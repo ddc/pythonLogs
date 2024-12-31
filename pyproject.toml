@@ -1,0 +1,62 @@
+[build-system]
+requires = ["poetry-core>=1.9.1"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "pythonLogs"
+version = "3.0.12"
+description = "Easy logs with rotations"
+license = "MIT"
+readme = "README.md"
+authors = ["Daniel Costa <danieldcsta@gmail.com>"]
+maintainers = ["Daniel Costa"]
+repository = "https://github.com/ddc/pythonLogs"
+homepage = "https://pypi.org/project/pythonLogs"
+packages = [{include = "pythonLogs"}]
+package-mode = true
+keywords = [
+    "python3", "python-3", "python",
+    "log", "logging", "logger",
+    "logutils", "log-utils", "pythonLogs"
+]
+classifiers = [
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3 :: Only",
+    "Operating System :: OS Independent",
+    "Environment :: Other Environment",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+]
+
+
+[tool.poetry.group.test]
+optional = true
+
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pydantic-settings = "^2.7.1"
+python-dotenv = "^1.0.1"
+pytz = "^2024.2"
+
+
+[tool.poetry.group.test.dependencies]
+coverage = "^7.6.10"
+poethepoet = "^0.32.0"
+pytest = "^8.3.4"
+
+
+[tool.coverage.run]
+omit = [
+    "tests/*",
+]
+
+
+[tool.poe.tasks]
+_test = "coverage run -m pytest -v"
+_coverage_report = "coverage report"
+_coverage_xml = "coverage xml"
+tests = ["_test", "_coverage_report", "_coverage_xml"]
+test = ["tests"]
