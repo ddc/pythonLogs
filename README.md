@@ -1,7 +1,7 @@
-# Easy logs with rotations
+# Simple python logs with file rotation
 
 [![Donate](https://img.shields.io/badge/Donate-PayPal-brightgreen.svg?style=plastic)](https://www.paypal.com/ncp/payment/6G9Z78QHUD4RJ)
-[![License](https://img.shields.io/pypi/l/pythonLogs)](https://github.com/ddc/pythonLogs/blob/main/LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PyPi](https://img.shields.io/pypi/v/pythonLogs.svg)](https://pypi.python.org/pypi/pythonLogs)
 [![PyPI Downloads](https://static.pepy.tech/badge/pythonLogs)](https://pepy.tech/projects/pythonLogs)
 [![codecov](https://codecov.io/gh/ddc/pythonLogs/graph/badge.svg?token=QsjwsmYzgD)](https://codecov.io/gh/ddc/pythonLogs)
@@ -11,10 +11,10 @@
 
 
 
-# Logs
-+ Parameters for all classes are declared as OPTIONAL 
+# Notes
++ Arguments for all classes are declared as OPTIONAL 
+  + arguments takes priority over environment variables
 + If any [.env](./pythonLogs/.env.example) variable is omitted, it falls back to default values here: [settings.py](pythonLogs/settings.py)
-+ Function arguments will overwrite any env variable
 + Timezone parameter can also accept `localtime`, default to `UTC`
   + This parameter is only to display the timezone datetime inside the log file
   + For timed rotation, only UTC and localtime are supported, meaning it will rotate at UTC or localtime
@@ -34,7 +34,7 @@ pip install pythonLogs
 
 # BasicLog
 + Setup Logging
-     + This is just a basic log, it does not use any file
+  + This is just a basic log, it does not use any file
 ```python
 from pythonLogs import BasicLog
 logger = BasicLog(
@@ -54,9 +54,9 @@ logger.warning("This is a warning example")
 
 # SizeRotatingLog
 + Setup Logging
-    + Logs will rotate based on the file size using the `maxmbytes` variable
-    + Rotated logs will have a sequence number starting from 1: `app.log_1.gz, app.log_2.gz`
-    + Logs will be deleted based on the `daystokeep` variable, defaults to 30
+  + Logs will rotate based on the file size using the `maxmbytes` variable
+  + Rotated logs will have a sequence number starting from 1: `app.log_1.gz, app.log_2.gz`
+  + Logs will be deleted based on the `daystokeep` variable, defaults to 30
 ```python
 from pythonLogs import SizeRotatingLog
 logger = SizeRotatingLog(
@@ -81,12 +81,12 @@ logger.warning("This is a warning example")
 
 # TimedRotatingLog
 + Setup Logging
-    + Logs will rotate based on `when` variable to a `.gz` file, defaults to `midnight`
-    + Rotated log will have the sufix variable on its name: `app_20240816.log.gz`
-    + Logs will be deleted based on the `daystokeep` variable, defaults to 30
-    + Current 'when' events supported:
-        + midnight — roll over at midnight
-        + W{0-6} - roll over on a certain day; 0 - Monday
+  + Logs will rotate based on `when` variable to a `.gz` file, defaults to `midnight`
+  + Rotated log will have the sufix variable on its name: `app_20240816.log.gz`
+  + Logs will be deleted based on the `daystokeep` variable, defaults to 30
+  + Current 'when' events supported:
+      + midnight — roll over at midnight
+      + W{0-6} - roll over on a certain day; 0 - Monday
 ```python
 from pythonLogs import TimedRotatingLog
 logger = TimedRotatingLog(
@@ -144,7 +144,7 @@ poetry build -f wheel
 # Run Tests and Get Coverage Report using Poe
 ```shell
 poetry update --with test
-poe tests
+poe test
 ```
 
 
