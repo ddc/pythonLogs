@@ -60,6 +60,9 @@ jobs:
       - test_and_build
     env:
       GITHUB_TOKEN: ${{ github.token }}
+    permissions:
+      contents: write
+      pull-requests: read
     steps:
       - id: release
         uses: rymndhng/release-on-push-action@master
