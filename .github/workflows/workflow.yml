@@ -1,113 +1,139 @@
-name: Test, Build, Release, Publish
+name: CI/CD Pipeline
 
 on:
   push:
-    branches:
-      - master
-      - main
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+    branches: [main, master]
 
 jobs:
-  test_and_build:
+  test:
+    name: Test Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.x"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@master
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: 'poetry'
 
       - name: Install Poetry
-        run: |  
-          python -m pip install --upgrade pip setuptools wheel
-          python -m pip install poetry
-
-      - name: Install poetry dependencies
-        run: |  
-          python -m poetry update --with test
-
-      - name: Run tests
-        run: |
-          python -m poetry run coverage run --omit=./tests/* -m pytest -v
-
-      - name: Generate Coverage Report
-        run: |  
-          python -m poetry run coverage report
-          python -m poetry run coverage xml
-
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
+        uses: snok/install-poetry@v1
         with:
-            token: ${{ secrets.CODECOV_TOKEN }}
-            slug: ddc/pythonLogs
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install dependencies
+        run: poetry install --with test --no-interaction --no-ansi
+
+      - name: Run tests with coverage
+        run: poetry run poe tests
+
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.13'
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.xml
+          flags: unittests
+          name: coverage-py${{ matrix.python-version }}
+
+  build:
+    name: Build Package
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'poetry'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install build dependencies only
+        run: poetry install --only main --no-interaction --no-ansi
 
       - name: Build package
-        run: |  
-          python -m poetry build
+        run: poetry build
 
-      - name: Store the distribution packages to publish to pypi
-        uses: actions/upload-artifact@master
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
         with:
-          name: python-package-distributions
+          name: python-package
           path: dist/
+          retention-days: 7
 
   release:
+    name: Create Release
     runs-on: ubuntu-latest
-    needs:
-      - test_and_build
-    env:
-      GITHUB_TOKEN: ${{ github.token }}
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
-      pull-requests: read
     steps:
-      - id: release
-        uses: rymndhng/release-on-push-action@master
+      - uses: actions/checkout@v4
+
+      - name: Download package artifacts
+        uses: actions/download-artifact@v4
         with:
-          bump_version_scheme: patch # major | minor | patch
-          tag_prefix: v
-          release_name: "Version <RELEASE_VERSION>"
-          release_body: ${{ steps.release.outputs.tag_name }}
+          name: python-package
+          path: dist
 
-      - name: Check Output Parameters
-        run: |
-          echo "Got tag name ${{ steps.release.outputs.tag_name }}"
-          echo "Got release version ${{ steps.release.outputs.version }}"
-          echo "Upload release artifacts to ${{ steps.release.outputs.upload_url }}"
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ github.ref_name }}
+          body: Automated release for version ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
 
-  publish-to-test-pypi:
+  publish:
+    name: Publish to PyPI
     runs-on: ubuntu-latest
+    needs: release
+    if: startsWith(github.ref, 'refs/tags/v')
     environment: release
-    needs:
-      - release
     permissions:
       id-token: write
     steps:
-      - name: Download all the dists
-        uses: actions/download-artifact@master
+      - name: Download package artifacts
+        uses: actions/download-artifact@v4
         with:
-          name: python-package-distributions
-          path: dist/
-      - name: Publish distribution to TestPyPI
+          name: python-package
+          path: dist
+
+      - name: Install twine
+        run: pip install twine
+
+      - name: Verify package
+        run: twine check dist/*
+
+      - name: Publish to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+          verbose: true
 
-  publish-to-pypi:
-    runs-on: ubuntu-latest
-    environment: release
-    needs:
-      - release
-    permissions:
-      id-token: write
-    steps:
-      - name: Download all the dists
-        uses: actions/download-artifact@master
-        with:
-          name: python-package-distributions
-          path: dist/
-      - name: Publish distribution to PyPI
+      - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
+          verbose: true

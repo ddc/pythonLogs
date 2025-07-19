@@ -1,11 +1,12 @@
 [build-system]
-requires = ["poetry-core>=1.9.1"]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
 
 [tool.poetry]
 name = "pythonLogs"
-version = "3.0.13"
-description = "Simple python logs with file rotation"
+version = "4.0.1"
+description = "A modern, high-performance Python logging library with automatic file rotation, factory pattern for easy logger creation, and optimized caching for better performance."
 license = "MIT"
 readme = "README.md"
 authors = ["Daniel Costa <danieldcsta@gmail.com>"]
@@ -31,21 +32,26 @@ classifiers = [
 ]
 
 
-[tool.poetry.group.test]
-optional = true
-
-
 [tool.poetry.dependencies]
 python = "^3.10"
-pydantic-settings = "^2.7.1"
-python-dotenv = "^1.0.1"
-pytz = "^2024.2"
+pydantic-settings = "^2.10.1"
+python-dotenv = "^1.1.1"
 
 
 [tool.poetry.group.test.dependencies]
-coverage = "^7.6.10"
-poethepoet = "^0.32.0"
-pytest = "^8.3.4"
+coverage = "^7.9.2"
+poethepoet = "^0.36.0"
+psutil = "^7.0.0"
+pytest = "^8.4.1"
+
+
+[tool.poetry.group.test]
+optional = true
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+]
 
 
 [tool.coverage.run]

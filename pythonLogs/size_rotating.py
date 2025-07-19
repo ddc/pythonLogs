@@ -1,7 +1,10 @@
 # -*- encoding: utf-8 -*-
 import logging.handlers
 import os
+import re
+import threading
 from typing import Optional
+from pythonLogs.constants import MB_TO_BYTES
 from pythonLogs.log_utils import (
     check_directory_permissions,
     check_filename_instance,
@@ -10,14 +13,15 @@ from pythonLogs.log_utils import (
     get_logger_and_formatter,
     get_stream_handler,
     gzip_file_with_sufix,
-    list_files,
     remove_old_logs,
     write_stderr,
 )
-from pythonLogs.settings import LogSettings
+from pythonLogs.memory_utils import cleanup_logger_handlers, register_logger_weakref
+from pythonLogs.settings import get_log_settings
 
 
 class SizeRotatingLog:
+    """Size-based rotating logger with context manager support for automatic resource cleanup."""
     def __init__(
         self,
         level: Optional[str] = None,
@@ -32,7 +36,7 @@ class SizeRotatingLog:
         streamhandler: Optional[bool] = None,
         showlocation: Optional[bool] = None,
     ):
-        _settings = LogSettings()
+        _settings = get_log_settings()
         self.level = get_level(level or _settings.level)
         self.appname = name or _settings.appname
         self.directory = directory or _settings.directory
@@ -44,6 +48,9 @@ class SizeRotatingLog:
         self.timezone = timezone or _settings.timezone
         self.streamhandler = streamhandler or _settings.stream_handler
         self.showlocation = showlocation or _settings.show_location
+        self.logger = None
+        # Instance-level lock for thread safety
+        self._lock = threading.Lock()
 
     def init(self):
         check_filename_instance(self.filenames)
@@ -58,7 +65,7 @@ class SizeRotatingLog:
             file_handler = logging.handlers.RotatingFileHandler(
                 filename=log_file_path,
                 mode="a",
-                maxBytes=self.maxmbytes * 1024 * 1024,
+                maxBytes=self.maxmbytes * MB_TO_BYTES,
                 backupCount=self.daystokeep,
                 encoding=self.encoding,
                 delay=False,
@@ -73,7 +80,31 @@ class SizeRotatingLog:
             stream_hdlr = get_stream_handler(self.level, formatter)
             logger.addHandler(stream_hdlr)
 
+        self.logger = logger
+        # Register weak reference for memory tracking
+        register_logger_weakref(logger)
         return logger
+    
+    def __enter__(self):
+        """Context manager entry."""
+        if not hasattr(self, 'logger') or self.logger is None:
+            self.init()
+        return self.logger
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit with automatic cleanup."""
+        if hasattr(self, 'logger'):
+            self._cleanup_logger(self.logger)
+    
+    def _cleanup_logger(self, logger: logging.Logger) -> None:
+        """Clean up logger resources by closing all handlers with thread safety."""
+        with self._lock:
+            cleanup_logger_handlers(logger)
+    
+    @staticmethod
+    def cleanup_logger(logger: logging.Logger) -> None:
+        """Static method for cleaning up logger resources (backward compatibility)."""
+        cleanup_logger_handlers(logger)
 
 
 class GZipRotatorSize:
@@ -87,19 +118,21 @@ class GZipRotatorSize:
             source_filename, _ = os.path.basename(source).split(".")
             new_file_number = self._get_new_file_number(self.directory, source_filename)
             if os.path.isfile(source):
-                gzip_file_with_sufix(source, new_file_number)
+                gzip_file_with_sufix(source, str(new_file_number))
 
     @staticmethod
-    def _get_new_file_number(directory, source_filename):
-        new_file_number = 1
-        previous_gz_files = list_files(directory, ends_with=".gz")
-        for gz_file in previous_gz_files:
-            if source_filename in gz_file:
-                try:
-                    oldest_file_name = gz_file.split(".")[0].split("_")
-                    if len(oldest_file_name) > 1:
-                        new_file_number = int(oldest_file_name[1]) + 1
-                except ValueError as e:
-                    write_stderr(f"Unable to get previous gz log file number | {gz_file} | {repr(e)}")
-                    raise
-        return new_file_number
+    def _get_new_file_number(directory: str, source_filename: str) -> int:
+        pattern = re.compile(rf"{re.escape(source_filename)}_(\d+)\.log\.gz$")
+        max_num = 0
+        try:
+            # Use pathlib for better performance with large directories
+            from pathlib import Path
+            dir_path = Path(directory)
+            for file_path in dir_path.iterdir():
+                if file_path.is_file():
+                    match = pattern.match(file_path.name)
+                    if match:
+                        max_num = max(max_num, int(match.group(1)))
+        except OSError as e:
+            write_stderr(f"Unable to get previous gz log file number | {repr(e)}")
+        return max_num + 1
