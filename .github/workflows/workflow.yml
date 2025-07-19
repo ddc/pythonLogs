@@ -7,6 +7,9 @@ on:
   pull_request:
     branches: [main, master]
 
+env:
+  PYTHON_VERSIONS: '["3.10", "3.11", "3.12", "3.13"]'
+
 jobs:
   test:
     name: Test Python ${{ matrix.python-version }}
@@ -14,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ${{ fromJson(env.PYTHON_VERSIONS) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -25,14 +28,9 @@ jobs:
           cache: 'poetry'
 
       - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
-
-      - name: Add Poetry to PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Install dependencies
         run: poetry install --with test --no-interaction --no-ansi
@@ -40,37 +38,34 @@ jobs:
       - name: Run tests with coverage
         run: poetry run poe tests
 
-      - name: Upload coverage to Codecov
+      - name: Upload coverage reports to Codecov
         if: matrix.python-version == '3.13'
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage.xml
-          flags: unittests
-          name: coverage-py${{ matrix.python-version }}
+            token: ${{ secrets.CODECOV_TOKEN }}
+            slug: ddc/pythonLogs
+
 
   build:
-    name: Build Package
+    name: Build Package Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     needs: test
+    strategy:
+      matrix:
+        python-version: ${{ fromJson(env.PYTHON_VERSIONS) }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: ${{ matrix.python-version }}
           cache: 'poetry'
 
       - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
-
-      - name: Add Poetry to PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Install build dependencies only
         run: poetry install --only main --no-interaction --no-ansi
@@ -81,7 +76,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: python-package
+          name: python-package-${{ matrix.python-version }}
           path: dist/
           retention-days: 7
 
@@ -98,8 +93,9 @@ jobs:
       - name: Download package artifacts
         uses: actions/download-artifact@v4
         with:
-          name: python-package
+          pattern: python-package-*
           path: dist
+          merge-multiple: true
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -124,8 +120,9 @@ jobs:
       - name: Download package artifacts
         uses: actions/download-artifact@v4
         with:
-          name: python-package
+          pattern: python-package-*
           path: dist
+          merge-multiple: true
 
       - name: Install twine
         run: pip install twine
