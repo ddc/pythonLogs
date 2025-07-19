@@ -4,8 +4,6 @@ on:
   push:
     branches: [main, master]
     tags: ['v*']
-  pull_request:
-    branches: [main, master]
 
 
 jobs:
@@ -93,7 +91,7 @@ jobs:
         with:
           pattern: python-package-*
           path: dist
-          merge-multiple: true
+          merge-multiple: false
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -120,7 +118,7 @@ jobs:
         with:
           pattern: python-package-*
           path: dist
-          merge-multiple: true
+          merge-multiple: false
 
       - name: Install twine
         run: pip install twine
