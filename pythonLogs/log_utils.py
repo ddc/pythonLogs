@@ -5,18 +5,26 @@ import logging.handlers
 import os
 import shutil
 import sys
+import threading
 import time
 from datetime import datetime, timedelta, timezone as dttz
-from time import struct_time
-from typing import Any, Callable
-import pytz
+from functools import lru_cache
+from pathlib import Path
+from typing import Callable, Set
+from zoneinfo import ZoneInfo
+from pythonLogs.constants import DEFAULT_FILE_MODE, LogLevel
+
+
+# Global cache for checked directories with thread safety and size limits
+_checked_directories: Set[str] = set()
+_directory_lock = threading.Lock()
+_max_cached_directories = 500  # Limit cache size to prevent unbounded growth
 
 
 def get_stream_handler(
     level: int,
     formatter: logging.Formatter,
 ) -> logging.StreamHandler:
-
     stream_hdlr = logging.StreamHandler()
     stream_hdlr.setFormatter(formatter)
     stream_hdlr.setLevel(level)
@@ -27,83 +35,94 @@ def get_logger_and_formatter(
     name: str,
     datefmt: str,
     show_location: bool,
-    timezone: str,
-) -> [logging.Logger, logging.Formatter]:
-
+    timezone_: str,
+) -> tuple[logging.Logger, logging.Formatter]:
     logger = logging.getLogger(name)
-    for handler in logger.handlers[:]:
-        handler.close()
-        logger.removeHandler(handler)
 
-    formatt = get_format(show_location, name, timezone)
+    # More efficient handler cleanup with context manager-like pattern
+    handlers_to_remove = list(logger.handlers)
+    for handler in handlers_to_remove:
+        try:
+            handler.close()
+        except (OSError, ValueError):
+            pass  # Ignore expected errors during cleanup
+        finally:
+            logger.removeHandler(handler)
+
+    formatt = get_format(show_location, name, timezone_)
     formatter = logging.Formatter(formatt, datefmt=datefmt)
-    formatter.converter = get_timezone_function(timezone)
+    formatter.converter = get_timezone_function(timezone_)
     return logger, formatter
 
 
 def check_filename_instance(filenames: list | tuple) -> None:
-    if not isinstance(filenames, list | tuple):
+    if not isinstance(filenames, (list, tuple)):
         err_msg = f"Unable to parse filenames. Filename instance is not list or tuple. | {filenames}"
         write_stderr(err_msg)
         raise TypeError(err_msg)
 
 
 def check_directory_permissions(directory_path: str) -> None:
-    if os.path.isdir(directory_path) and not os.access(directory_path, os.W_OK | os.X_OK):
-        err_msg = f"Unable to access directory | {directory_path}"
-        write_stderr(err_msg)
-        raise PermissionError(err_msg)
+    # Thread-safe check with double-checked locking pattern
+    if directory_path in _checked_directories:
+        return
 
-    try:
-        if not os.path.isdir(directory_path):
-            os.makedirs(directory_path, mode=0o755, exist_ok=True)
-    except PermissionError as e:
-        err_msg = f"Unable to create directory | {directory_path}"
-        write_stderr(f"{err_msg} | {repr(e)}")
-        raise PermissionError(err_msg)
+    with _directory_lock:
+        # Check again inside the lock to avoid race conditions
+        if directory_path in _checked_directories:
+            return
+
+        path_obj = Path(directory_path)
+
+        if path_obj.exists():
+            if not os.access(directory_path, os.W_OK | os.X_OK):
+                err_msg = f"Unable to access directory | {directory_path}"
+                write_stderr(err_msg)
+                raise PermissionError(err_msg)
+        else:
+            try:
+                path_obj.mkdir(mode=DEFAULT_FILE_MODE, parents=True, exist_ok=True)
+            except PermissionError as e:
+                err_msg = f"Unable to create directory | {directory_path}"
+                write_stderr(f"{err_msg} | {repr(e)}")
+                raise PermissionError(err_msg)
+
+        # Add to cache with size limit enforcement
+        if len(_checked_directories) >= _max_cached_directories:
+            # Remove a random entry to make space (simple eviction strategy)
+            _checked_directories.pop()
+        _checked_directories.add(directory_path)
 
 
 def remove_old_logs(logs_dir: str, days_to_keep: int) -> None:
-    files_list = list_files(logs_dir, ends_with=".gz")
-    for file in files_list:
-        try:
-            if is_older_than_x_days(file, days_to_keep):
-                delete_file(file)
-        except Exception as e:
-            write_stderr(f"Unable to delete {days_to_keep} days old logs | {file} | {repr(e)}")
+    if days_to_keep <= 0:
+        return
 
-
-def list_files(directory: str, ends_with: str) -> tuple:
-    """
-    List all files in the given directory
-        and returns them in a list sorted by creation time in ascending order
-    :param directory:
-    :param ends_with:
-    :return: tuple
-    """
+    cutoff_time = datetime.now() - timedelta(days=days_to_keep)
 
     try:
-        result: list = []
-        if os.path.isdir(directory):
-            result: list = [os.path.join(directory, f) for f in os.listdir(directory) if f.lower().endswith(ends_with)]
-            result.sort(key=os.path.getmtime)
-        return tuple(result)
-    except Exception as e:
-        write_stderr(repr(e))
-        raise e
+        for file_path in Path(logs_dir).glob("*.gz"):
+            try:
+                if file_path.stat().st_mtime < cutoff_time.timestamp():
+                    file_path.unlink()
+            except (OSError, IOError) as e:
+                write_stderr(f"Unable to delete old log | {file_path} | {repr(e)}")
+    except OSError as e:
+        write_stderr(f"Unable to scan directory for old logs | {logs_dir} | {repr(e)}")
 
 
 def delete_file(path: str) -> bool:
-    """
-    Remove the given file and returns True if the file was successfully removed
-    :param path:
-    :return: True
-    """
+    """Remove the given file and returns True if the file was successfully removed"""
+    path_obj = Path(path)
+
     try:
-        if os.path.isfile(path):
-            os.remove(path)
-        elif os.path.exists(path):
-            shutil.rmtree(path)
+        if path_obj.is_file():
+            path_obj.unlink()
+        elif path_obj.is_dir():
+            shutil.rmtree(path_obj)
+        elif path_obj.exists():
+            # Handle special files
+            path_obj.unlink()
         else:
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), path)
     except OSError as e:
@@ -113,97 +132,96 @@ def delete_file(path: str) -> bool:
 
 
 def is_older_than_x_days(path: str, days: int) -> bool:
-    """
-    Check if a file or directory is older than the specified number of days
-    :param path:
-    :param days:
-    :return:
-    """
+    """Check if a file or directory is older than the specified number of days"""
+    path_obj = Path(path)
 
-    if not os.path.exists(path):
+    if not path_obj.exists():
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), path)
 
     try:
         if int(days) in (0, 1):
-            cutoff_time = datetime.today()
+            cutoff_time = datetime.now()
         else:
-            cutoff_time = datetime.today() - timedelta(days=int(days))
+            cutoff_time = datetime.now() - timedelta(days=int(days))
     except ValueError as e:
         write_stderr(repr(e))
         raise e
 
-    file_timestamp = os.stat(path).st_mtime
-    file_time = datetime.fromtimestamp(file_timestamp)
+    file_time = datetime.fromtimestamp(path_obj.stat().st_mtime)
+    return file_time < cutoff_time
 
-    if file_time < cutoff_time:
-        return True
-    return False
+
+# Cache stderr timezone for better performance
+@lru_cache(maxsize=1)
+def _get_stderr_timezone():
+    timezone_name = os.getenv("LOG_TIMEZONE", "UTC")
+    if timezone_name.lower() == "localtime":
+        return None  # Use system local timezone
+    return ZoneInfo(timezone_name)
 
 
 def write_stderr(msg: str) -> None:
-    """
-    Write msg to stderr
-    :param msg:
-    :return: None
-    """
+    """Write msg to stderr with optimized timezone handling"""
+    try:
+        tz = _get_stderr_timezone()
+        if tz is None:
+            # Use local timezone
+            dt = datetime.now()
+        else:
+            dt = datetime.now(dttz.utc).astimezone(tz)
+        dt_timezone = dt.strftime("%Y-%m-%dT%H:%M:%S.%f%z")
+        sys.stderr.write(f"[{dt_timezone}]:[ERROR]:{msg}\n")
+    except (OSError, ValueError, KeyError):
+        # Fallback to simple timestamp if timezone fails
+        sys.stderr.write(f"[{datetime.now().isoformat()}]:[ERROR]:{msg}\n")
 
-    obj = datetime.now(dttz.utc)
-    dt = obj.astimezone(pytz.timezone(os.getenv("LOG_TIMEZONE", "UTC")))
-    dt_timezone = dt.strftime("%Y-%m-%dT%H:%M:%S.%f:%z")
-    sys.stderr.write(f"[{dt_timezone}]:[ERROR]:{msg}\n")
 
-
-def get_level(level: str) -> logging:
-    """
-    Get logging level
-    :param level:
-    :return: level
-    """
-
+def get_level(level: str) -> int:
+    """Get logging level using enum values"""
     if not isinstance(level, str):
         write_stderr(f"Unable to get log level. Setting default level to: 'INFO' ({logging.INFO})")
         return logging.INFO
 
-    match level.lower():
-        case "debug":
-            return logging.DEBUG
-        case "warning" | "warn":
-            return logging.WARNING
-        case "error":
-            return logging.ERROR
-        case "critical" | "crit":
-            return logging.CRITICAL
-        case _:
-            return logging.INFO
+    level_map = {
+        LogLevel.DEBUG.value.lower(): logging.DEBUG,
+        LogLevel.WARNING.value.lower(): logging.WARNING,
+        LogLevel.WARN.value.lower(): logging.WARNING,
+        LogLevel.ERROR.value.lower(): logging.ERROR,
+        LogLevel.CRITICAL.value.lower(): logging.CRITICAL,
+        LogLevel.CRIT.value.lower(): logging.CRITICAL,
+        LogLevel.INFO.value.lower(): logging.INFO,
+    }
+
+    return level_map.get(level.lower(), logging.INFO)
 
 
 def get_log_path(directory: str, filename: str) -> str:
-    """
-    Get log file path
-    :param directory:
-    :param filename:
-    :return: path as str
-    """
+    """Get log file path with optimized validation"""
+    log_file_path = str(Path(directory) / filename)
 
-    log_file_path = str(os.path.join(directory, filename))
-    err_message = f"Unable to open log file for writing | {log_file_path}"
+    # Check directory permissions (cached)
+    check_directory_permissions(directory)
 
-    try:
-        open(log_file_path, "a+").close()
-    except PermissionError as e:
-        write_stderr(f"{err_message} | {repr(e)}")
+    # Only validate write access to directory, not create the file
+    if not os.access(directory, os.W_OK):
+        err_message = f"Unable to write to log directory | {directory}"
+        write_stderr(err_message)
         raise PermissionError(err_message)
-    except FileNotFoundError as e:
-        write_stderr(f"{err_message} | {repr(e)}")
-        raise FileNotFoundError(err_message)
-    except OSError as e:
-        write_stderr(f"{err_message} | {repr(e)}")
-        raise e
 
     return log_file_path
 
 
-def get_format(show_location: bool, name: str, timezone: str) -> str:
+@lru_cache(maxsize=32)
+def _get_timezone_offset(timezone_: str) -> str:
+    """Cache timezone offset calculation"""
+    if timezone_.lower() == "localtime":
+        return time.strftime("%z")
+    else:
+        return datetime.now(ZoneInfo(timezone_)).strftime("%z")
+
+
+def get_format(show_location: bool, name: str, timezone_: str) -> str:
+    """Get log format string with cached timezone offset"""
     _debug_fmt = ""
     _logger_name = ""
 
@@ -213,52 +231,46 @@ def get_format(show_location: bool, name: str, timezone: str) -> str:
     if show_location:
         _debug_fmt = "[%(filename)s:%(funcName)s:%(lineno)d]:"
 
-    if timezone == "localtime":
-        utc_offset = time.strftime("%z")
-    else:
-        utc_offset = datetime.now(pytz.timezone(timezone)).strftime("%z")
-
-    fmt = f"[%(asctime)s.%(msecs)03d{utc_offset}]:[%(levelname)s]:{_logger_name}{_debug_fmt}%(message)s"
-    return fmt
+    utc_offset = _get_timezone_offset(timezone_)
+    return f"[%(asctime)s.%(msecs)03d{utc_offset}]:[%(levelname)s]:{_logger_name}{_debug_fmt}%(message)s"
 
 
-def gzip_file_with_sufix(file_path, sufix) -> str | None:
-    """
-    gzip file
-    :param file_path:
-    :param sufix:
-    :return: bool
-    """
+def gzip_file_with_sufix(file_path: str, sufix: str) -> str | None:
+    """gzip file with improved error handling and performance"""
+    path_obj = Path(file_path)
 
-    if os.path.isfile(file_path):
-        sfname, sext = os.path.splitext(file_path)
-        renamed_dst = f"{sfname}_{sufix}{sext}.gz"
+    if not path_obj.is_file():
+        return None
 
-        try:
-            with open(file_path, "rb") as fin:
-                with gzip.open(renamed_dst, "wb") as fout:
-                    fout.writelines(fin)
-        except Exception as e:
-            write_stderr(f"Unable to gzip log file | {file_path} | {repr(e)}")
-            raise e
+    # Use pathlib for cleaner path operations
+    renamed_dst = path_obj.with_name(f"{path_obj.stem}_{sufix}{path_obj.suffix}.gz")
 
-        try:
-            delete_file(file_path)
-        except OSError as e:
-            write_stderr(f"Unable to delete source log file | {file_path} | {repr(e)}")
-            raise e
+    try:
+        with open(file_path, "rb") as fin:
+            with gzip.open(renamed_dst, "wb", compresslevel=6) as fout:  # Balanced compression
+                shutil.copyfileobj(fin, fout, length=64*1024)  # type: ignore # 64KB chunks for better performance
+    except (OSError, IOError) as e:
+        write_stderr(f"Unable to gzip log file | {file_path} | {repr(e)}")
+        raise e
 
-        return renamed_dst
+    try:
+        path_obj.unlink()  # Use pathlib for deletion
+    except OSError as e:
+        write_stderr(f"Unable to delete source log file | {file_path} | {repr(e)}")
+        raise e
+
+    return str(renamed_dst)
 
 
-def get_timezone_function(
-    time_zone: str,
-) -> Callable[[float | None, Any], struct_time] | Callable[[Any], struct_time]:
-
+@lru_cache(maxsize=32)
+def get_timezone_function(time_zone: str) -> Callable:
+    """Get timezone function with caching for better performance"""
     match time_zone.lower():
         case "utc":
             return time.gmtime
         case "localtime":
             return time.localtime
         case _:
-            return lambda *args: datetime.now(tz=pytz.timezone(time_zone)).timetuple()
+            # Cache the timezone object
+            tz = ZoneInfo(time_zone)
+            return lambda *args: datetime.now(tz=tz).timetuple()

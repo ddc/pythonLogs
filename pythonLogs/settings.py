@@ -1,36 +1,35 @@
 # -*- encoding: utf-8 -*-
-from enum import Enum
+from functools import lru_cache
+from typing import Optional
 from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import Optional
+from pythonLogs.constants import (
+    DEFAULT_BACKUP_COUNT,
+    DEFAULT_DATE_FORMAT,
+    DEFAULT_ENCODING,
+    DEFAULT_ROTATE_SUFFIX,
+    DEFAULT_TIMEZONE,
+    LogLevel,
+    RotateWhen
+)
 
 
-class LogLevel(str, Enum):
-    """log levels"""
-
-    CRITICAL = "CRITICAL"
-    CRIT = "CRIT"
-    ERROR = "ERROR"
-    WARNING = "WARNING"
-    WARN = "WARN"
-    INFO = "INFO"
-    DEBUG = "DEBUG"
+# Lazy loading flag for dotenv
+_dotenv_loaded = False
 
 
 class LogSettings(BaseSettings):
     """If any ENV variable is omitted, it falls back to default values here"""
 
-    load_dotenv()
-
     level: Optional[LogLevel] = Field(default=LogLevel.INFO)
     appname: Optional[str] = Field(default="app")
     directory: Optional[str] = Field(default="/app/logs")
     filename: Optional[str] = Field(default="app.log")
-    encoding: Optional[str] = Field(default="UTF-8")
-    date_format: Optional[str] = Field(default="%Y-%m-%dT%H:%M:%S")
-    days_to_keep: Optional[int] = Field(default=30)
-    timezone: Optional[str] = Field(default="UTC")
+    encoding: Optional[str] = Field(default=DEFAULT_ENCODING)
+    date_format: Optional[str] = Field(default=DEFAULT_DATE_FORMAT)
+    days_to_keep: Optional[int] = Field(default=DEFAULT_BACKUP_COUNT)
+    timezone: Optional[str] = Field(default=DEFAULT_TIMEZONE)
     stream_handler: Optional[bool] = Field(default=True)
     show_location: Optional[bool] = Field(default=False)
 
@@ -38,8 +37,18 @@ class LogSettings(BaseSettings):
     max_file_size_mb: Optional[int] = Field(default=10)
 
     # TimedRotatingLog
-    rotate_when: Optional[str] = Field(default="midnight")
+    rotate_when: Optional[RotateWhen] = Field(default=RotateWhen.MIDNIGHT)
     rotate_at_utc: Optional[bool] = Field(default=True)
-    rotate_file_sufix: Optional[str] = Field(default="%Y%m%d")
+    rotate_file_sufix: Optional[str] = Field(default=DEFAULT_ROTATE_SUFFIX)
 
     model_config = SettingsConfigDict(env_prefix="LOG_", env_file=".env", extra="allow")
+
+
+@lru_cache(maxsize=1)
+def get_log_settings() -> LogSettings:
+    """Get cached log settings instance to avoid repeated instantiation"""
+    global _dotenv_loaded
+    if not _dotenv_loaded:
+        load_dotenv()
+        _dotenv_loaded = True
+    return LogSettings()

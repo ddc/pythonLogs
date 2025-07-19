@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 import logging.handlers
 import os
+import threading
 from typing import Optional
 from pythonLogs.log_utils import (
     check_directory_permissions,
@@ -12,14 +13,20 @@ from pythonLogs.log_utils import (
     gzip_file_with_sufix,
     remove_old_logs,
 )
-from pythonLogs.settings import LogSettings
+from pythonLogs.memory_utils import cleanup_logger_handlers, register_logger_weakref
+from pythonLogs.settings import get_log_settings
 
 
 class TimedRotatingLog:
     """
+    Time-based rotating logger with context manager support for automatic resource cleanup.
+    
     Current 'rotating_when' events supported for TimedRotatingLogs:
-        midnight - roll over at midnight
-        W{0-6} - roll over on a certain day; 0 - Monday
+    Use RotateWhen enum values:
+        RotateWhen.MIDNIGHT - roll over at midnight
+        RotateWhen.MONDAY through RotateWhen.SUNDAY - roll over on specific days
+        RotateWhen.HOURLY - roll over every hour
+        RotateWhen.DAILY - roll over daily
     """
 
     def __init__(
@@ -32,13 +39,13 @@ class TimedRotatingLog:
         sufix: Optional[str] = None,
         daystokeep: Optional[int] = None,
         encoding: Optional[str] = None,
-        datefmt: Optional[str] = None,
-        timezone: Optional[str] = None,
-        streamhandler: Optional[bool] = None,
-        showlocation: Optional[bool] = None,
-        rotateatutc: Optional[bool] = None,
+         datefmt: Optional[str] = None,
+         timezone: Optional[str] = None,
+         streamhandler: Optional[bool] = None,
+         showlocation: Optional[bool] = None,
+         rotateatutc: Optional[bool] = None,
     ):
-        _settings = LogSettings()
+        _settings = get_log_settings()
         self.level = get_level(level or _settings.level)
         self.appname = name or _settings.appname
         self.directory = directory or _settings.directory
@@ -52,6 +59,9 @@ class TimedRotatingLog:
         self.streamhandler = streamhandler or _settings.stream_handler
         self.showlocation = showlocation or _settings.show_location
         self.rotateatutc = rotateatutc or _settings.rotate_at_utc
+        self.logger = None
+        # Instance-level lock for thread safety
+        self._lock = threading.Lock()
 
     def init(self):
         check_filename_instance(self.filenames)
@@ -68,8 +78,7 @@ class TimedRotatingLog:
                 encoding=self.encoding,
                 when=self.when,
                 utc=self.rotateatutc,
-                backupCount=self.daystokeep,
-            )
+                backupCount=self.daystokeep, )
             file_handler.suffix = self.sufix
             file_handler.rotator = GZipRotatorTimed(self.directory, self.daystokeep)
             file_handler.setFormatter(formatter)
@@ -80,7 +89,31 @@ class TimedRotatingLog:
             stream_hdlr = get_stream_handler(self.level, formatter)
             logger.addHandler(stream_hdlr)
 
+        self.logger = logger
+        # Register weak reference for memory tracking
+        register_logger_weakref(logger)
         return logger
+
+    def __enter__(self):
+        """Context manager entry."""
+        if not hasattr(self, 'logger') or self.logger is None:
+            self.init()
+        return self.logger
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit with automatic cleanup."""
+        if hasattr(self, 'logger'):
+            self._cleanup_logger(self.logger)
+
+    def _cleanup_logger(self, logger: logging.Logger) -> None:
+        """Clean up logger resources by closing all handlers with thread safety."""
+        with self._lock:
+            cleanup_logger_handlers(logger)
+
+    @staticmethod
+    def cleanup_logger(logger: logging.Logger) -> None:
+        """Static method for cleaning up logger resources (backward compatibility)."""
+        cleanup_logger_handlers(logger)
 
 
 class GZipRotatorTimed:

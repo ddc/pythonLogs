@@ -1,11 +1,15 @@
 # -*- encoding: utf-8 -*-
 import logging
+import threading
 from typing import Optional
 from pythonLogs.log_utils import get_format, get_level, get_timezone_function
-from pythonLogs.settings import LogSettings
+from pythonLogs.memory_utils import cleanup_logger_handlers, register_logger_weakref
+from pythonLogs.settings import get_log_settings
 
 
 class BasicLog:
+    """Basic logger with context manager support for automatic resource cleanup."""
+
     def __init__(
         self,
         level: Optional[str] = None,
@@ -15,13 +19,16 @@ class BasicLog:
         timezone: Optional[str] = None,
         showlocation: Optional[bool] = None,
     ):
-        _settings = LogSettings()
+        _settings = get_log_settings()
         self.level = get_level(level or _settings.level)
         self.appname = name or _settings.appname
         self.encoding = encoding or _settings.encoding
         self.datefmt = datefmt or _settings.date_format
         self.timezone = timezone or _settings.timezone
         self.showlocation = showlocation or _settings.show_location
+        self.logger = None
+        # Instance-level lock for thread safety
+        self._lock = threading.Lock()
 
     def init(self):
         logger = logging.getLogger(self.appname)
@@ -29,4 +36,28 @@ class BasicLog:
         logging.Formatter.converter = get_timezone_function(self.timezone)
         _format = get_format(self.showlocation, self.appname, self.timezone)
         logging.basicConfig(datefmt=self.datefmt, encoding=self.encoding, format=_format)
+        self.logger = logger
+        # Register weak reference for memory tracking
+        register_logger_weakref(logger)
         return logger
+
+    def __enter__(self):
+        """Context manager entry."""
+        if not hasattr(self, 'logger') or self.logger is None:
+            self.init()
+        return self.logger
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit with automatic cleanup."""
+        if hasattr(self, 'logger'):
+            self._cleanup_logger(self.logger)
+
+    def _cleanup_logger(self, logger: logging.Logger) -> None:
+        """Clean up logger resources by closing all handlers with thread safety."""
+        with self._lock:
+            cleanup_logger_handlers(logger)
+
+    @staticmethod
+    def cleanup_logger(logger: logging.Logger) -> None:
+        """Static method for cleaning up logger resources (backward compatibility)."""
+        cleanup_logger_handlers(logger)
