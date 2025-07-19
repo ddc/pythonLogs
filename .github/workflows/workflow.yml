@@ -7,8 +7,10 @@ on:
   pull_request:
     branches: [main, master]
 
+
 env:
-  PYTHON_VERSIONS: '["3.10", "3.11", "3.12", "3.13"]'
+  PYTHON_VERSIONS: '3.10, 3.11, 3.12, 3.13'
+
 
 jobs:
   test:
@@ -17,9 +19,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ${{ fromJson(env.PYTHON_VERSIONS) }}
+        python-version: ${{ env.PYTHON_VERSIONS }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Get latest Python version
+        id: get_latest
+        run: |
+          LATEST_VERSION=$(echo "$PYTHON_VERSIONS" | tr ' ' '\n' | tail -n1)
+          echo "LATEST_PYTHON_VERSION=$LATEST_VERSION" >> "$GITHUB_ENV"
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -39,7 +47,7 @@ jobs:
         run: poetry run poe tests
 
       - name: Upload coverage reports to Codecov
-        if: matrix.python-version == '3.13'
+        if: matrix.python-version == env.LATEST_PYTHON_VERSION
         uses: codecov/codecov-action@v5
         with:
             token: ${{ secrets.CODECOV_TOKEN }}
@@ -52,7 +60,7 @@ jobs:
     needs: test
     strategy:
       matrix:
-        python-version: ${{ fromJson(env.PYTHON_VERSIONS) }}
+        python-version: ${{ env.PYTHON_VERSIONS }}
     steps:
       - uses: actions/checkout@v4
 
