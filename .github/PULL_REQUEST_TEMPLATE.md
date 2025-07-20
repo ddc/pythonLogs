@@ -1,0 +1,16 @@
+## Summary
+
+<!-- What is this pull request for? Does it fix any issues? -->
+
+## Checklist
+- [ ] If code changes were made, then they have been tested.
+    - [ ] I have updated the documentation to reflect the changes.
+- [ ] I have thought about how this code may affect other services.
+
+- [ ] This PR fixes an issue.
+- [ ] This PR adds something new (e.g. new method or parameters).
+- [ ] This PR is a breaking change (e.g. methods or parameters removed/renamed)
+- [ ] This PR is **not** a code change (e.g. documentation, README, ...)
+
+## Reviewer
+- [ ] I understand that approving this code, I am also responsible for it going into the codebase.

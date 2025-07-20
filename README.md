@@ -232,7 +232,7 @@ logger.warning("This is a warning example")
 
 
 
-# Context Manager Support
+# Context Manager Support (slow but if you want immediate, deterministic cleanup for a specific scope)
 
 All logger types support context managers for automatic resource cleanup and exception safety:
 
@@ -385,7 +385,7 @@ audit_logger.info("User admin logged in")
 ```
 
 ## Env Variables (Optional | Production)
-.env variables can be used by leaving all options blank when calling the function
+The .env variables file can be used by leaving all options blank when calling the function
 If not specified inside the .env file, it will use the dafault value
 This is a good approach for production environments, since options can be changed easily
 ```python
