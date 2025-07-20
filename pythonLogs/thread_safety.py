@@ -58,6 +58,16 @@ def thread_safe(func: F) -> F:
     return wrapper
 
 
+def _get_wrappable_methods(cls: Type) -> list:
+    """Helper function to get methods that should be made thread-safe."""
+    return [
+        method_name for method_name in dir(cls)
+        if (callable(getattr(cls, method_name, None)) and 
+            not method_name.startswith('_') and
+            method_name not in ['__enter__', '__exit__', '__init__'])
+    ]
+
+
 def auto_thread_safe(thread_safe_methods: list = None):
     """Class decorator that adds automatic thread safety to specified methods."""
     
@@ -71,12 +81,7 @@ def auto_thread_safe(thread_safe_methods: list = None):
             cls._thread_safe_methods = thread_safe_methods
         
         # Get methods to make thread-safe
-        methods_to_wrap = thread_safe_methods or [
-            method_name for method_name in dir(cls)
-            if (callable(getattr(cls, method_name, None)) and 
-                not method_name.startswith('_') and
-                method_name not in ['__enter__', '__exit__', '__init__'])
-        ]
+        methods_to_wrap = thread_safe_methods or _get_wrappable_methods(cls)
         
         # Wrap each method
         for method_name in methods_to_wrap:

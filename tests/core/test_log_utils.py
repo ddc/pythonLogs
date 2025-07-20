@@ -163,7 +163,7 @@ class TestLogUtils:
         name = "test2"
         timezone = "America/Los_Angeles"
         result = log_utils.get_format(show_location, name, timezone)
-        assert result.startswith(f"[%(asctime)s.%(msecs)03d-0")
+        assert result.startswith("[%(asctime)s.%(msecs)03d-0")
         assert result.endswith(f"]:[%(levelname)s]:[{name}]:%(message)s")
 
         show_location = False

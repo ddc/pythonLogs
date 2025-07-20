@@ -276,7 +276,9 @@ class TestResourceManagement:
             futures = [executor.submit(create_and_cleanup_logger, i) for i in range(num_threads)]
             
             # Wait for all to complete
-            results = [future.result() for future in concurrent.futures.as_completed(futures)]
+            results = []
+            for future in concurrent.futures.as_completed(futures):
+                results.append(future.result())
         
         # All operations should succeed
         assert all(results)

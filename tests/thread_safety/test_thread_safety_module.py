@@ -162,11 +162,10 @@ class TestAutoThreadSafeDecorator:
                 return "test"
         
         obj = TestClass()
-        original_method = obj.test_method
         
         # Apply decorator again (should not double-wrap)
-        TestClass = auto_thread_safe(['test_method'])(TestClass)
-        obj2 = TestClass()
+        test_class = auto_thread_safe(['test_method'])(TestClass)
+        obj2 = test_class()
         
         # Should still work and not be double-wrapped
         assert obj2.test_method() == "test"
@@ -434,10 +433,10 @@ class TestEdgeCases:
                 self.counter += 1
         
         # Apply auto_thread_safe multiple times
-        TestClass = auto_thread_safe(['increment'])(TestClass)
-        TestClass = auto_thread_safe(['increment'])(TestClass)
+        test_class = auto_thread_safe(['increment'])(TestClass)
+        test_class = auto_thread_safe(['increment'])(test_class)
         
-        obj = TestClass()
+        obj = test_class()
         obj.increment()
         assert obj.counter == 1
 

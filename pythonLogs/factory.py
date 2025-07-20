@@ -80,7 +80,7 @@ class LoggerFactory:
 
             # Check if logger already exists in the registry
             if name in cls._logger_registry:
-                logger, timestamp = cls._logger_registry[name]
+                logger, _ = cls._logger_registry[name]
                 # Update timestamp for LRU tracking
                 cls._logger_registry[name] = (logger, time.time())
                 return logger
