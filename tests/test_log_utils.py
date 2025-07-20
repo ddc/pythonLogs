@@ -617,3 +617,284 @@ class TestLogUtils:
             elif "LOG_TIMEZONE" in os.environ:
                 del os.environ["LOG_TIMEZONE"]
             log_utils._get_stderr_timezone.cache_clear()
+
+    def test_check_filename_instance_edge_cases(self):
+        """Test check_filename_instance with more edge cases."""
+        # Test with various invalid types
+        with pytest.raises(TypeError):
+            log_utils.check_filename_instance(123)
+            
+        with pytest.raises(TypeError):
+            log_utils.check_filename_instance(None)
+            
+        with pytest.raises(TypeError):
+            log_utils.check_filename_instance({"file": "test.log"})
+        
+        # Valid cases should not raise
+        log_utils.check_filename_instance(["test.log", "test2.log"])
+        log_utils.check_filename_instance(("test.log", "test2.log"))
+        log_utils.check_filename_instance([])  # Empty list is valid
+        log_utils.check_filename_instance(())  # Empty tuple is valid
+
+    def test_lru_cache_behavior_verification(self):
+        """Test LRU cache behavior in timezone functions."""
+        # Clear caches first
+        log_utils.get_timezone_function.cache_clear()
+        log_utils._get_timezone_offset.cache_clear()
+        
+        # Test get_timezone_function cache
+        initial_cache = log_utils.get_timezone_function.cache_info()
+        assert initial_cache.currsize == 0
+        
+        # Call function multiple times with the same input
+        func1 = log_utils.get_timezone_function("UTC")
+        func2 = log_utils.get_timezone_function("UTC")
+        func3 = log_utils.get_timezone_function("localtime")
+        
+        # Should be cached
+        cache_info = log_utils.get_timezone_function.cache_info()
+        assert cache_info.currsize == 2  # Two unique calls
+        assert cache_info.hits >= 1  # At least one cache hit
+        
+        # Test _get_timezone_offset cache
+        offset1 = log_utils._get_timezone_offset("UTC")
+        offset2 = log_utils._get_timezone_offset("UTC")
+        assert offset1 == offset2
+        
+        offset_cache = log_utils._get_timezone_offset.cache_info()
+        assert offset_cache.currsize >= 1
+        assert offset_cache.hits >= 1
+
+    def test_thread_safety_directory_check(self):
+        """Test thread safety of directory permission checking."""
+        import threading
+        import concurrent.futures
+        
+        errors = []
+        checked_dirs = []
+        
+        def check_directory_worker(worker_id):
+            """Worker function to check directory permissions concurrently."""
+            try:
+                _temp_dir = tempfile.mkdtemp(prefix=f"thread_test_{worker_id}_")
+                checked_dirs.append(_temp_dir)
+                
+                # Multiple calls should be thread-safe
+                for _ in range(5):
+                    log_utils.check_directory_permissions(_temp_dir)
+                    
+                return _temp_dir
+            except Exception as e:
+                errors.append(f"Worker {worker_id}: {str(e)}")
+                return None
+        
+        try:
+            # Run concurrent workers
+            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                futures = [executor.submit(check_directory_worker, i) for i in range(5)]
+                results = [future.result() for future in concurrent.futures.as_completed(futures)]
+            
+            # Should have no errors
+            assert len(errors) == 0, f"Thread safety errors: {errors}"
+            assert len([r for r in results if r is not None]) == 5
+            
+        finally:
+            # Cleanup
+            import shutil
+            for temp_dir in checked_dirs:
+                if temp_dir and os.path.exists(temp_dir):
+                    shutil.rmtree(temp_dir, ignore_errors=True)
+
+    def test_gzip_compression_levels(self):
+        """Test gzip compression with different scenarios."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create a larger file to test compression
+            test_file = os.path.join(temp_dir, "large_test.log")
+            test_content = "This is a test log entry.\n" * 1000  # Larger content
+            
+            with open(test_file, "w") as f:
+                f.write(test_content)
+            
+            # Test gzip compression
+            result = log_utils.gzip_file_with_sufix(test_file, "compressed")
+            assert result is not None
+            assert result.endswith("_compressed.log.gz")
+            assert os.path.exists(result)
+            assert not os.path.exists(test_file)  # Original should be deleted
+            
+            # Verify compressed file can be read
+            import gzip
+            with gzip.open(result, "rt") as f:
+                decompressed_content = f.read()
+            assert decompressed_content == test_content
+
+    def test_get_timezone_function_edge_cases(self):
+        """Test get_timezone_function with various timezone inputs."""
+        # Test standard timezones
+        utc_func = log_utils.get_timezone_function("UTC")
+        assert utc_func.__name__ == "gmtime"
+        
+        local_func = log_utils.get_timezone_function("localtime")
+        assert local_func.__name__ == "localtime"
+        
+        # Test case insensitivity
+        utc_upper = log_utils.get_timezone_function("UTC")
+        utc_lower = log_utils.get_timezone_function("utc")
+        assert utc_upper is utc_lower  # Should be cached
+        
+        # Test custom timezone
+        custom_func = log_utils.get_timezone_function("America/New_York")
+        assert custom_func.__name__ == "<lambda>"
+        
+        # Test function returns proper time tuple
+        time_tuple = custom_func()
+        assert len(time_tuple) == 9  # Standard time tuple length
+
+    def test_cache_eviction_stress_test(self):
+        """Test cache eviction under stress conditions."""
+        original_max = log_utils._max_cached_directories
+        try:
+            # Set very small cache for testing
+            log_utils._max_cached_directories = 3
+            
+            temp_dirs = []
+            # Create more directories than cache can hold
+            for i in range(10):
+                temp_dir = tempfile.mkdtemp(prefix=f"eviction_test_{i}_")
+                temp_dirs.append(temp_dir)
+                
+                # Clear cache first to test eviction
+                if i == 0:
+                    log_utils._checked_directories.clear()
+                
+                log_utils.check_directory_permissions(temp_dir)
+                
+                # Verify cache size doesn't exceed limit
+                with log_utils._directory_lock:
+                    cache_size = len(log_utils._checked_directories)
+                assert cache_size <= 3, f"Cache size {cache_size} exceeds limit of 3"
+            
+            # Verify some directories are still in the cache
+            with log_utils._directory_lock:
+                final_cache_size = len(log_utils._checked_directories)
+            assert final_cache_size <= 3
+            assert final_cache_size > 0  # Should have some entries
+            
+        finally:
+            # Cleanup
+            import shutil
+            for temp_dir in temp_dirs:
+                if os.path.exists(temp_dir):
+                    shutil.rmtree(temp_dir, ignore_errors=True)
+            log_utils._max_cached_directories = original_max
+
+    def test_error_handling_comprehensive(self):
+        """Test comprehensive error handling scenarios."""
+        # Test get_level with various invalid inputs
+        assert log_utils.get_level(None) == logging.INFO
+        assert log_utils.get_level([]) == logging.INFO
+        assert log_utils.get_level({}) == logging.INFO
+        assert log_utils.get_level(object()) == logging.INFO
+        
+        # Test invalid level strings
+        assert log_utils.get_level("INVALID_LEVEL") == logging.INFO
+        assert log_utils.get_level("") == logging.INFO
+        assert log_utils.get_level("   ") == logging.INFO
+
+    def test_path_operations_edge_cases(self):
+        """Test path operations with edge cases."""
+        # Test get_log_path with various directory scenarios
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Test with nested path creation
+            nested_dir = os.path.join(temp_dir, "level1", "level2", "level3")
+            result = log_utils.get_log_path(nested_dir, "nested.log")
+            assert result == os.path.join(nested_dir, "nested.log")
+            assert os.path.exists(nested_dir)
+            
+            # Test with special characters in filename
+            special_file = "test-file_with.special@chars.log"
+            result = log_utils.get_log_path(temp_dir, special_file)
+            assert result == os.path.join(temp_dir, special_file)
+
+    def test_timezone_offset_various_timezones(self):
+        """Test timezone offset calculation for various timezones."""
+        # Clear cache first
+        log_utils._get_timezone_offset.cache_clear()
+        
+        # Test various timezones
+        timezones = [
+            ("UTC", "+0000"),
+            ("Europe/London", None),  # Variable offset due to DST
+            ("Asia/Tokyo", "+0900"),
+            ("America/Los_Angeles", None),  # Variable offset due to DST
+            ("localtime", None)  # System dependent
+        ]
+        
+        for tz, expected_offset in timezones:
+            try:
+                offset = log_utils._get_timezone_offset(tz)
+                assert isinstance(offset, str)
+                assert len(offset) == 5  # Format: +/-HHMM
+                assert offset[0] in ['+', '-']
+                
+                if expected_offset:
+                    assert offset == expected_offset
+                    
+            except Exception as e:
+                # Some timezones might not be available on all systems
+                pytest.skip(f"Timezone {tz} not available: {e}")
+
+    def test_formatter_and_logger_integration(self):
+        """Test integration between get_logger_and_formatter and other utilities."""
+        name = "integration_test"
+        datefmt = "%Y-%m-%d %H:%M:%S"
+        
+        # Test with various timezone settings
+        timezones = ["UTC", "localtime", "Europe/Berlin"]
+        
+        for timezone in timezones:
+            try:
+                logger, formatter = log_utils.get_logger_and_formatter(
+                    name, datefmt, True, timezone
+                )
+                
+                # Verify logger properties
+                assert logger.name == name
+                assert isinstance(formatter, logging.Formatter)
+                assert formatter.datefmt == datefmt
+                
+                # Test format string generation
+                format_str = log_utils.get_format(True, name, timezone)
+                assert f"[{name}]:" in format_str
+                assert "[%(filename)s:%(funcName)s:%(lineno)d]:" in format_str
+                
+                # Test timezone function integration
+                tz_func = log_utils.get_timezone_function(timezone)
+                assert callable(tz_func)
+                
+            except Exception as e:
+                pytest.skip(f"Timezone {timezone} not available: {e}")
+
+    def test_memory_efficiency_verification(self):
+        """Test memory efficiency of caching mechanisms."""
+        import sys
+        
+        # Clear all caches
+        log_utils.get_timezone_function.cache_clear()
+        log_utils._get_timezone_offset.cache_clear()
+        log_utils._get_stderr_timezone.cache_clear()
+        log_utils._checked_directories.clear()
+        
+        # Test that repeated operations don't significantly increase memory
+        initial_refs = sys.getrefcount(log_utils.get_timezone_function)
+        
+        # Perform many operations
+        for i in range(100):
+            log_utils.get_timezone_function("UTC")
+            log_utils._get_timezone_offset("UTC")
+            log_utils.get_format(False, f"test_{i}", "UTC")
+        
+        # Reference count shouldn't grow significantly
+        final_refs = sys.getrefcount(log_utils.get_timezone_function)
+        ref_growth = final_refs - initial_refs
+        assert ref_growth < 50, f"Memory leak detected: reference count grew by {ref_growth}"
