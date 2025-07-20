@@ -24,11 +24,15 @@ High-performance Python logging library with file rotation and optimized caching
   - [Timed Rotating Logger](#timed-rotating-logger)
 - [Context Manager Support](#context-manager-support)
 - [Advanced Factory Features](#advanced-factory-features)
+- [Environment Variables](#env-variables-optional--production)
 - [Memory Management](#memory-management)
+- [Flexible Configuration Options](#flexible-configuration-options)
 - [Migration Guide](#migration-guide)
 - [Performance Improvements](#performance-improvements)
-- [Environment Variables](#env-variables-optional)
 - [Development](#source-code)
+- [Run Tests and Get Coverage Report using Poe](#run-tests-and-get-coverage-report-using-poe)
+- [License](#license)
+- [Buy me a cup of coffee](#buy-me-a-cup-of-coffee)
 
 
 
@@ -232,8 +236,9 @@ logger.warning("This is a warning example")
 
 
 
-# Context Manager Support (slow but if you want immediate, deterministic cleanup for a specific scope)
+# Context Manager Support
 
+Slow, but if you want immediate, deterministic cleanup for a specific scope.\
 All logger types support context managers for automatic resource cleanup and exception safety:
 
 ## Basic Usage
@@ -303,44 +308,6 @@ assert logger1 is logger2
 clear_logger_registry()
 ```
 
-## Flexible Configuration Options
-You can use either enums (for type safety) or strings (for simplicity):
-
-```python
-from pythonLogs import LogLevel, RotateWhen, LoggerType
-
-# Option 1: Type-safe enums (recommended)
-LogLevel.DEBUG     # "DEBUG"
-LogLevel.INFO      # "INFO"  
-LogLevel.WARNING   # "WARNING"
-LogLevel.ERROR     # "ERROR"
-LogLevel.CRITICAL  # "CRITICAL"
-
-# Option 2: String values (case-insensitive)
-"debug"       # Same as LogLevel.DEBUG
-"info"        # Same as LogLevel.INFO
-"warning"     # Same as LogLevel.WARNING  
-"warn"        # Same as LogLevel.WARN (alias)
-"error"       # Same as LogLevel.ERROR
-"critical"    # Same as LogLevel.CRITICAL
-"crit"        # Same as LogLevel.CRIT (alias)
-# Also supports: "DEBUG", "Info", "Warning", etc.
-
-# RotateWhen values
-RotateWhen.MIDNIGHT   # "midnight"
-RotateWhen.HOURLY     # "H"
-RotateWhen.DAILY      # "D"
-RotateWhen.MONDAY     # "W0"
-# ... through SUNDAY  # "W6"
-# String equivalents: "midnight", "H", "D", "W0"-"W6"
-
-# LoggerType values
-LoggerType.BASIC            # "basic"
-LoggerType.SIZE_ROTATING    # "size_rotating"  
-LoggerType.TIMED_ROTATING   # "timed_rotating"
-# String equivalents: "basic", "size_rotating", "timed_rotating"
-```
-
 ## Production Setup Example
 ```python
 from pythonLogs import size_rotating_logger, timed_rotating_logger, LogLevel, RotateWhen
@@ -385,9 +352,9 @@ audit_logger.info("User admin logged in")
 ```
 
 ## Env Variables (Optional | Production)
-The .env variables file can be used by leaving all options blank when calling the function
-If not specified inside the .env file, it will use the dafault value
-This is a good approach for production environments, since options can be changed easily
+The .env variables file can be used by leaving all options blank when calling the function.\
+If not specified inside the .env file, it will use the dafault value.\
+This is a good approach for production environments, since options can be changed easily.
 ```python
 from pythonLogs import timed_rotating_logger
 log = timed_rotating_logger()
@@ -415,8 +382,6 @@ LOG_ROTATE_WHEN=midnight
 LOG_ROTATE_AT_UTC=True
 LOG_ROTATE_FILE_SUFIX="%Y%m%d"
 ```
-
-
 
 
 # Memory Management
@@ -512,6 +477,45 @@ for thread in threads:
 
 # Safe to clear registry from main thread
 clear_logger_registry()
+```
+
+
+# Flexible Configuration Options
+You can use either enums (for type safety) or strings (for simplicity):
+
+```python
+from pythonLogs import LogLevel, RotateWhen, LoggerType
+
+# Option 1: Type-safe enums (recommended)
+LogLevel.DEBUG     # "DEBUG"
+LogLevel.INFO      # "INFO"  
+LogLevel.WARNING   # "WARNING"
+LogLevel.ERROR     # "ERROR"
+LogLevel.CRITICAL  # "CRITICAL"
+
+# Option 2: String values (case-insensitive)
+"debug"       # Same as LogLevel.DEBUG
+"info"        # Same as LogLevel.INFO
+"warning"     # Same as LogLevel.WARNING  
+"warn"        # Same as LogLevel.WARN (alias)
+"error"       # Same as LogLevel.ERROR
+"critical"    # Same as LogLevel.CRITICAL
+"crit"        # Same as LogLevel.CRIT (alias)
+# Also supports: "DEBUG", "Info", "Warning", etc.
+
+# RotateWhen values
+RotateWhen.MIDNIGHT   # "midnight"
+RotateWhen.HOURLY     # "H"
+RotateWhen.DAILY      # "D"
+RotateWhen.MONDAY     # "W0"
+# ... through SUNDAY  # "W6"
+# String equivalents: "midnight", "H", "D", "W0"-"W6"
+
+# LoggerType values
+LoggerType.BASIC            # "basic"
+LoggerType.SIZE_ROTATING    # "size_rotating"  
+LoggerType.TIMED_ROTATING   # "timed_rotating"
+# String equivalents: "basic", "size_rotating", "timed_rotating"
 ```
 
 
