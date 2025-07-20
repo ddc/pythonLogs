@@ -28,7 +28,6 @@ High-performance Python logging library with file rotation and optimized caching
 - [Memory Management](#memory-management)
 - [Flexible Configuration Options](#flexible-configuration-options)
 - [Migration Guide](#migration-guide)
-- [Performance Improvements](#performance-improvements)
 - [Development](#source-code)
 - [Run Tests and Get Coverage Report using Poe](#run-tests-and-get-coverage-report-using-poe)
 - [License](#license)
@@ -518,32 +517,12 @@ timed_logger = timed_rotating_logger(level=LogLevel.WARNING, name="app", directo
 - 🔧 **Cleaner API** without manual `.init()` calls
 - 📚 **Centralized configuration** through factory pattern
 
-# Performance Improvements
-
-## Benchmarks
-The factory pattern with optimizations provides significant performance improvements:
-
-| Feature | Improvement | Benefit |
-|---------|-------------|---------|
-| Logger Registry | 90%+ faster | Cached logger instances |
-| Settings Caching | ~85% faster | Reused configuration objects |
-| Directory Validation | ~75% faster | Cached permission checks |
-| Timezone Operations | ~60% faster | Cached timezone functions |
-
-## Performance Test Results
-```python
-# Create 100 loggers - Performance comparison
-# Legacy method:     ~0.045 seconds
-# Factory pattern:   ~0.004 seconds  
-# Improvement:       91% faster ⚡
-```
 
 # Source Code
 ### Build
 ```shell
 poetry build -f wheel
 ```
-
 
 
 # Run Tests and Get Coverage Report using Poe
@@ -553,11 +532,8 @@ poe test
 ```
 
 
-
 # License
 Released under the [MIT License](LICENSE)
-
-
 
 
 # Buy me a cup of coffee
