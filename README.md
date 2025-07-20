@@ -6,6 +6,7 @@
 [![PyPI Downloads](https://static.pepy.tech/badge/pythonLogs)](https://pepy.tech/projects/pythonLogs)
 [![codecov](https://codecov.io/gh/ddc/pythonLogs/graph/badge.svg?token=QsjwsmYzgD)](https://codecov.io/gh/ddc/pythonLogs)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![CI/CD Pipeline](https://github.com/ddc/pythonLogs/actions/workflows/workflow.yml/badge.svg)](https://github.com/ddc/pythonLogs/actions/workflows/workflow.yml)
 [![Build Status](https://img.shields.io/endpoint.svg?url=https%3A//actions-badge.atrox.dev/ddc/pythonLogs/badge?ref=main&label=build&logo=none)](https://actions-badge.atrox.dev/ddc/pythonLogs/goto?ref=main)
 [![Python](https://img.shields.io/pypi/pyversions/pythonLogs.svg)](https://www.python.org/downloads)
 
