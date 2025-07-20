@@ -11,8 +11,6 @@
 
 [![Support me on GitHub](https://img.shields.io/badge/Support_me_on_GitHub-154c79?style=for-the-badge&logo=github)](https://github.com/sponsors/ddc)
 
-High-performance Python logging library with file rotation and optimized caching for better performance
-
 
 ## Table of Contents
 
