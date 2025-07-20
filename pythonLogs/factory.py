@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+import atexit
 import logging
 import threading
 import time
@@ -28,6 +29,23 @@ class LoggerFactory:
     # Memory optimization settings
     _max_loggers = 100  # Maximum number of cached loggers
     _logger_ttl = 3600  # Logger TTL in seconds (1 hour)
+    _initialized = False  # Flag to track if memory limits have been initialized
+    _atexit_registered = False  # Flag to track if atexit cleanup is registered
+
+    @classmethod
+    def _ensure_initialized(cls) -> None:
+        """Ensure memory limits are initialized from settings on first use."""
+        if not cls._initialized:
+            from pythonLogs.settings import get_log_settings
+            settings = get_log_settings()
+            cls._max_loggers = settings.max_loggers
+            cls._logger_ttl = settings.logger_ttl_seconds
+            cls._initialized = True
+            
+        # Register atexit cleanup on first use
+        if not cls._atexit_registered:
+            atexit.register(cls._atexit_cleanup)
+            cls._atexit_registered = True
 
     @classmethod
     def get_or_create_logger(
@@ -54,6 +72,9 @@ class LoggerFactory:
 
         # Thread-safe check-and-create operation
         with cls._registry_lock:
+            # Initialize memory limits from settings on first use
+            cls._ensure_initialized()
+            
             # Clean up expired loggers first
             cls._cleanup_expired_loggers()
 
@@ -114,7 +135,7 @@ class LoggerFactory:
 
     @classmethod
     def set_memory_limits(cls, max_loggers: int = 100, ttl_seconds: int = 3600) -> None:
-        """Configure memory management limits for the logger registry.
+        """Configure memory management limits for the logger registry at runtime.
         
         Args:
             max_loggers: Maximum number of cached loggers
@@ -123,10 +144,20 @@ class LoggerFactory:
         with cls._registry_lock:
             cls._max_loggers = max_loggers
             cls._logger_ttl = ttl_seconds
+            cls._initialized = True  # Mark as manually configured
             # Clean up immediately with new settings
             cls._cleanup_expired_loggers()
             cls._enforce_size_limit()
 
+    @classmethod
+    def _atexit_cleanup(cls) -> None:
+        """Cleanup function registered with atexit to ensure proper resource cleanup."""
+        try:
+            cls.clear_registry()
+        except Exception:
+            # Silently ignore exceptions during shutdown cleanup
+            pass
+    
     @staticmethod
     def _cleanup_logger(logger: logging.Logger) -> None:
         """Clean up logger resources by closing all handlers."""

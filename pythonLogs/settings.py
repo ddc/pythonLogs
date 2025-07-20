@@ -23,15 +23,18 @@ class LogSettings(BaseSettings):
     """If any ENV variable is omitted, it falls back to default values here"""
 
     level: Optional[LogLevel] = Field(default=LogLevel.INFO)
-    appname: Optional[str] = Field(default="app")
-    directory: Optional[str] = Field(default="/app/logs")
-    filename: Optional[str] = Field(default="app.log")
-    encoding: Optional[str] = Field(default=DEFAULT_ENCODING)
-    date_format: Optional[str] = Field(default=DEFAULT_DATE_FORMAT)
-    days_to_keep: Optional[int] = Field(default=DEFAULT_BACKUP_COUNT)
     timezone: Optional[str] = Field(default=DEFAULT_TIMEZONE)
+    encoding: Optional[str] = Field(default=DEFAULT_ENCODING)
+    appname: Optional[str] = Field(default="app")
+    filename: Optional[str] = Field(default="app.log")
+    directory: Optional[str] = Field(default="/app/logs")
+    days_to_keep: Optional[int] = Field(default=DEFAULT_BACKUP_COUNT)
+    date_format: Optional[str] = Field(default=DEFAULT_DATE_FORMAT)
     stream_handler: Optional[bool] = Field(default=True)
     show_location: Optional[bool] = Field(default=False)
+    # Memory management
+    max_loggers: Optional[int] = Field(default=100)
+    logger_ttl_seconds: Optional[int] = Field(default=3600)
 
     # SizeRotatingLog
     max_file_size_mb: Optional[int] = Field(default=10)

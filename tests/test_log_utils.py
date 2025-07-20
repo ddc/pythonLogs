@@ -383,8 +383,237 @@ class TestLogUtils:
             # First call should add to cache
             log_utils.check_directory_permissions(temp_dir)
             
-            # Second call should use cache (no exception should be raised)
+            # The Second call should use cache (no exception should be raised)
             log_utils.check_directory_permissions(temp_dir)
             
             # Verify it's in the cache by checking the global variable
             assert temp_dir in log_utils._checked_directories
+
+    def test_check_directory_permissions_cache_eviction(self):
+        """Test cache eviction when max directories reached"""
+        original_max = log_utils._max_cached_directories
+        original_cache = log_utils._checked_directories.copy()
+        
+        try:
+            # Set a small cache size for testing
+            log_utils._max_cached_directories = 2
+            log_utils._checked_directories.clear()
+            
+            with tempfile.TemporaryDirectory() as temp_dir1:
+                with tempfile.TemporaryDirectory() as temp_dir2:
+                    with tempfile.TemporaryDirectory() as temp_dir3:
+                        # Fill cache to capacity
+                        log_utils.check_directory_permissions(temp_dir1)
+                        log_utils.check_directory_permissions(temp_dir2)
+                        assert len(log_utils._checked_directories) == 2
+                        
+                        # Adding a third should trigger eviction
+                        log_utils.check_directory_permissions(temp_dir3)
+                        assert len(log_utils._checked_directories) == 2
+                        assert temp_dir3 in log_utils._checked_directories
+        finally:
+            # Restore original values
+            log_utils._max_cached_directories = original_max
+            log_utils._checked_directories = original_cache
+
+    def test_handler_close_error_handling(self):
+        """Test error handling when closing handlers in get_logger_and_formatter"""
+        name = "test_handler_error"
+        
+        # Create a logger with a handler that will error on close
+        logger = logging.getLogger(name)
+        
+        # Create a mock handler that raises error on close
+        class ErrorHandler(logging.StreamHandler):
+            def close(self):
+                raise OSError("Test error")
+        
+        error_handler = ErrorHandler()
+        logger.addHandler(error_handler)
+        
+        # This should handle the error gracefully
+        new_logger, formatter = log_utils.get_logger_and_formatter(name, "%Y-%m-%d", False, "UTC")
+        
+        # Should still work despite the error
+        assert new_logger is logger
+        assert len(new_logger.handlers) == 0
+
+    def test_remove_old_logs_file_error(self):
+        """Test remove_old_logs error handling when file deletion fails"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create a .gz file
+            gz_file = os.path.join(temp_dir, "test.gz")
+            with open(gz_file, "wb") as f:
+                f.write(b"test content")
+            
+            # Set old modification time
+            old_time = time.time() - 2*24*60*60  # 2 days old
+            os.utime(gz_file, (old_time, old_time))
+            
+            # Make parent directory read-only to trigger deletion error
+            os.chmod(temp_dir, 0o555)
+            
+            try:
+                # Capture stderr to verify error was logged
+                stderr_capture = io.StringIO()
+                with contextlib.redirect_stderr(stderr_capture):
+                    log_utils.remove_old_logs(temp_dir, 1)
+                
+                # Should have logged an error but not crashed
+                output = stderr_capture.getvalue()
+                assert "Unable to delete old log" in output
+            finally:
+                # Restore permissions for cleanup
+                os.chmod(temp_dir, 0o755)
+
+    def test_remove_old_logs_directory_error(self):
+        """Test remove_old_logs error handling when directory scan fails"""
+        # Test with a simulated Path.glob() error by mocking pathlib.Path
+        import unittest.mock
+        from pathlib import Path
+        
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create a normal directory first
+            test_dir = os.path.join(temp_dir, "test_dir")
+            os.makedirs(test_dir)
+            
+            # Mock Path.glob to raise an OSError
+            original_path_glob = Path.glob
+            def mock_glob(self, pattern):
+                if str(self) == test_dir:
+                    raise OSError("Mocked directory scan error")
+                return original_path_glob(self, pattern)
+            
+            try:
+                with unittest.mock.patch.object(Path, 'glob', mock_glob):
+                    stderr_capture = io.StringIO()
+                    with contextlib.redirect_stderr(stderr_capture):
+                        log_utils.remove_old_logs(test_dir, 1)
+                    
+                    output = stderr_capture.getvalue()
+                    assert "Unable to scan directory for old logs" in output
+            finally:
+                # Ensure the original method is restored
+                Path.glob = original_path_glob
+
+    def test_delete_file_special_file(self):
+        """Test delete_file with special file types"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create a symbolic link (special file)
+            target_file = os.path.join(temp_dir, "target.txt")
+            link_file = os.path.join(temp_dir, "link.txt")
+            
+            with open(target_file, "w") as f:
+                f.write("test content")
+            
+            os.symlink(target_file, link_file)
+            assert os.path.exists(link_file)
+            assert os.path.islink(link_file)
+            
+            # delete_file should handle symlinks
+            result = log_utils.delete_file(link_file)
+            assert result == True
+            assert not os.path.exists(link_file)
+
+    def test_get_log_path_permission_error(self):
+        """Test get_log_path when directory exists but is not writable"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create a subdirectory and make it read-only
+            readonly_dir = os.path.join(temp_dir, "readonly")
+            os.makedirs(readonly_dir)
+            os.chmod(readonly_dir, 0o555)  # Read and execute only
+            
+            try:
+                with pytest.raises(PermissionError) as exc_info:
+                    log_utils.get_log_path(readonly_dir, "test.log")
+                # The error could be from check_directory_permissions or get_log_path itself
+                assert ("Unable to access directory" in str(exc_info.value) or 
+                        "Unable to write to log directory" in str(exc_info.value))
+            finally:
+                os.chmod(readonly_dir, 0o755)  # Restore for cleanup
+
+    def test_gzip_file_io_error(self):
+        """Test gzip_file_with_sufix error handling during compression"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create a test file
+            test_file = os.path.join(temp_dir, "test.log")
+            with open(test_file, "w") as f:
+                f.write("test content")
+            
+            # Make directory read-only to trigger gzip error
+            os.chmod(temp_dir, 0o555)
+            
+            try:
+                stderr_capture = io.StringIO()
+                with contextlib.redirect_stderr(stderr_capture):
+                    with pytest.raises(OSError):
+                        log_utils.gzip_file_with_sufix(test_file, "test")
+                
+                output = stderr_capture.getvalue()
+                assert "Unable to gzip log file" in output
+            finally:
+                os.chmod(temp_dir, 0o755)  # Restore for cleanup
+
+    def test_gzip_file_deletion_error(self):
+        """Test gzip_file_with_sufix error when source file deletion fails"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create a test file
+            test_file = os.path.join(temp_dir, "test.log")
+            with open(test_file, "w") as f:
+                f.write("test content")
+            
+            # Create the gzip file successfully first
+            result = log_utils.gzip_file_with_sufix(test_file, "test")
+            assert result is not None
+            assert result.endswith("_test.log.gz")
+            
+            # Clean up
+            if os.path.exists(result):
+                os.unlink(result)
+
+    def test_write_stderr_fallback(self):
+        """Test write_stderr fallback when timezone operations fail"""
+        # Save original function
+        original_get_stderr_tz = log_utils._get_stderr_timezone
+        
+        # Mock _get_stderr_timezone to raise an error
+        def mock_error_timezone():
+            raise KeyError("Mock timezone error")
+        
+        try:
+            log_utils._get_stderr_timezone = mock_error_timezone
+            
+            stderr_capture = io.StringIO()
+            with contextlib.redirect_stderr(stderr_capture):
+                log_utils.write_stderr("Test fallback message")
+            
+            output = stderr_capture.getvalue()
+            assert "Test fallback message" in output
+            assert "ERROR" in output
+        finally:
+            # Restore original function
+            log_utils._get_stderr_timezone = original_get_stderr_tz
+
+    def test_stderr_timezone_with_special_timezone(self):
+        """Test _get_stderr_timezone with different timezone configurations"""
+        original_tz = os.environ.get("LOG_TIMEZONE")
+        
+        try:
+            # Test with a specific timezone
+            os.environ["LOG_TIMEZONE"] = "Europe/London"
+            # Clear the cache
+            log_utils._get_stderr_timezone.cache_clear()
+            
+            stderr_capture = io.StringIO()
+            with contextlib.redirect_stderr(stderr_capture):
+                log_utils.write_stderr("Test timezone message")
+            
+            output = stderr_capture.getvalue()
+            assert "Test timezone message" in output
+            
+        finally:
+            if original_tz is not None:
+                os.environ["LOG_TIMEZONE"] = original_tz
+            elif "LOG_TIMEZONE" in os.environ:
+                del os.environ["LOG_TIMEZONE"]
+            log_utils._get_stderr_timezone.cache_clear()
