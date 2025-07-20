@@ -30,12 +30,13 @@ class TestThreadSafeDecorator:
                 time.sleep(0.001)  # Simulate some work
                 self.counter = current + 1
         
-        obj = TestClass()
         threads = []
         
         def worker():
             for _ in range(10):
                 obj.increment()
+        
+        obj = TestClass()
         
         # Create multiple threads
         for _ in range(5):
