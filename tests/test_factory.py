@@ -59,7 +59,7 @@ class TestLoggerFactory:
     
     def test_logger_registry_caching(self):
         """Test logger registry functionality."""
-        # Clear registry and verify it's empty
+        # Clear the registry and verify it's empty
         clear_logger_registry()
         assert len(get_registered_loggers()) == 0
         
@@ -208,7 +208,7 @@ class TestLoggerFactory:
         assert result is True
         assert "shutdown_test" not in get_registered_loggers()
         
-        # Try to shutdown non-existent logger
+        # Try to shut down non-existent logger
         result = LoggerFactory.shutdown_logger("non_existent")
         assert result is False
 
@@ -291,10 +291,10 @@ class TestLoggerFactory:
         registry_copy = get_registered_loggers()
         assert len(registry_copy) == 2
         
-        # Modify the copy (should not affect original)
+        # Modify the copy (should not affect the original)
         registry_copy["new_logger"] = logger1
         
-        # Original registry should be unchanged
+        # The Original registry should be unchanged
         original_registry = get_registered_loggers()
         assert len(original_registry) == 2
         assert "new_logger" not in original_registry
@@ -314,3 +314,158 @@ class TestLoggerFactory:
         # Shutdown should handle the error gracefully
         result = LoggerFactory.shutdown_logger("cleanup_error_test")
         assert result is True
+
+    def test_factory_ensure_initialized_behavior(self):
+        """Test _ensure_initialized method behavior."""
+        # Clear any existing initialization
+        LoggerFactory._initialized = False
+        LoggerFactory._atexit_registered = False
+        
+        # Calling get_or_create_logger should trigger initialization
+        logger = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="init_test")
+        
+        # Should now be initialized
+        assert LoggerFactory._initialized is True
+        assert LoggerFactory._atexit_registered is True
+        assert logger is not None
+        
+        # Calling again should not re-initialize
+        LoggerFactory._ensure_initialized()
+        assert LoggerFactory._initialized is True
+
+    def test_factory_atexit_cleanup_error_handling(self):
+        """Test atexit cleanup error handling."""
+        from unittest.mock import patch, Mock
+        
+        # Mock the clear_registry method to raise an error
+        with patch.object(LoggerFactory, 'clear_registry', side_effect=Exception("Test error")):
+            # Should not raise an exception
+            LoggerFactory._atexit_cleanup()
+
+    def test_factory_ttl_cleanup_edge_cases(self):
+        """Test TTL cleanup with edge cases."""
+        import time
+        
+        # Set very short TTL
+        LoggerFactory.set_memory_limits(max_loggers=100, ttl_seconds=0.1)
+        
+        # Create loggers
+        logger1 = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="ttl_edge1")
+        logger2 = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="ttl_edge2")
+        
+        # Verify they're registered
+        assert len(LoggerFactory.get_registered_loggers()) == 2
+        
+        # Wait for TTL to expire
+        time.sleep(0.15)
+        
+        # Force cleanup by creating another logger
+        logger3 = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="ttl_edge3")
+        
+        # Old loggers should be cleaned up
+        registry = LoggerFactory.get_registered_loggers()
+        assert "ttl_edge1" not in registry
+        assert "ttl_edge2" not in registry
+        assert "ttl_edge3" in registry
+
+    def test_factory_lru_eviction_comprehensive(self):
+        """Test comprehensive LRU eviction scenarios."""
+        # Set a small limit for testing
+        LoggerFactory.set_memory_limits(max_loggers=2, ttl_seconds=3600)
+        
+        # Create loggers in specific order
+        logger1 = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="lru1")
+        logger2 = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="lru2")
+        
+        # Access logger1 to update its timestamp
+        logger1_again = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="lru1")
+        assert logger1 is logger1_again
+        
+        # Create third logger - should evict logger2 (oldest)
+        logger3 = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="lru3")
+        
+        registry = LoggerFactory.get_registered_loggers()
+        assert len(registry) == 2
+        assert "lru1" in registry  # Recently accessed
+        assert "lru2" not in registry  # Should be evicted
+        assert "lru3" in registry  # Newly created
+
+    def test_factory_memory_limits_from_settings(self):
+        """Test memory limits initialization from settings."""
+        from unittest.mock import patch, Mock
+        
+        # Mock settings
+        mock_settings = Mock()
+        mock_settings.max_loggers = 50
+        mock_settings.logger_ttl_seconds = 1800
+        
+        # Patch the import inside the function
+        with patch('pythonLogs.settings.get_log_settings', return_value=mock_settings):
+            # Reset initialization flag
+            LoggerFactory._initialized = False
+            
+            # This should trigger initialization from settings
+            LoggerFactory._ensure_initialized()
+            
+            assert LoggerFactory._max_loggers == 50
+            assert LoggerFactory._logger_ttl == 1800
+            assert LoggerFactory._initialized is True
+
+    def test_factory_zero_max_loggers_handling(self):
+        """Test handling of zero max_loggers setting."""
+        # Set max_loggers to 0
+        LoggerFactory.set_memory_limits(max_loggers=0, ttl_seconds=3600)
+        
+        # Create a logger - it gets added after clearing registry
+        logger1 = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="zero_test1")
+        assert logger1 is not None
+        
+        # Registry will contain the newly created logger (added after clearing)
+        registry = LoggerFactory.get_registered_loggers()
+        assert len(registry) == 1
+        assert "zero_test1" in registry
+        
+        # Creating another logger should clear the registry again and add the new one
+        logger2 = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="zero_test2")
+        assert logger2 is not None
+        registry = LoggerFactory.get_registered_loggers()
+        assert len(registry) == 1
+        assert "zero_test2" in registry
+        assert "zero_test1" not in registry  # Should be cleared
+
+    def test_factory_negative_max_loggers_handling(self):
+        """Test handling of negative max_loggers setting."""
+        # Set max_loggers to negative value
+        LoggerFactory.set_memory_limits(max_loggers=-1, ttl_seconds=3600)
+        
+        # Create a logger - it gets added after clearing registry
+        logger = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="negative_test")
+        assert logger is not None
+        
+        # Registry will contain the newly created logger (added after clearing)
+        registry = LoggerFactory.get_registered_loggers()
+        assert len(registry) == 1
+        assert "negative_test" in registry
+
+    def test_factory_large_scale_operations(self):
+        """Test factory with large scale operations."""
+        # Set reasonable limits
+        LoggerFactory.set_memory_limits(max_loggers=10, ttl_seconds=3600)
+        
+        # Create many loggers
+        created_loggers = []
+        for i in range(20):
+            logger = LoggerFactory.get_or_create_logger(
+                LoggerType.BASIC, 
+                name=f"scale_test_{i}"
+            )
+            created_loggers.append(logger)
+        
+        # Registry should not exceed the limit
+        registry = LoggerFactory.get_registered_loggers()
+        assert len(registry) <= 10
+        
+        # All loggers should still be functional
+        for logger in created_loggers:
+            logger.info("Scale test message")
+            assert logger.name is not None

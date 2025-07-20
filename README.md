@@ -11,7 +11,7 @@
 
 [![Support me on GitHub](https://img.shields.io/badge/Support_me_on_GitHub-154c79?style=for-the-badge&logo=github)](https://github.com/sponsors/ddc)
 
-A modern, high-performance Python logging library with automatic file rotation, context manager support, and memory optimization.
+High-performance Python logging library with file rotation and optimized caching for better performance
 
 
 ## Table of Contents
@@ -384,18 +384,28 @@ error_logger.error("Database connection failed")
 audit_logger.info("User admin logged in")
 ```
 
-## Env Variables (Optional)
+## Env Variables (Optional | Production)
+.env variables can be used by leaving all options blank when calling the function
+If not specified inside the .env file, it will use the dafault value
+This is a good approach for production environments, since options can be changed easily
+```python
+from pythonLogs import timed_rotating_logger
+log = timed_rotating_logger()
+```
+
 ```
 LOG_LEVEL=DEBUG
-LOG_TIMEZONE=America/Chicago
+LOG_TIMEZONE=UTC
 LOG_ENCODING=UTF-8
 LOG_APPNAME=app
 LOG_FILENAME=app.log
 LOG_DIRECTORY=/app/logs
 LOG_DAYS_TO_KEEP=30
+LOG_DATE_FORMAT=%Y-%m-%dT%H:%M:%S
 LOG_STREAM_HANDLER=True
 LOG_SHOW_LOCATION=False
-LOG_DATE_FORMAT=%Y-%m-%dT%H:%M:%S
+LOG_MAX_LOGGERS=50
+LOG_LOGGER_TTL_SECONDS=1800
 
 # SizeRotatingLog
 LOG_MAX_FILE_SIZE_MB=10
@@ -403,6 +413,7 @@ LOG_MAX_FILE_SIZE_MB=10
 # TimedRotatingLog
 LOG_ROTATE_WHEN=midnight
 LOG_ROTATE_AT_UTC=True
+LOG_ROTATE_FILE_SUFIX="%Y%m%d"
 ```
 
 
