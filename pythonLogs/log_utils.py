@@ -12,7 +12,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Callable, Set
 from zoneinfo import ZoneInfo
-from pythonLogs.constants import DEFAULT_FILE_MODE, LogLevel
+from pythonLogs.constants import DEFAULT_FILE_MODE, LEVEL_MAP
 
 
 # Global cache for checked directories with thread safety and size limits
@@ -182,17 +182,7 @@ def get_level(level: str) -> int:
         write_stderr(f"Unable to get log level. Setting default level to: 'INFO' ({logging.INFO})")
         return logging.INFO
 
-    level_map = {
-        LogLevel.DEBUG.value.lower(): logging.DEBUG,
-        LogLevel.WARNING.value.lower(): logging.WARNING,
-        LogLevel.WARN.value.lower(): logging.WARNING,
-        LogLevel.ERROR.value.lower(): logging.ERROR,
-        LogLevel.CRITICAL.value.lower(): logging.CRITICAL,
-        LogLevel.CRIT.value.lower(): logging.CRITICAL,
-        LogLevel.INFO.value.lower(): logging.INFO,
-    }
-
-    return level_map.get(level.lower(), logging.INFO)
+    return LEVEL_MAP.get(level.lower(), logging.INFO)
 
 
 def get_log_path(directory: str, filename: str) -> str:
