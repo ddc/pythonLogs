@@ -1,7 +1,6 @@
 # -*- encoding: utf-8 -*-
 import logging.handlers
 import os
-import threading
 from typing import Optional
 from pythonLogs.log_utils import (
     check_directory_permissions,
@@ -15,8 +14,10 @@ from pythonLogs.log_utils import (
 )
 from pythonLogs.memory_utils import cleanup_logger_handlers, register_logger_weakref
 from pythonLogs.settings import get_log_settings
+from pythonLogs.thread_safety import auto_thread_safe
 
 
+@auto_thread_safe(['init', '_cleanup_logger'])
 class TimedRotatingLog:
     """
     Time-based rotating logger with context manager support for automatic resource cleanup.
@@ -60,8 +61,6 @@ class TimedRotatingLog:
         self.showlocation = showlocation or _settings.show_location
         self.rotateatutc = rotateatutc or _settings.rotate_at_utc
         self.logger = None
-        # Instance-level lock for thread safety
-        self._lock = threading.Lock()
 
     def init(self):
         check_filename_instance(self.filenames)
@@ -107,8 +106,7 @@ class TimedRotatingLog:
 
     def _cleanup_logger(self, logger: logging.Logger) -> None:
         """Clean up logger resources by closing all handlers with thread safety."""
-        with self._lock:
-            cleanup_logger_handlers(logger)
+        cleanup_logger_handlers(logger)
 
     @staticmethod
     def cleanup_logger(logger: logging.Logger) -> None:

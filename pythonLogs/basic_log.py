@@ -1,12 +1,13 @@
 # -*- encoding: utf-8 -*-
 import logging
-import threading
 from typing import Optional
 from pythonLogs.log_utils import get_format, get_level, get_timezone_function
 from pythonLogs.memory_utils import cleanup_logger_handlers, register_logger_weakref
 from pythonLogs.settings import get_log_settings
+from pythonLogs.thread_safety import auto_thread_safe
 
 
+@auto_thread_safe(['init', '_cleanup_logger'])
 class BasicLog:
     """Basic logger with context manager support for automatic resource cleanup."""
 
@@ -27,8 +28,6 @@ class BasicLog:
         self.timezone = timezone or _settings.timezone
         self.showlocation = showlocation or _settings.show_location
         self.logger = None
-        # Instance-level lock for thread safety
-        self._lock = threading.Lock()
 
     def init(self):
         logger = logging.getLogger(self.appname)
@@ -54,8 +53,7 @@ class BasicLog:
 
     def _cleanup_logger(self, logger: logging.Logger) -> None:
         """Clean up logger resources by closing all handlers with thread safety."""
-        with self._lock:
-            cleanup_logger_handlers(logger)
+        cleanup_logger_handlers(logger)
 
     @staticmethod
     def cleanup_logger(logger: logging.Logger) -> None:
