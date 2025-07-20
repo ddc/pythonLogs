@@ -2,10 +2,9 @@
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-
 [tool.poetry]
 name = "pythonLogs"
-version = "4.0.2"
+version = "4.0.3"
 description = "High-performance Python logging library with file rotation and optimized caching for better performance"
 license = "MIT"
 readme = "README.md"
@@ -31,13 +30,11 @@ classifiers = [
     "Natural Language :: English",
 ]
 
-
 [tool.poetry.dependencies]
 python = "^3.10"
 pydantic = "^2.11.7"
 pydantic-settings = "^2.10.1"
 python-dotenv = "^1.1.1"
-
 
 [tool.poetry.group.test.dependencies]
 coverage = "^7.9.2"
@@ -45,37 +42,31 @@ poethepoet = "^0.36.0"
 psutil = "^7.0.0"
 pytest = "^8.4.1"
 
-
-[tool.poetry.group.test]
-optional = true
-
-
-[tool.black]
-line-length = 120
-skip-string-normalization = true
-
-
-[tool.pytest.ini_options]
-markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')"
-]
-
-
-[tool.coverage.run]
-omit = [
-    "tests/*",
-]
-
-
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-]
-
-
 [tool.poe.tasks]
 _test = "coverage run -m pytest -v"
 _coverage_report = "coverage report"
 _coverage_xml = "coverage xml"
 tests = ["_test", "_coverage_report", "_coverage_xml"]
 test = ["tests"]
+
+[tool.poetry.group.test]
+optional = true
+
+[tool.black]
+line-length = 120
+skip-string-normalization = true
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+]
+
+[tool.coverage.run]
+omit = [
+    "tests/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+]
