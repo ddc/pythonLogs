@@ -446,40 +446,6 @@ registered = LoggerFactory.get_registered_loggers()
 print(f"Currently registered: {list(registered.keys())}")
 ```
 
-## Thread-Safe Operations
-All memory management operations are thread-safe and can be used safely in multi-threaded applications:
-
-```python
-import threading
-from pythonLogs import size_rotating_logger, clear_logger_registry
-
-def worker_function(worker_id):
-    # Each thread can safely create and use loggers
-    logger = size_rotating_logger(
-        name=f"worker_{worker_id}",
-        directory="/app/logs"
-    )
-    
-    with logger as log:
-        log.info(f"Worker {worker_id} started")
-        # Automatic cleanup per thread
-
-# Create multiple threads - all operations are thread-safe
-threads = []
-for i in range(10):
-    thread = threading.Thread(target=worker_function, args=(i,))
-    threads.append(thread)
-    thread.start()
-
-# Wait for completion and clean up
-for thread in threads:
-    thread.join()
-
-# Safe to clear registry from main thread
-clear_logger_registry()
-```
-
-
 # Flexible Configuration Options
 You can use either enums (for type safety) or strings (for simplicity):
 
