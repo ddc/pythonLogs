@@ -159,3 +159,6 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 /package-lock.json
+/profile_fixed.prof
+/profile_output.prof
+/profile_pytest.prof

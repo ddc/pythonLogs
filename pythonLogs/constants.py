@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+import logging
 from enum import Enum
 
 # File and Directory Constants
@@ -40,3 +41,15 @@ class RotateWhen(str, Enum):
     SUNDAY = "W6"
     HOURLY = "H"
     DAILY = "D"
+
+
+# Level mapping for performance optimization
+LEVEL_MAP = {
+    LogLevel.DEBUG.value.lower(): logging.DEBUG,
+    LogLevel.WARNING.value.lower(): logging.WARNING,
+    LogLevel.WARN.value.lower(): logging.WARNING,
+    LogLevel.ERROR.value.lower(): logging.ERROR,
+    LogLevel.CRITICAL.value.lower(): logging.CRITICAL,
+    LogLevel.CRIT.value.lower(): logging.CRITICAL,
+    LogLevel.INFO.value.lower(): logging.INFO,
+}
