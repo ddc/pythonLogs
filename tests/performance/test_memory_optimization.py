@@ -414,8 +414,8 @@ class TestMemoryOptimization:
         # Test with logger having handlers
         logger = logging.getLogger("cleanup_test")
         handler1 = logging.StreamHandler()
-        with tempfile.NamedTemporaryFile(suffix=".log", delete=False) as temp_file:
-            temp_filename = temp_file.name
+        fd, temp_filename = tempfile.mkstemp(suffix=".log")
+        os.close(fd)  # Close the file descriptor as we only need the filename
         handler2 = logging.FileHandler(temp_filename)
         
         try:

@@ -34,7 +34,14 @@ class BasicLog:
         logger.setLevel(self.level)
         logging.Formatter.converter = get_timezone_function(self.timezone)
         _format = get_format(self.showlocation, self.appname, self.timezone)
-        logging.basicConfig(datefmt=self.datefmt, encoding=self.encoding, format=_format)
+        
+        # Only add handler if logger doesn't have any handlers
+        if not logger.handlers:
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter(_format, datefmt=self.datefmt)
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
+        
         self.logger = logger
         # Register weak reference for memory tracking
         register_logger_weakref(logger)
