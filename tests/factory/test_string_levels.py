@@ -22,24 +22,20 @@ from pythonLogs import (
 class TestStringLevels:
     """Test string level support across all logger types and methods."""
     
-    def setup_method(self):
+    @pytest.fixture(autouse=True)
+    def setup_temp_dir(self):
         """Set up test fixtures before each test method."""
         # Clear any existing loggers
         clear_logger_registry()
         
-        # Create temporary directory for log files
-        self.temp_dir = tempfile.mkdtemp()
-        self.log_file = "string_test.log"
-    
-    def teardown_method(self):
-        """Clean up after each test method."""
+        # Create temporary directory for log files using context manager
+        with tempfile.TemporaryDirectory() as temp_dir:
+            self.temp_dir = temp_dir
+            self.log_file = "string_test.log"
+            yield
+        
         # Clear registry after each test
         clear_logger_registry()
-        
-        # Clean up temporary files
-        import shutil
-        if os.path.exists(self.temp_dir):
-            shutil.rmtree(self.temp_dir, ignore_errors=True)
     
     def test_basic_logger_string_levels(self):
         """Test BasicLog with string levels."""

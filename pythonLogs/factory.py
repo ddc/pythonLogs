@@ -3,6 +3,7 @@ import atexit
 import logging
 import threading
 import time
+from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, Optional, Tuple, Union
 from pythonLogs.basic_log import BasicLog
@@ -10,6 +11,25 @@ from pythonLogs.constants import LogLevel, RotateWhen
 from pythonLogs.memory_utils import cleanup_logger_handlers
 from pythonLogs.size_rotating import SizeRotatingLog
 from pythonLogs.timed_rotating import TimedRotatingLog
+
+
+@dataclass
+class LoggerConfig:
+    """Configuration class to group logger parameters"""
+    level: Optional[Union[LogLevel, str]] = None
+    name: Optional[str] = None
+    directory: Optional[str] = None
+    filenames: Optional[list | tuple] = None
+    encoding: Optional[str] = None
+    datefmt: Optional[str] = None
+    timezone: Optional[str] = None
+    streamhandler: Optional[bool] = None
+    showlocation: Optional[bool] = None
+    maxmbytes: Optional[int] = None
+    when: Optional[Union[RotateWhen, str]] = None
+    sufix: Optional[str] = None
+    rotateatutc: Optional[bool] = None
+    daystokeep: Optional[int] = None
 
 
 class LoggerType(str, Enum):
@@ -189,21 +209,8 @@ class LoggerFactory:
     @staticmethod
     def create_logger(
         logger_type: Union[LoggerType, str],
-        level: Optional[Union[LogLevel, str]] = None,
-        name: Optional[str] = None,
-        directory: Optional[str] = None,
-        filenames: Optional[list | tuple] = None,
-        encoding: Optional[str] = None,
-        datefmt: Optional[str] = None,
-        timezone: Optional[str] = None,
-        streamhandler: Optional[bool] = None,
-        showlocation: Optional[bool] = None,  # Size rotating specific
-        maxmbytes: Optional[int] = None,  # Timed rotating specific
-        when: Optional[Union[RotateWhen, str]] = None,
-        sufix: Optional[str] = None,
-        rotateatutc: Optional[bool] = None,
-        # Common
-        daystokeep: Optional[int] = None,
+        config: Optional[LoggerConfig] = None,
+        **kwargs
     ) -> logging.Logger:
 
         """
@@ -211,20 +218,8 @@ class LoggerFactory:
         
         Args:
             logger_type: Type of logger to create (LoggerType enum or string)
-            level: Log level (LogLevel enum or string: DEBUG, INFO, WARNING, ERROR, CRITICAL)
-            name: Logger name
-            directory: Log directory path
-            filenames: List/tuple of log filenames
-            encoding: File encoding
-            datefmt: Date format string
-            timezone: Timezone for timestamps
-            streamhandler: Enable console output
-            showlocation: Show file location in logs
-            maxmbytes: Max file size in MB (size rotating only)
-            when: When to rotate (RotateWhen enum or string: MIDNIGHT, HOURLY, DAILY, etc.)
-            sufix: Date suffix for rotated files (timed rotating only)
-            rotateatutc: Rotate at UTC time (timed rotating only)
-            daystokeep: Days to keep old logs
+            config: LoggerConfig object with logger parameters
+            **kwargs: Individual logger parameters (for backward compatibility)
             
         Returns:
             Configured logger instance
@@ -239,50 +234,72 @@ class LoggerFactory:
             except ValueError:
                 raise ValueError(f"Invalid logger type: {logger_type}. Valid types: {[t.value for t in LoggerType]}")
 
+        # Merge config and kwargs (kwargs take precedence for backward compatibility)
+        if config is None:
+            config = LoggerConfig()
+        
+        # Create a new config with kwargs overriding config values
+        final_config = LoggerConfig(
+            level=kwargs.get('level', config.level),
+            name=kwargs.get('name', config.name),
+            directory=kwargs.get('directory', config.directory),
+            filenames=kwargs.get('filenames', config.filenames),
+            encoding=kwargs.get('encoding', config.encoding),
+            datefmt=kwargs.get('datefmt', config.datefmt),
+            timezone=kwargs.get('timezone', config.timezone),
+            streamhandler=kwargs.get('streamhandler', config.streamhandler),
+            showlocation=kwargs.get('showlocation', config.showlocation),
+            maxmbytes=kwargs.get('maxmbytes', config.maxmbytes),
+            when=kwargs.get('when', config.when),
+            sufix=kwargs.get('sufix', config.sufix),
+            rotateatutc=kwargs.get('rotateatutc', config.rotateatutc),
+            daystokeep=kwargs.get('daystokeep', config.daystokeep)
+        )
+
         # Convert enum values to strings for logger classes
-        level_str = level.value if isinstance(level, LogLevel) else level
-        when_str = when.value if isinstance(when, RotateWhen) else when
+        level_str = final_config.level.value if isinstance(final_config.level, LogLevel) else final_config.level
+        when_str = final_config.when.value if isinstance(final_config.when, RotateWhen) else final_config.when
 
         # Create logger based on type
         match logger_type:
             case LoggerType.BASIC:
                 logger_instance = BasicLog(
                     level=level_str,
-                    name=name,
-                    encoding=encoding,
-                    datefmt=datefmt,
-                    timezone=timezone,
-                    showlocation=showlocation, )
+                    name=final_config.name,
+                    encoding=final_config.encoding,
+                    datefmt=final_config.datefmt,
+                    timezone=final_config.timezone,
+                    showlocation=final_config.showlocation, )
 
             case LoggerType.SIZE_ROTATING:
                 logger_instance = SizeRotatingLog(
                     level=level_str,
-                    name=name,
-                    directory=directory,
-                    filenames=filenames,
-                    maxmbytes=maxmbytes,
-                    daystokeep=daystokeep,
-                    encoding=encoding,
-                    datefmt=datefmt,
-                    timezone=timezone,
-                    streamhandler=streamhandler,
-                    showlocation=showlocation, )
+                    name=final_config.name,
+                    directory=final_config.directory,
+                    filenames=final_config.filenames,
+                    maxmbytes=final_config.maxmbytes,
+                    daystokeep=final_config.daystokeep,
+                    encoding=final_config.encoding,
+                    datefmt=final_config.datefmt,
+                    timezone=final_config.timezone,
+                    streamhandler=final_config.streamhandler,
+                    showlocation=final_config.showlocation, )
 
             case LoggerType.TIMED_ROTATING:
                 logger_instance = TimedRotatingLog(
                     level=level_str,
-                    name=name,
-                    directory=directory,
-                    filenames=filenames,
+                    name=final_config.name,
+                    directory=final_config.directory,
+                    filenames=final_config.filenames,
                     when=when_str,
-                    sufix=sufix,
-                    daystokeep=daystokeep,
-                    encoding=encoding,
-                    datefmt=datefmt,
-                    timezone=timezone,
-                    streamhandler=streamhandler,
-                    showlocation=showlocation,
-                    rotateatutc=rotateatutc, )
+                    sufix=final_config.sufix,
+                    daystokeep=final_config.daystokeep,
+                    encoding=final_config.encoding,
+                    datefmt=final_config.datefmt,
+                    timezone=final_config.timezone,
+                    streamhandler=final_config.streamhandler,
+                    showlocation=final_config.showlocation,
+                    rotateatutc=final_config.rotateatutc, )
 
             case _:
                 raise ValueError(f"Unsupported logger type: {logger_type}")

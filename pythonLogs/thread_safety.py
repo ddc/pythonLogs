@@ -1,7 +1,8 @@
 # -*- encoding: utf-8 -*-
 import functools
 import threading
-from typing import Any, Callable, Dict, TypeVar, Type
+from typing import Any, Callable, Dict, Type, TypeVar
+
 
 F = TypeVar('F', bound=Callable[..., Any])
 
@@ -68,13 +69,24 @@ def _get_wrappable_methods(cls: Type) -> list:
     ]
 
 
+def _ensure_class_has_lock(cls: Type) -> None:
+    """Ensure the class has a lock attribute."""
+    if not hasattr(cls, '_lock'):
+        cls._lock = threading.RLock()
+
+
+def _should_wrap_method(cls: Type, method_name: str, original_method: Any) -> bool:
+    """Check if a method should be wrapped with thread safety."""
+    return (hasattr(cls, method_name) and 
+            callable(original_method) and 
+            not hasattr(original_method, '_thread_safe_wrapped'))
+
+
 def auto_thread_safe(thread_safe_methods: list = None):
     """Class decorator that adds automatic thread safety to specified methods."""
     
     def decorator(cls: Type) -> Type:
-        # Add lock to class if not present
-        if not hasattr(cls, '_lock'):
-            cls._lock = threading.RLock()
+        _ensure_class_has_lock(cls)
         
         # Store thread-safe methods list
         if thread_safe_methods:
@@ -85,12 +97,11 @@ def auto_thread_safe(thread_safe_methods: list = None):
         
         # Wrap each method
         for method_name in methods_to_wrap:
-            if hasattr(cls, method_name):
-                original_method = getattr(cls, method_name)
-                if callable(original_method) and not hasattr(original_method, '_thread_safe_wrapped'):
-                    wrapped_method = thread_safe(original_method)
-                    wrapped_method._thread_safe_wrapped = True
-                    setattr(cls, method_name, wrapped_method)
+            original_method = getattr(cls, method_name, None)
+            if _should_wrap_method(cls, method_name, original_method):
+                wrapped_method = thread_safe(original_method)
+                wrapped_method._thread_safe_wrapped = True
+                setattr(cls, method_name, wrapped_method)
         
         return cls
     

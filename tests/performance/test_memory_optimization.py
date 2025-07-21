@@ -107,11 +107,12 @@ class TestMemoryOptimization:
         # Set a small limit for testing
         set_directory_cache_limit(3)
         
-        # Create temporary directories and check them
+        # Create temporary directories and check them using context managers
         temp_dirs = []
         for i in range(5):
-            temp_dir = tempfile.mkdtemp(prefix=f"cache_test_{i}_")
-            temp_dirs.append(temp_dir)
+            temp_dir_context = tempfile.TemporaryDirectory(prefix=f"cache_test_{i}_")
+            temp_dir = temp_dir_context.__enter__()
+            temp_dirs.append((temp_dir, temp_dir_context))
             log_utils.check_directory_permissions(temp_dir)
         
         try:
@@ -121,11 +122,9 @@ class TestMemoryOptimization:
             assert cache_size <= 3, f"Directory cache size {cache_size} exceeds limit of 3"
         
         finally:
-            # Cleanup temp directories
-            import shutil
-            for temp_dir in temp_dirs:
-                if os.path.exists(temp_dir):
-                    shutil.rmtree(temp_dir, ignore_errors=True)
+            # Cleanup temp directories using context managers
+            for temp_dir, temp_dir_context in temp_dirs:
+                temp_dir_context.__exit__(None, None, None)
     
     def test_formatter_cache_efficiency(self):
         """Test that formatters are cached and reused efficiently."""
@@ -414,8 +413,10 @@ class TestMemoryOptimization:
         # Test with logger having handlers
         logger = logging.getLogger("cleanup_test")
         handler1 = logging.StreamHandler()
-        fd, temp_filename = tempfile.mkstemp(suffix=".log")
-        os.close(fd)  # Close the file descriptor as we only need the filename
+        
+        with tempfile.NamedTemporaryFile(suffix=".log", delete=False) as temp_file:
+            temp_filename = temp_file.name
+        
         handler2 = logging.FileHandler(temp_filename)
         
         try:
@@ -479,12 +480,13 @@ class TestMemoryOptimization:
         from pythonLogs.memory_utils import set_directory_cache_limit, clear_directory_cache
         import pythonLogs.log_utils as log_utils
         
-        # Setup some directories in cache
+        # Setup some directories in cache using context managers
         clear_directory_cache()
         temp_dirs = []
         for i in range(5):
-            temp_dir = tempfile.mkdtemp(prefix=f"limit_test_{i}_")
-            temp_dirs.append(temp_dir)
+            temp_dir_context = tempfile.TemporaryDirectory(prefix=f"limit_test_{i}_")
+            temp_dir = temp_dir_context.__enter__()
+            temp_dirs.append((temp_dir, temp_dir_context))
             log_utils.check_directory_permissions(temp_dir)
         
         try:
@@ -508,11 +510,9 @@ class TestMemoryOptimization:
             assert zero_size == 0
             
         finally:
-            # Cleanup
-            import shutil
-            for temp_dir in temp_dirs:
-                if os.path.exists(temp_dir):
-                    shutil.rmtree(temp_dir, ignore_errors=True)
+            # Cleanup using context managers
+            for temp_dir, temp_dir_context in temp_dirs:
+                temp_dir_context.__exit__(None, None, None)
 
     def test_register_logger_weakref_direct(self):
         """Test register_logger_weakref function directly."""
@@ -530,7 +530,6 @@ class TestMemoryOptimization:
         assert new_count >= initial_count
         
         # Delete logger reference
-        logger_name = logger.name
         del logger
         
         # Force garbage collection

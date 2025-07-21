@@ -18,7 +18,7 @@ class TestZoneinfoFallbacks:
         """Test that zoneinfo is available in Python 3.9+."""
         try:
             from zoneinfo import ZoneInfo
-            assert ZoneInfo is not None
+            # If import succeeds, ZoneInfo is guaranteed to be a valid class
             print("✓ Native zoneinfo available")
         except ImportError:
             pytest.skip("zoneinfo not available in this Python version")
@@ -209,8 +209,7 @@ class TestZoneinfoFallbacks:
         # Clear registry to free memory
         clear_logger_registry()
         
-        # Should complete without memory issues
-        assert True  # If we get here, no memory issues occurred
+        # Should complete without memory issues - test passes if no exception is raised
     
     def test_timezone_validation_edge_cases(self):
         """Test timezone validation for various edge cases."""

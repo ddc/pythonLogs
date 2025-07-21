@@ -18,12 +18,12 @@ from pythonLogs import log_utils
 
 class TestLogUtils:
     @classmethod
-    def setup_class(cls):
+    def setup_class(_cls):
         """setup_class"""
         pass
 
     @classmethod
-    def teardown_class(cls):
+    def teardown_class(_cls):
         """teardown_class"""
         pass
 
@@ -123,9 +123,8 @@ class TestLogUtils:
         assert level == logging.CRITICAL
 
     def test_get_log_path(self):
-        temp_dir = tempfile.mkdtemp()
-        test_file = "test.log"
-        try:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            test_file = "test.log"
             # Test 1: Valid directory should return the correct path
             result = log_utils.get_log_path(temp_dir, test_file)
             assert result == os.path.join(temp_dir, test_file)
@@ -146,8 +145,6 @@ class TestLogUtils:
             finally:
                 os.chmod(readonly_dir, 0o755)  # Cleanup permissions
                 os.rmdir(readonly_dir)
-        finally:
-            shutil.rmtree(temp_dir)
 
     def test_get_format(self):
         show_location = True
@@ -676,14 +673,14 @@ class TestLogUtils:
         def check_directory_worker(worker_id):
             """Worker function to check directory permissions concurrently."""
             try:
-                _temp_dir = tempfile.mkdtemp(prefix=f"thread_test_{worker_id}_")
-                checked_dirs.append(_temp_dir)
-                
-                # Multiple calls should be thread-safe
-                for _ in range(5):
-                    log_utils.check_directory_permissions(_temp_dir)
+                with tempfile.TemporaryDirectory(prefix=f"thread_test_{worker_id}_") as _temp_dir:
+                    checked_dirs.append(_temp_dir)
                     
-                return _temp_dir
+                    # Multiple calls should be thread-safe
+                    for _ in range(5):
+                        log_utils.check_directory_permissions(_temp_dir)
+                        
+                    return _temp_dir
             except Exception as e:
                 errors.append(f"Worker {worker_id}: {str(e)}")
                 return None
@@ -699,11 +696,8 @@ class TestLogUtils:
             assert len([r for r in results if r is not None]) == 5
             
         finally:
-            # Cleanup
-            import shutil
-            for temp_dir in checked_dirs:
-                if temp_dir and os.path.exists(temp_dir):
-                    shutil.rmtree(temp_dir, ignore_errors=True)
+            # Cleanup is handled automatically by TemporaryDirectory context managers
+            pass
 
     def test_gzip_compression_levels(self):
         """Test gzip compression with different scenarios."""
@@ -758,10 +752,11 @@ class TestLogUtils:
             log_utils._max_cached_directories = 3
             
             temp_dirs = []
-            # Create more directories than cache can hold
+            # Create more directories than cache can hold using context managers
             for i in range(10):
-                temp_dir = tempfile.mkdtemp(prefix=f"eviction_test_{i}_")
-                temp_dirs.append(temp_dir)
+                temp_dir_context = tempfile.TemporaryDirectory(prefix=f"eviction_test_{i}_")
+                temp_dir = temp_dir_context.__enter__()
+                temp_dirs.append((temp_dir, temp_dir_context))
                 
                 # Clear cache first to test eviction
                 if i == 0:
@@ -781,11 +776,9 @@ class TestLogUtils:
             assert final_cache_size > 0  # Should have some entries
             
         finally:
-            # Cleanup
-            import shutil
-            for temp_dir in temp_dirs:
-                if os.path.exists(temp_dir):
-                    shutil.rmtree(temp_dir, ignore_errors=True)
+            # Cleanup using context managers
+            for temp_dir, temp_dir_context in temp_dirs:
+                temp_dir_context.__exit__(None, None, None)
             log_utils._max_cached_directories = original_max
 
     def test_error_handling_comprehensive(self):

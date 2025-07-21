@@ -121,14 +121,14 @@ class TestThreadSafety:
         def check_directory_worker(worker_id):
             """Worker that checks directory permissions."""
             try:
-                # Create a unique temp directory for each worker
-                _temp_dir = tempfile.mkdtemp(prefix=f"test_thread_{worker_id}_")
-                temp_dirs.append(_temp_dir)
-                
-                # Multiple calls to the same directory should be safe
-                for _ in range(3):
-                    log_utils.check_directory_permissions(_temp_dir)
-                    time.sleep(0.001)  # Small delay to increase race condition chance
+                # Create a unique temp directory for each worker using context manager
+                with tempfile.TemporaryDirectory(prefix=f"test_thread_{worker_id}_") as _temp_dir:
+                    temp_dirs.append(_temp_dir)
+                    
+                    # Multiple calls to the same directory should be safe
+                    for _ in range(3):
+                        log_utils.check_directory_permissions(_temp_dir)
+                        time.sleep(0.001)  # Small delay to increase race condition chance
                     
             except Exception as e:
                 errors.append(str(e))
@@ -150,11 +150,8 @@ class TestThreadSafety:
             assert len(log_utils._checked_directories) == num_threads
             
         finally:
-            # Cleanup temp directories
-            import shutil
-            for temp_dir in temp_dirs:
-                if os.path.exists(temp_dir):
-                    shutil.rmtree(temp_dir, ignore_errors=True)
+            # Cleanup is handled automatically by TemporaryDirectory context managers
+            pass
     
     def test_concurrent_context_manager_cleanup(self):
         """Test concurrent context manager cleanup doesn't cause issues."""
@@ -343,6 +340,63 @@ class TestThreadSafety:
         # Should complete without errors
         assert len(errors) == 0, f"Registry clear test errors: {errors}"
     
+    def _create_logger_and_messages(self, worker_id, temp_dir, results_lock, thread_results):
+        """Helper to create logger and log messages for a worker thread."""
+        logger_instance = SizeRotatingLog(
+            name=f"independent_{worker_id}",
+            directory=temp_dir,
+            filenames=[f"independent_{worker_id}.log"],
+            level="DEBUG"
+        )
+        
+        with logger_instance as logger:
+            # Log thread-specific messages
+            messages = []
+            for i in range(10):
+                _message = f"Thread {worker_id} message {i}"
+                logger.info(_message)
+                messages.append(_message)
+            
+            # Verify log file and read content
+            log_file = os.path.join(temp_dir, f"independent_{worker_id}.log")
+            assert os.path.exists(log_file), f"Log file missing for thread {worker_id}"
+            
+            with open(log_file, 'r') as f:
+               _log_content = f.read()
+            
+            # Verify all messages are in the file
+            for _message in messages:
+                assert _message in _log_content
+            
+            with results_lock:
+                thread_results[worker_id] = {
+                    'messages': messages,
+                    'log_content': _log_content
+                }
+    
+    def _verify_thread_results(self, thread_results, num_threads):
+        """Helper to verify all thread results are successful."""
+        for worker_id in range(num_threads):
+            assert worker_id in thread_results
+            assert 'error' not in thread_results[worker_id], \
+                f"Thread {worker_id} failed: {thread_results[worker_id].get('error')}"
+            assert 'messages' in thread_results[worker_id]
+            assert len(thread_results[worker_id]['messages']) == 10
+    
+    def _check_worker_log_isolation(self, worker_id, log_content, thread_results, num_threads):
+        """Check that a worker's log doesn't contain messages from other workers."""
+        for other_id in range(num_threads):
+            if other_id != worker_id:
+                for message in thread_results[other_id]['messages']:
+                    assert message not in log_content, \
+                        f"Thread {worker_id} log contains message from thread {other_id}"
+
+    def _verify_no_cross_contamination(self, thread_results, num_threads):
+        """Helper to verify no cross-contamination between thread logs."""
+        for worker_id in range(num_threads):
+            log_content = thread_results[worker_id]['log_content']
+            self._check_worker_log_isolation(worker_id, log_content, thread_results, num_threads)
+
     def test_thread_local_logger_independence(self):
         """Test that loggers in different threads don't interfere with each other."""
         num_threads = 5
@@ -353,38 +407,7 @@ class TestThreadSafety:
             """Worker that creates and uses independent loggers."""
             try:
                 with tempfile.TemporaryDirectory() as temp_dir:
-                    # Each thread creates its own logger instance (not using factory caching)
-                    logger_instance = SizeRotatingLog(
-                        name=f"independent_{worker_id}",
-                        directory=temp_dir,
-                        filenames=[f"independent_{worker_id}.log"],
-                        level="DEBUG"
-                    )
-                    
-                    with logger_instance as logger:
-                        # Log thread-specific messages
-                        messages = []
-                        for i in range(10):
-                            _message = f"Thread {worker_id} message {i}"
-                            logger.info(_message)
-                            messages.append(_message)
-                        
-                        # Verify log file exists and contains expected content
-                        log_file = os.path.join(temp_dir, f"independent_{worker_id}.log")
-                        assert os.path.exists(log_file), f"Log file missing for thread {worker_id}"
-                        
-                        with open(log_file, 'r') as f:
-                           _log_content = f.read()
-                        
-                        # All thread-specific messages should be in the file
-                        for _message in messages:
-                            assert _message in _log_content
-                        
-                        with results_lock:
-                            thread_results[worker_id] = {
-                                'messages': messages,
-                                'log_content': _log_content
-                            }
+                    self._create_logger_and_messages(worker_id, temp_dir, results_lock, thread_results)
                             
             except Exception as e:
                 with results_lock:
@@ -397,22 +420,10 @@ class TestThreadSafety:
                 future.result()
         
         # Verify all threads succeeded
-        for worker_id in range(num_threads):
-            assert worker_id in thread_results
-            assert 'error' not in thread_results[worker_id], \
-                f"Thread {worker_id} failed: {thread_results[worker_id].get('error')}"
-            assert 'messages' in thread_results[worker_id]
-            assert len(thread_results[worker_id]['messages']) == 10
+        self._verify_thread_results(thread_results, num_threads)
         
         # Verify no cross-contamination between threads
-        for worker_id in range(num_threads):
-            log_content = thread_results[worker_id]['log_content']
-            for other_id in range(num_threads):
-                if other_id != worker_id:
-                    # This thread's log should not contain messages from other threads
-                    for message in thread_results[other_id]['messages']:
-                        assert message not in log_content, \
-                            f"Thread {worker_id} log contains message from thread {other_id}"
+        self._verify_no_cross_contamination(thread_results, num_threads)
 
 
 if __name__ == "__main__":
