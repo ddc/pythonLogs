@@ -23,24 +23,20 @@ from pythonLogs import (
 class TestResourceManagement:
     """Test resource management functionality."""
 
-    def setup_method(self):
+    @pytest.fixture(autouse=True)
+    def setup_temp_dir(self):
         """Set up test fixtures before each test method."""
         # Clear any existing loggers
         clear_logger_registry()
 
-        # Create temporary directory for log files
-        self.temp_dir = tempfile.mkdtemp()
-        self.log_file = "resource_test.log"
-
-    def teardown_method(self):
-        """Clean up after each test method."""
+        # Create temporary directory for log files using context manager
+        with tempfile.TemporaryDirectory() as temp_dir:
+            self.temp_dir = temp_dir
+            self.log_file = "resource_test.log"
+            yield
+        
         # Clear registry after each test
         clear_logger_registry()
-
-        # Clean up temporary files
-        import shutil
-        if os.path.exists(self.temp_dir):
-            shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_factory_registry_cleanup(self):
         """Test that factory registry cleanup properly closes handlers."""
@@ -273,10 +269,14 @@ class TestResourceManagement:
         # Create multiple threads doing concurrent operations
         num_threads = 5
         with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
-            futures = [executor.submit(create_and_cleanup_logger, i) for i in range(num_threads)]
+            futures = []
+            for i in range(num_threads):
+                futures.append(executor.submit(create_and_cleanup_logger, i))
             
             # Wait for all to complete
-            results = [future.result() for future in concurrent.futures.as_completed(futures)]
+            results = []
+            for future in concurrent.futures.as_completed(futures):
+                results.append(future.result())
         
         # All operations should succeed
         assert all(results)

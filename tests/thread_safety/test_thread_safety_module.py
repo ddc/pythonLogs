@@ -17,7 +17,7 @@ class TestThreadSafeDecorator:
     """Test the @thread_safe decorator."""
 
     def test_thread_safe_decorator_basic(self):
-        """Test basic functionality of @thread_safe decorator."""
+        """Test the basic functionality of @thread_safe decorator."""
         
         class TestClass:
             def __init__(self):
@@ -30,12 +30,13 @@ class TestThreadSafeDecorator:
                 time.sleep(0.001)  # Simulate some work
                 self.counter = current + 1
         
-        obj = TestClass()
         threads = []
         
         def worker():
             for _ in range(10):
                 obj.increment()
+        
+        obj = TestClass()
         
         # Create multiple threads
         for _ in range(5):
@@ -111,7 +112,7 @@ class TestAutoThreadSafeDecorator:
         
         obj = TestClass()
         
-        # Check that specified method is wrapped
+        # Check that the specified method is wrapped
         assert hasattr(obj.increment, '_thread_safe_wrapped')
         # Check that non-specified method is not wrapped
         assert not hasattr(obj.unsafe_increment, '_thread_safe_wrapped')
@@ -143,6 +144,9 @@ class TestAutoThreadSafeDecorator:
                 self.counter -= 1
             
             def _private_method(self):
+                # This method is intentionally empty - it exists solely to test
+                # that private methods (starting with underscore) are NOT wrapped
+                # with thread safety by the @auto_thread_safe decorator
                 pass
         
         obj = TestClass()
@@ -162,11 +166,10 @@ class TestAutoThreadSafeDecorator:
                 return "test"
         
         obj = TestClass()
-        original_method = obj.test_method
         
         # Apply decorator again (should not double-wrap)
-        TestClass = auto_thread_safe(['test_method'])(TestClass)
-        obj2 = TestClass()
+        wrapped_test_class = auto_thread_safe(['test_method'])(TestClass)
+        obj2 = wrapped_test_class()
         
         # Should still work and not be double-wrapped
         assert obj2.test_method() == "test"
@@ -434,10 +437,10 @@ class TestEdgeCases:
                 self.counter += 1
         
         # Apply auto_thread_safe multiple times
-        TestClass = auto_thread_safe(['increment'])(TestClass)
-        TestClass = auto_thread_safe(['increment'])(TestClass)
+        wrapped_test_class = auto_thread_safe(['increment'])(TestClass)
+        wrapped_test_class = auto_thread_safe(['increment'])(wrapped_test_class)
         
-        obj = TestClass()
+        obj = wrapped_test_class()
         obj.increment()
         assert obj.counter == 1
 

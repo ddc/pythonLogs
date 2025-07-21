@@ -187,8 +187,8 @@ class TestAdvancedThreadSafetyPatterns:
             results = [future.result() for future in as_completed(futures)]
         
         # All instances should be the same object
-        assert len(set(id(inst) for inst in instances)) == 1
-        # Counter should be exactly 50
+        assert len({id(inst) for inst in instances}) == 1
+        # The Counter should be exactly 50
         assert instances[0].counter == 50
 
     def test_resource_pool_pattern(self):

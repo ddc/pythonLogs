@@ -10,7 +10,7 @@ from pythonLogs.log_utils import (
     get_logger_and_formatter,
     get_stream_handler,
     gzip_file_with_sufix,
-    remove_old_logs,
+     remove_old_logs,
 )
 from pythonLogs.memory_utils import cleanup_logger_handlers, register_logger_weakref
 from pythonLogs.settings import get_log_settings

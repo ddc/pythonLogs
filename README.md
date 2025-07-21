@@ -5,8 +5,10 @@
 [![PyPi](https://img.shields.io/pypi/v/pythonLogs.svg)](https://pypi.python.org/pypi/pythonLogs)
 [![PyPI Downloads](https://static.pepy.tech/badge/pythonLogs)](https://pepy.tech/projects/pythonLogs)
 [![codecov](https://codecov.io/gh/ddc/pythonLogs/graph/badge.svg?token=QsjwsmYzgD)](https://codecov.io/gh/ddc/pythonLogs)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![CI/CD Pipeline](https://github.com/ddc/pythonLogs/actions/workflows/workflow.yml/badge.svg)](https://github.com/ddc/pythonLogs/actions/workflows/workflow.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=ddc_pythonLogs&metric=alert_status)](https://sonarcloud.io/dashboard?id=ddc_pythonLogs)  
 [![Build Status](https://img.shields.io/endpoint.svg?url=https%3A//actions-badge.atrox.dev/ddc/pythonLogs/badge?ref=main&label=build&logo=none)](https://actions-badge.atrox.dev/ddc/pythonLogs/goto?ref=main)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Python](https://img.shields.io/pypi/pyversions/pythonLogs.svg)](https://www.python.org/downloads)
 
 [![Support me on GitHub](https://img.shields.io/badge/Support_me_on_GitHub-154c79?style=for-the-badge&logo=github)](https://github.com/sponsors/ddc)

@@ -11,7 +11,7 @@ from pythonLogs.constants import (
     DEFAULT_ROTATE_SUFFIX,
     DEFAULT_TIMEZONE,
     LogLevel,
-    RotateWhen
+    RotateWhen,
 )
 
 

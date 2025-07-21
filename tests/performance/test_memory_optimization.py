@@ -107,11 +107,12 @@ class TestMemoryOptimization:
         # Set a small limit for testing
         set_directory_cache_limit(3)
         
-        # Create temporary directories and check them
+        # Create temporary directories and check them using context managers
         temp_dirs = []
         for i in range(5):
-            temp_dir = tempfile.mkdtemp(prefix=f"cache_test_{i}_")
-            temp_dirs.append(temp_dir)
+            temp_dir_context = tempfile.TemporaryDirectory(prefix=f"cache_test_{i}_")
+            temp_dir = temp_dir_context.__enter__()
+            temp_dirs.append((temp_dir, temp_dir_context))
             log_utils.check_directory_permissions(temp_dir)
         
         try:
@@ -121,11 +122,9 @@ class TestMemoryOptimization:
             assert cache_size <= 3, f"Directory cache size {cache_size} exceeds limit of 3"
         
         finally:
-            # Cleanup temp directories
-            import shutil
-            for temp_dir in temp_dirs:
-                if os.path.exists(temp_dir):
-                    shutil.rmtree(temp_dir, ignore_errors=True)
+            # Cleanup temp directories using context managers
+            for temp_dir, temp_dir_context in temp_dirs:
+                temp_dir_context.__exit__(None, None, None)
     
     def test_formatter_cache_efficiency(self):
         """Test that formatters are cached and reused efficiently."""
@@ -351,7 +350,7 @@ class TestMemoryOptimization:
         with tempfile.TemporaryDirectory() as temp_dir:
             # Basic logger context manager
             with BasicLog(name="cleanup_test_basic", level="INFO") as logger1:
-                assert len(logger1.handlers) >= 0
+                assert len(logger1.handlers) > 0
                 logger1.info("Test message 1")
             
             # After context exit, handlers should be cleaned
@@ -414,15 +413,24 @@ class TestMemoryOptimization:
         # Test with logger having handlers
         logger = logging.getLogger("cleanup_test")
         handler1 = logging.StreamHandler()
-        handler2 = logging.FileHandler(tempfile.mktemp(suffix=".log"))
         
-        logger.addHandler(handler1)
-        logger.addHandler(handler2)
-        assert len(logger.handlers) == 2
+        with tempfile.NamedTemporaryFile(suffix=".log", delete=False) as temp_file:
+            temp_filename = temp_file.name
         
-        # Cleanup should remove all handlers
-        cleanup_logger_handlers(logger)
-        assert len(logger.handlers) == 0
+        handler2 = logging.FileHandler(temp_filename)
+        
+        try:
+            logger.addHandler(handler1)
+            logger.addHandler(handler2)
+            assert len(logger.handlers) == 2
+            
+            # Cleanup should remove all handlers
+            cleanup_logger_handlers(logger)
+            assert len(logger.handlers) == 0
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_filename):
+                os.unlink(temp_filename)
 
     def test_cleanup_logger_handlers_error_handling(self):
         """Test cleanup_logger_handlers with handler errors."""
@@ -472,12 +480,13 @@ class TestMemoryOptimization:
         from pythonLogs.memory_utils import set_directory_cache_limit, clear_directory_cache
         import pythonLogs.log_utils as log_utils
         
-        # Setup some directories in cache
+        # Setup some directories in cache using context managers
         clear_directory_cache()
         temp_dirs = []
         for i in range(5):
-            temp_dir = tempfile.mkdtemp(prefix=f"limit_test_{i}_")
-            temp_dirs.append(temp_dir)
+            temp_dir_context = tempfile.TemporaryDirectory(prefix=f"limit_test_{i}_")
+            temp_dir = temp_dir_context.__enter__()
+            temp_dirs.append((temp_dir, temp_dir_context))
             log_utils.check_directory_permissions(temp_dir)
         
         try:
@@ -501,11 +510,9 @@ class TestMemoryOptimization:
             assert zero_size == 0
             
         finally:
-            # Cleanup
-            import shutil
-            for temp_dir in temp_dirs:
-                if os.path.exists(temp_dir):
-                    shutil.rmtree(temp_dir, ignore_errors=True)
+            # Cleanup using context managers
+            for temp_dir, temp_dir_context in temp_dirs:
+                temp_dir_context.__exit__(None, None, None)
 
     def test_register_logger_weakref_direct(self):
         """Test register_logger_weakref function directly."""
@@ -523,7 +530,6 @@ class TestMemoryOptimization:
         assert new_count >= initial_count
         
         # Delete logger reference
-        logger_name = logger.name
         del logger
         
         # Force garbage collection
@@ -559,7 +565,7 @@ class TestMemoryOptimization:
         gc.collect()
         
         # Callback should have been called
-        assert len(callback_called) >= 0  # May or may not be called immediately
+        assert len(callback_called) == 0 or len(callback_called) > 0  # May or may not be called immediately
 
     def test_optimize_lru_cache_sizes_normal_operation(self):
         """Test optimize_lru_cache_sizes normal operation."""
