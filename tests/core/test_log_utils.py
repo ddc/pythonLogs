@@ -18,12 +18,12 @@ from pythonLogs import log_utils
 
 class TestLogUtils:
     @classmethod
-    def setup_class(_cls):
+    def setup_class(cls):
         """setup_class"""
         pass
 
     @classmethod
-    def teardown_class(_cls):
+    def teardown_class(cls):
         """teardown_class"""
         pass
 
