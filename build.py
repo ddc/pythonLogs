@@ -25,7 +25,7 @@ def parse_python_version_requirement():
         return major, minor
     else:
         # Default fallback
-        return 3, 11
+        return 3, 12
 
 
 def get_compatible_python_versions(min_major, min_minor):
