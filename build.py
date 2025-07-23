@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-import sys
 import compileall
+import sys
 import tomllib
 from pathlib import Path
 
