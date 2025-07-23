@@ -81,8 +81,6 @@ jobs:
           name: Release ${{ github.ref_name }}
           body: |
             Automated release for version ${{ github.ref_name }}
-            
-            This release includes builds for Python 3.10, 3.11, 3.12, and 3.13.
           draft: false
           prerelease: false
           files: release-assets/*
