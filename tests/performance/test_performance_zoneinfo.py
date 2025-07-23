@@ -35,25 +35,21 @@ class TestZoneinfoPerformance:
         """Test that timezone function caching improves performance."""
         from pythonLogs.log_utils import get_timezone_function
         
-        # First call (not cached)
+        # First call (not cached) - single call to prime the cache
         start_time = time.time()
-        for _ in range(50):
-            get_timezone_function("America/New_York")
+        get_timezone_function("America/New_York")
         first_call_time = time.time() - start_time
         
-        # Clear cache and test again
-        get_timezone_function.cache_clear()
-        
-        # Subsequent calls (should be from cache after first)
+        # Subsequent calls (should be from cache)
         start_time = time.time()
         for _ in range(50):
             get_timezone_function("America/New_York")  # Same timezone, should be cached
         cached_call_time = time.time() - start_time
         
-        # Cached calls should be significantly faster
-        # Note: Since caching happens after the first call, we expect similar times
-        # but the cache prevents repeated timezone object creation
-        assert cached_call_time <= first_call_time * 1.5  # Allow some tolerance
+        # Cached calls should be significantly faster per call
+        # Compare average time per call
+        cached_avg_time = cached_call_time / 50
+        assert cached_avg_time <= first_call_time  # Cached should be faster or equal
     
     def test_timezone_offset_caching_performance(self):
         """Test timezone offset calculation caching performance."""
