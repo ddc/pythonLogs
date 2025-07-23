@@ -36,18 +36,11 @@ jobs:
           poetry run python build.py
           poetry build
 
-      - name: Rename artifacts with Python version
+      - name: Copy artifacts
         run: |
           mkdir -p dist-py${{ matrix.python-version }}
           cp dist/*.whl dist-py${{ matrix.python-version }}/
           cp dist/*.tar.gz dist-py${{ matrix.python-version }}/
-          # Rename wheel to include Python version
-          cd dist-py${{ matrix.python-version }}
-          for file in *.whl; do
-            if [[ "$file" != *"py${{ matrix.python-version }}"* ]]; then
-              mv "$file" "${file%.whl}-py${{ matrix.python-version }}.whl"
-            fi
-          done
 
       - name: Upload Python ${{ matrix.python-version }} artifacts
         uses: actions/upload-artifact@v4
