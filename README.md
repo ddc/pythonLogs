@@ -30,10 +30,12 @@ High-performance Python logging library with file rotation and optimized caching
 - [Memory Management](#memory-management)
 - [Flexible Configuration Options](#flexible-configuration-options)
 - [Migration Guide](#migration-guide)
-- [Development](#source-code)
-- [Run Tests and Get Coverage Report using Poe](#run-tests-and-get-coverage-report-using-poe)
+- [Development](#development)
+- [Development](#development)
+  - [Building from Source](#building-from-source)
+  - [Running Tests](#running-tests)
 - [License](#license)
-- [Buy me a cup of coffee](#buy-me-a-cup-of-coffee)
+- [Support](#support)
 
 
 
@@ -520,25 +522,27 @@ timed_logger = timed_rotating_logger(level=LogLevel.WARNING, name="app", directo
 - 📚 **Centralized configuration** through factory pattern
 
 
-# Source Code
-### Build
+# Development
+
+### Building from Source
 ```shell
 poetry build -f wheel
 ```
 
-
-# Run Tests and Get Coverage Report using Poe
+### Running Tests
 ```shell
 poetry update --with test
-poe test
+poe tests
 ```
 
-
 # License
+
 Released under the [MIT License](LICENSE)
 
+# Support
 
-# Buy me a cup of coffee
-+ [GitHub Sponsor](https://github.com/sponsors/ddc)
-+ [ko-fi](https://ko-fi.com/ddcsta)
-+ [Paypal](https://www.paypal.com/ncp/payment/6G9Z78QHUD4RJ)
+If you find this project helpful, consider supporting development:
+
+- [GitHub Sponsor](https://github.com/sponsors/ddc)
+- [ko-fi](https://ko-fi.com/ddcsta)
+- [PayPal](https://www.paypal.com/ncp/payment/6G9Z78QHUD4RJ)
