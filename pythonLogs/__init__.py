@@ -58,7 +58,7 @@ __author__ = "Daniel Costa"
 __email__ = "danieldcsta@gmail.com>"
 __license__ = "MIT"
 __copyright__ = "Copyright 2024-present ddc"
-_req_python_version = (3, 10, 0)
+_req_python_version = (3, 12, 0)
 
 
 try:
