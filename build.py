@@ -14,7 +14,7 @@ def parse_python_version_requirement():
     
     python_req = data["tool"]["poetry"]["dependencies"]["python"]
     
-    # Parse version constraint like "^3.10" 
+    # Parse version constraint like "^3.12"
     if python_req.startswith("^"):
         min_version = python_req[1:]
         major, minor = map(int, min_version.split("."))
@@ -40,7 +40,7 @@ def get_compatible_python_versions(min_major, min_minor):
         end_minor = max(current_minor + 2, 12) if major == current_major else 12
         
         for minor in range(start_minor, end_minor + 1):
-            if major == 3 and minor >= min_minor:  # Only include 3.10+
+            if major == 3 and minor >= min_minor:
                 versions.append(f"{major}.{minor}")
     
     return versions
