@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "pythonLogs"
-version = "4.0.7"
+version = "5.0.0"
 description = "High-performance Python logging library with file rotation and optimized caching for better performance"
 license = "MIT"
 readme = "README.md"
