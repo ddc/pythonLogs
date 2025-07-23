@@ -7,19 +7,20 @@ on:
 
 
 jobs:
-  release:
-    name: Build and Release
+  build:
+    name: Build for Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
-    permissions:
-      contents: write
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: ${{ matrix.python-version }}
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
@@ -30,25 +31,67 @@ jobs:
       - name: Install build dependencies only
         run: poetry install --only main --no-interaction --no-ansi
 
-      - name: Build package
-        run: poetry build
+      - name: Build package with custom build script
+        run: |
+          poetry run python build.py
+          poetry build
+
+      - name: Rename artifacts with Python version
+        run: |
+          mkdir -p dist-py${{ matrix.python-version }}
+          cp dist/*.whl dist-py${{ matrix.python-version }}/
+          cp dist/*.tar.gz dist-py${{ matrix.python-version }}/
+          # Rename wheel to include Python version
+          cd dist-py${{ matrix.python-version }}
+          for file in *.whl; do
+            if [[ "$file" != *"py${{ matrix.python-version }}"* ]]; then
+              mv "$file" "${file%.whl}-py${{ matrix.python-version }}.whl"
+            fi
+          done
+
+      - name: Upload Python ${{ matrix.python-version }} artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-packages-${{ matrix.python-version }}
+          path: dist-py${{ matrix.python-version }}/
+          retention-days: 7
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+          find artifacts/ -name "*.whl" -exec cp {} release-assets/ \;
+          find artifacts/ -name "*.tar.gz" -exec cp {} release-assets/ \;
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           name: Release ${{ github.ref_name }}
-          body: Automated release for version ${{ github.ref_name }}
+          body: |
+            Automated release for version ${{ github.ref_name }}
+            
+            This release includes builds for Python 3.10, 3.11, 3.12, and 3.13.
           draft: false
           prerelease: false
-          files: |
-            dist/*.whl
-            dist/*.tar.gz
+          files: release-assets/*
 
-      - name: Upload artifacts for PyPI
+      - name: Upload combined artifacts for PyPI
         uses: actions/upload-artifact@v4
         with:
-          name: python-packages
-          path: dist/
+          name: python-packages-combined
+          path: release-assets/
           retention-days: 7
 
   publish:
@@ -63,7 +106,7 @@ jobs:
       - name: Download package artifacts
         uses: actions/download-artifact@v4
         with:
-          name: python-packages
+          name: python-packages-combined
           path: dist
 
       - name: Publish to TestPyPI

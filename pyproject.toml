@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "pythonLogs"
-version = "4.0.6"
+version = "4.0.7"
 description = "High-performance Python logging library with file rotation and optimized caching for better performance"
 license = "MIT"
 readme = "README.md"
@@ -30,8 +30,15 @@ classifiers = [
     "Natural Language :: English",
 ]
 
+[tool.poetry.build]
+script = "build.py"
+generate-setup-file = false
+
+[tool.poetry.group.test]
+optional = true
+
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.12"
 pydantic-settings = "^2.10.1"
 python-dotenv = "^1.1.1"
 
@@ -47,9 +54,6 @@ _coverage_report = "coverage report"
 _coverage_xml = "coverage xml"
 tests = ["_test", "_coverage_report", "_coverage_xml"]
 test = ["tests"]
-
-[tool.poetry.group.test]
-optional = true
 
 [tool.black]
 line-length = 120
