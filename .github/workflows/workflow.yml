@@ -31,11 +31,13 @@ jobs:
 
       - name: Install build dependencies only
         run: poetry install --only main --no-interaction --no-ansi
+        shell: bash
 
       - name: Build package with custom build script
         run: |
           poetry run python build.py
           poetry build
+        shell: bash
 
       - name: Copy artifacts
         shell: bash
