@@ -8,11 +8,12 @@ on:
 
 jobs:
   build:
-    name: Build for Python ${{ matrix.python-version }}
-    runs-on: ubuntu-latest
+    name: Build for Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     if: startsWith(github.ref, 'refs/tags/v')
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
@@ -37,16 +38,17 @@ jobs:
           poetry build
 
       - name: Copy artifacts
+        shell: bash
         run: |
-          mkdir -p dist-py${{ matrix.python-version }}
-          cp dist/*.whl dist-py${{ matrix.python-version }}/
-          cp dist/*.tar.gz dist-py${{ matrix.python-version }}/
+          mkdir -p dist-py${{ matrix.python-version }}-${{ matrix.os }}
+          cp dist/*.whl dist-py${{ matrix.python-version }}-${{ matrix.os }}/ || true
+          cp dist/*.tar.gz dist-py${{ matrix.python-version }}-${{ matrix.os }}/ || true
 
-      - name: Upload Python ${{ matrix.python-version }} artifacts
+      - name: Upload Python ${{ matrix.python-version }} ${{ matrix.os }} artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: python-packages-${{ matrix.python-version }}
-          path: dist-py${{ matrix.python-version }}/
+          name: python-packages-${{ matrix.python-version }}-${{ matrix.os }}
+          path: dist-py${{ matrix.python-version }}-${{ matrix.os }}/
           retention-days: 7
 
   release:
