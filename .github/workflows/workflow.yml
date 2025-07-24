@@ -2,19 +2,59 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, master]
+    branches: ["**"]
     tags: ['v*']
+
+env:
+  PYTHON_VERSIONS: '["3.12", "3.13"]'
+  OS_VERSIONS: '["ubuntu-latest", "windows-latest", "macos-latest"]'
 
 
 jobs:
+  test:
+    name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(env.OS_VERSIONS) }}
+        python-version: ${{ fromJSON(env.PYTHON_VERSIONS) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install dependencies
+        run: poetry install --with test --no-interaction --no-ansi
+        shell: bash
+
+      - name: Run tests with coverage
+        run: poetry run poe tests
+
+      - name: Upload coverage reports to Codecov
+        if: matrix.python-version == '3.13' && matrix.os == 'ubuntu-latest'
+        uses: codecov/codecov-action@v5
+        with:
+            token: ${{ secrets.CODECOV_TOKEN }}
+            slug: ddc/pythonLogs
+
   build:
     name: Build for Python ${{ matrix.python-version }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     if: startsWith(github.ref, 'refs/tags/v')
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.12", "3.13"]
+        os: ${{ fromJSON(env.OS_VERSIONS) }}
+        python-version: ${{ fromJSON(env.PYTHON_VERSIONS) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -30,7 +70,12 @@ jobs:
           virtualenvs-in-project: true
 
       - name: Install build dependencies only
-        run: poetry install --only main --no-interaction --no-ansi
+        run: |
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            poetry install --only main --no-interaction --no-ansi -E mongodb -E mssql -E mysql -E oracle
+          else
+            poetry install --only main --no-interaction --no-ansi -E all
+          fi
         shell: bash
 
       - name: Build package with custom build script
