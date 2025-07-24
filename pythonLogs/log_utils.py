@@ -157,7 +157,11 @@ def _get_stderr_timezone():
     timezone_name = os.getenv("LOG_TIMEZONE", "UTC")
     if timezone_name.lower() == "localtime":
         return None  # Use system local timezone
-    return ZoneInfo(timezone_name)
+    try:
+        return ZoneInfo(timezone_name)
+    except Exception:
+        # Fallback to local timezone if requested timezone is not available
+        return None
 
 
 def write_stderr(msg: str) -> None:
@@ -203,11 +207,16 @@ def get_log_path(directory: str, filename: str) -> str:
 
 @lru_cache(maxsize=32)
 def _get_timezone_offset(timezone_: str) -> str:
-    """Cache timezone offset calculation"""
+    """Cache timezone offset calculation with fallback for missing timezone data"""
     if timezone_.lower() == "localtime":
         return time.strftime("%z")
     else:
-        return datetime.now(ZoneInfo(timezone_)).strftime("%z")
+        try:
+            return datetime.now(ZoneInfo(timezone_)).strftime("%z")
+        except Exception:
+            # Fallback to localtime if the requested timezone is not available
+            # This is common on Windows systems without full timezone data
+            return time.strftime("%z")
 
 
 def get_format(show_location: bool, name: str, timezone_: str) -> str:
@@ -254,13 +263,23 @@ def gzip_file_with_sufix(file_path: str, sufix: str) -> str | None:
 
 @lru_cache(maxsize=32)
 def get_timezone_function(time_zone: str) -> Callable:
-    """Get timezone function with caching for better performance"""
+    """Get timezone function with caching and fallback for missing timezone data"""
     match time_zone.lower():
         case "utc":
-            return time.gmtime
+            try:
+                # Try to create UTC timezone to verify it's available
+                ZoneInfo("UTC")
+                return time.gmtime
+            except Exception:
+                # Fallback to localtime if UTC timezone data is missing
+                return time.localtime
         case "localtime":
             return time.localtime
         case _:
-            # Cache the timezone object
-            tz = ZoneInfo(time_zone)
-            return lambda *args: datetime.now(tz=tz).timetuple()
+            try:
+                # Cache the timezone object
+                tz = ZoneInfo(time_zone)
+                return lambda *args: datetime.now(tz=tz).timetuple()
+            except Exception:
+                # Fallback to localtime if the requested timezone is not available
+                return time.localtime

@@ -31,13 +31,16 @@ class TestZoneinfoFallbacks:
         """Test proper error handling for timezone operations."""
         from pythonLogs import basic_logger, LogLevel
         
-        # Test with invalid timezone
-        with pytest.raises(Exception):  # Should raise ZoneInfoNotFoundError or similar
-            basic_logger(
-                name="error_test",
-                timezone="NonExistent/Timezone",
-                level=LogLevel.INFO
-            )
+        # With the new fallback system, invalid timezones should gracefully fall back
+        # to localtime instead of raising exceptions for better robustness
+        logger = basic_logger(
+            name="error_test",
+            timezone="NonExistent/Timezone",  # Should fall back to localtime
+            level=LogLevel.INFO
+        )
+        # Logger should be created successfully with fallback
+        assert logger.name == "error_test"
+        logger.info("Test message with fallback timezone")
     
     def test_timezone_offset_edge_cases(self):
         """Test timezone offset calculation for edge cases."""
@@ -241,6 +244,9 @@ class TestZoneinfoFallbacks:
                 assert len(result) == 5
                 assert result[0] in ['+', '-']
         
-        # Test that invalid timezone names raise appropriate errors
-        with pytest.raises(Exception):  # Should raise ZoneInfoNotFoundError
-            _get_timezone_offset("invalid_timezone")
+        # Test that invalid timezone names now fall back gracefully to localtime
+        result = _get_timezone_offset("invalid_timezone")
+        # Should fall back to localtime format
+        assert isinstance(result, str)
+        assert len(result) == 5
+        assert result[0] in ['+', '-']

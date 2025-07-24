@@ -125,12 +125,15 @@ class TestTimezoneZoneinfo:
     
     def test_invalid_timezone_handling(self):
         """Test handling of invalid timezone names."""
-        # Should handle invalid timezone gracefully
-        with pytest.raises(Exception):  # ZoneInfoNotFoundError or similar
-            basic_logger(
-                name="invalid_tz_test",
-                timezone="Invalid/Timezone"
-            )
+        # With the new fallback system, invalid timezones should fall back to localtime
+        # instead of raising exceptions, making the system more robust
+        logger = basic_logger(
+            name="invalid_tz_test",
+            timezone="Invalid/Timezone"  # This should now fall back to localtime
+        )
+        # Logger should be created successfully with fallback
+        assert logger.name == "invalid_tz_test"
+        logger.info("Test message with invalid timezone")
     
     def test_timezone_offset_calculation(self):
         """Test timezone offset calculation function."""
