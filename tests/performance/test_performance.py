@@ -10,6 +10,8 @@ import pytest
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from ..test_utils import get_safe_timezone
+
 from pythonLogs import (
     LoggerFactory,
     LoggerType,
@@ -105,11 +107,12 @@ class TestPerformance:
         # Create multiple loggers with same timezone
         start_time = time.time()
         
+        safe_tz = get_safe_timezone()
         loggers = []
         for i in range(20):
             logger = basic_logger(
                 name=f"tz_test_{i}",
-                timezone="UTC"  # Same timezone should use cached function
+                timezone=safe_tz  # Same timezone should use cached function
             )
             loggers.append(logger)
         

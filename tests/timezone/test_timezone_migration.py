@@ -9,6 +9,8 @@ import pytest
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from ..test_utils import skip_if_no_zoneinfo_utc, get_safe_timezone, requires_zoneinfo_utc
+
 from pythonLogs import (
     basic_logger,
     size_rotating_logger,
@@ -34,6 +36,7 @@ class TestTimezoneZoneinfo:
         """Clear registry before each test."""
         clear_logger_registry()
     
+    @requires_zoneinfo_utc
     def test_zoneinfo_import_success(self):
         """Test that ZoneInfo is properly imported."""
         from pythonLogs.log_utils import ZoneInfo
@@ -42,6 +45,7 @@ class TestTimezoneZoneinfo:
         utc_tz = ZoneInfo("UTC")
         assert utc_tz is not None
     
+    @requires_zoneinfo_utc
     def test_utc_timezone_basic_logger(self):
         """Test UTC timezone with basic logger."""
         logger = basic_logger(
