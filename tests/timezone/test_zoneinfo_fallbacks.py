@@ -198,6 +198,13 @@ class TestZoneinfoFallbacks:
         """Test that timezone caching doesn't cause memory leaks."""
         from pythonLogs import basic_logger, clear_logger_registry
         
+        # Check if zoneinfo works on this system
+        try:
+            from zoneinfo import ZoneInfo
+            ZoneInfo("UTC")  # Test if UTC is available
+        except Exception:
+            pytest.skip("zoneinfo not available or UTC timezone data missing on this system")
+        
         # Create many loggers with same timezone (should use cache)
         for i in range(100):
             logger = basic_logger(
@@ -214,6 +221,13 @@ class TestZoneinfoFallbacks:
     def test_timezone_validation_edge_cases(self):
         """Test timezone validation for various edge cases."""
         from pythonLogs.log_utils import _get_timezone_offset
+        
+        # Check if zoneinfo works on this system
+        try:
+            from zoneinfo import ZoneInfo
+            ZoneInfo("UTC")  # Test if UTC is available
+        except Exception:
+            pytest.skip("zoneinfo not available or UTC timezone data missing on this system")
         
         # Test case variations (timezone names are case-sensitive except for localtime)
         test_cases = [

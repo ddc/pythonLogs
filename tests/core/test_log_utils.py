@@ -54,12 +54,18 @@ class TestLogUtils:
         log_utils.delete_file(directory)
         assert os.path.exists(directory) == False
 
-        # test permission error on creation
-        directory = "/non-existent-directory"
-        with pytest.raises(PermissionError) as exec_info:
-            log_utils.check_directory_permissions(directory)
-        assert type(exec_info.value) is PermissionError
-        assert "Unable to create directory" in str(exec_info.value)
+        # test permission error on creation - use a readonly parent directory
+        with tempfile.TemporaryDirectory() as temp_dir:
+            readonly_parent = os.path.join(temp_dir, "readonly")
+            os.makedirs(readonly_parent, mode=0o555)  # Read-only parent
+            try:
+                non_existent = os.path.join(readonly_parent, "non-existent-directory")
+                with pytest.raises(PermissionError) as exec_info:
+                    log_utils.check_directory_permissions(non_existent)
+                assert type(exec_info.value) is PermissionError
+                assert "Unable to create directory" in str(exec_info.value)
+            finally:
+                os.chmod(readonly_parent, 0o755)  # Restore permissions for cleanup
 
     def test_remove_old_logs(self):
         directory = os.path.join(tempfile.gettempdir(), "test_remove_logs")
@@ -181,11 +187,12 @@ class TestLogUtils:
         log_utils.delete_file(result)
         assert os.path.isfile(result) == False
 
-        # test a non-existent file
-        file_path = "/non-existent-directory/test2.log"
-        sufix = "test2"
-        result = log_utils.gzip_file_with_sufix(file_path, sufix)
-        assert result is None
+        # test a non-existent file - use tempfile path that doesn't exist
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_path = os.path.join(temp_dir, "non-existent-directory", "test2.log")
+            sufix = "test2"
+            result = log_utils.gzip_file_with_sufix(file_path, sufix)
+            assert result is None
 
     def test_get_timezone_function(self):
         timezone = "UTC"
