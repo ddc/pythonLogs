@@ -1,6 +1,6 @@
 name: CI/CD Pipeline
 
-on:
+"on":
   push:
     branches: ["**"]
     tags: ['v*']
