@@ -8,9 +8,11 @@ import pytest
 
 
 # Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from ..test_utils import skip_if_no_zoneinfo_utc, get_safe_timezone, requires_zoneinfo_utc
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+tests_dir = os.path.join(project_root, 'tests')
+sys.path.insert(0, project_root)  # For pythonLogs
+sys.path.insert(0, tests_dir)  # For test_utils in tests/
+from test_utils import skip_if_no_zoneinfo_utc, get_safe_timezone, requires_zoneinfo_utc
 
 
 class TestZoneinfoFallbacks:
