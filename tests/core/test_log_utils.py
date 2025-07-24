@@ -42,30 +42,42 @@ class TestLogUtils:
         assert "Unable to parse filenames" in str(exec_info.value)
 
     def test_check_directory_permissions(self):
-        # Test permission error on access
-        directory = os.path.join(tempfile.gettempdir(), "test_permission")
-        os.makedirs(directory, mode=0o000, exist_ok=True)  # No permissions at all
-        assert os.path.exists(directory) == True
-        with pytest.raises(PermissionError) as exec_info:
-            log_utils.check_directory_permissions(directory)
-        os.chmod(directory, 0o755)  # Restore permissions for cleanup
-        assert type(exec_info.value) is PermissionError
-        assert "Unable to access directory" in str(exec_info.value)
-        log_utils.delete_file(directory)
-        assert os.path.exists(directory) == False
-
-        # test permission error on creation - use a readonly parent directory
-        with tempfile.TemporaryDirectory() as temp_dir:
-            readonly_parent = os.path.join(temp_dir, "readonly")
-            os.makedirs(readonly_parent, mode=0o555)  # Read-only parent
-            try:
-                non_existent = os.path.join(readonly_parent, "non-existent-directory")
+        import sys
+        
+        if sys.platform == "win32":
+            # On Windows, use a non-existent drive to simulate permission error
+            invalid_path = "Z:\\nonexistent\\directory"
+            if not os.path.exists("Z:\\"):
                 with pytest.raises(PermissionError) as exec_info:
-                    log_utils.check_directory_permissions(non_existent)
-                assert type(exec_info.value) is PermissionError
+                    log_utils.check_directory_permissions(invalid_path)
                 assert "Unable to create directory" in str(exec_info.value)
-            finally:
-                os.chmod(readonly_parent, 0o755)  # Restore permissions for cleanup
+            else:
+                pytest.skip("Z: drive exists, cannot test permission error")
+        else:
+            # Unix-style permission testing
+            directory = os.path.join(tempfile.gettempdir(), "test_permission")
+            os.makedirs(directory, mode=0o000, exist_ok=True)  # No permissions at all
+            assert os.path.exists(directory) == True
+            with pytest.raises(PermissionError) as exec_info:
+                log_utils.check_directory_permissions(directory)
+            os.chmod(directory, 0o755)  # Restore permissions for cleanup
+            assert type(exec_info.value) is PermissionError
+            assert "Unable to access directory" in str(exec_info.value)
+            log_utils.delete_file(directory)
+            assert os.path.exists(directory) == False
+
+            # test permission error on creation - use a readonly parent directory
+            with tempfile.TemporaryDirectory() as temp_dir:
+                readonly_parent = os.path.join(temp_dir, "readonly")
+                os.makedirs(readonly_parent, mode=0o555)  # Read-only parent
+                try:
+                    non_existent = os.path.join(readonly_parent, "non-existent-directory")
+                    with pytest.raises(PermissionError) as exec_info:
+                        log_utils.check_directory_permissions(non_existent)
+                    assert type(exec_info.value) is PermissionError
+                    assert "Unable to create directory" in str(exec_info.value)
+                finally:
+                    os.chmod(readonly_parent, 0o755)  # Restore permissions for cleanup
 
     def test_remove_old_logs(self):
         directory = os.path.join(tempfile.gettempdir(), "test_remove_logs")
