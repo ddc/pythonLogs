@@ -338,6 +338,7 @@ class TestMemoryOptimization:
         assert final_stats['formatter_cache_size'] <= 50
         assert final_stats['directory_cache_size'] <= 500
     
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_logger_cleanup_on_context_exit(self):
         """Test that logger cleanup works properly with context managers."""
         from pythonLogs import BasicLog, SizeRotatingLog

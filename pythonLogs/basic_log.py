@@ -1,8 +1,8 @@
-# -*- encoding: utf-8 -*-
 import logging
 from typing import Optional
 from pythonLogs.log_utils import get_format, get_level, get_timezone_function
-from pythonLogs.memory_utils import cleanup_logger_handlers, register_logger_weakref
+from pythonLogs.log_utils import cleanup_logger_handlers
+from pythonLogs.memory_utils import register_logger_weakref
 from pythonLogs.settings import get_log_settings
 from pythonLogs.thread_safety import auto_thread_safe
 
@@ -34,14 +34,14 @@ class BasicLog:
         logger.setLevel(self.level)
         logging.Formatter.converter = get_timezone_function(self.timezone)
         _format = get_format(self.showlocation, self.appname, self.timezone)
-        
+
         # Only add handler if logger doesn't have any handlers
         if not logger.handlers:
             handler = logging.StreamHandler()
             formatter = logging.Formatter(_format, datefmt=self.datefmt)
             handler.setFormatter(formatter)
             logger.addHandler(handler)
-        
+
         self.logger = logger
         # Register weak reference for memory tracking
         register_logger_weakref(logger)

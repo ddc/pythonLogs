@@ -18,6 +18,7 @@ from pythonLogs.size_rotating import SizeRotatingLog, GZipRotatorSize
 class TestSizeRotatingLog:
     """Test cases for the SizeRotatingLog class."""
     
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_size_rotating_log_initialization(self):
         """Test SizeRotatingLog initialization with default settings."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -30,6 +31,7 @@ class TestSizeRotatingLog:
             assert size_log.directory == temp_dir
             assert size_log.level == logging.INFO
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_size_rotating_log_initialization_with_all_params(self):
         """Test SizeRotatingLog initialization with all parameters."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -53,6 +55,7 @@ class TestSizeRotatingLog:
             assert size_log.streamhandler is True
             assert size_log.showlocation is True
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_size_rotating_log_init_method(self):
         """Test the init method of SizeRotatingLog."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -67,6 +70,7 @@ class TestSizeRotatingLog:
             assert logger.name == "test_init"
             assert len(logger.handlers) > 0
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_size_rotating_log_context_manager(self):
         """Test SizeRotatingLog as context manager."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -78,6 +82,7 @@ class TestSizeRotatingLog:
                 assert logger.name == "test_context"
                 logger.info("Test message in context")
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_size_rotating_log_context_manager_cleanup(self):
         """Test context manager cleanup functionality."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -94,6 +99,7 @@ class TestSizeRotatingLog:
             final_handler_count = len(logger.handlers)
             assert final_handler_count == 0
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_size_rotating_log_multiple_files(self):
         """Test SizeRotatingLog with multiple log files."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -108,6 +114,7 @@ class TestSizeRotatingLog:
             file_handlers = [h for h in logger.handlers if isinstance(h, logging.handlers.RotatingFileHandler)]
             assert len(file_handlers) == 3
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_size_rotating_log_with_stream_handler(self):
         """Test SizeRotatingLog with stream handler enabled."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -125,6 +132,7 @@ class TestSizeRotatingLog:
             assert len(stream_handlers) >= 1
             assert len(file_handlers) >= 1
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_size_rotating_log_cleanup_logger_error_handling(self):
         """Test error handling in _cleanup_logger method."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -145,6 +153,7 @@ class TestSizeRotatingLog:
             # Mock handler should still be removed despite the error
             assert mock_handler not in logger.handlers
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_size_rotating_log_invalid_filenames(self):
         """Test SizeRotatingLog with invalid filenames' parameter."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -157,6 +166,7 @@ class TestSizeRotatingLog:
             with pytest.raises(TypeError, match="Unable to parse filenames"):
                 size_log.init()
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_size_rotating_log_actual_logging(self):
         """Test actual logging functionality with file creation."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -188,6 +198,7 @@ class TestSizeRotatingLog:
 class TestGZipRotatorSize:
     """Test cases for the GZipRotatorSize class."""
     
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_gzip_rotator_size_initialization(self):
         """Test GZipRotatorSize initialization."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -195,6 +206,7 @@ class TestGZipRotatorSize:
             assert rotator.directory == temp_dir
             assert rotator.daystokeep == 7
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_gzip_rotator_size_call_with_empty_file(self):
         """Test GZipRotatorSize with empty source file."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -210,6 +222,7 @@ class TestGZipRotatorSize:
             # Source file should still exist (not processed)
             assert source_file.exists()
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_gzip_rotator_size_call_with_content(self):
         """Test GZipRotatorSize with file containing content."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -229,6 +242,7 @@ class TestGZipRotatorSize:
             gz_files = list(Path(temp_dir).glob("*.gz"))
             assert len(gz_files) > 0
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_gzip_rotator_size_get_new_file_number(self):
         """Test _get_new_file_number method."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -242,12 +256,14 @@ class TestGZipRotatorSize:
             new_number = GZipRotatorSize._get_new_file_number(temp_dir, "test")
             assert new_number == 6
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_gzip_rotator_size_get_new_file_number_no_existing_files(self):
         """Test _get_new_file_number with no existing files."""
         with tempfile.TemporaryDirectory() as temp_dir:
             new_number = GZipRotatorSize._get_new_file_number(temp_dir, "test")
             assert new_number == 1
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_gzip_rotator_size_get_new_file_number_with_special_chars(self):
         """Test _get_new_file_number with special characters in filename."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -268,6 +284,7 @@ class TestGZipRotatorSize:
         new_number = GZipRotatorSize._get_new_file_number("/non/existent/directory", "test")
         assert new_number == 1
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_gzip_rotator_size_call_with_nonexistent_source(self):
         """Test GZipRotatorSize with non-existent source file."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -281,6 +298,7 @@ class TestGZipRotatorSize:
             assert len(gz_files) == 0
 
     @patch('pythonLogs.size_rotating.remove_old_logs')
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_gzip_rotator_size_calls_remove_old_logs(self, mock_remove_old_logs):
         """Test that GZipRotatorSize calls remove_old_logs."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -295,6 +313,7 @@ class TestGZipRotatorSize:
             # Should have called remove_old_logs
             mock_remove_old_logs.assert_called_once_with(temp_dir, 7)
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_gzip_rotator_size_integration(self):
         """Test GZipRotatorSize integration with actual rotation."""
         with tempfile.TemporaryDirectory() as temp_dir:

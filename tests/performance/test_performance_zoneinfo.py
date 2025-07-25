@@ -222,6 +222,7 @@ class TestZoneinfoPerformance:
         # Should complete in reasonable time (less than 2 seconds for 100 loggers)
         assert elapsed_time < 2.0
     
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_file_logger_timezone_performance(self):
         """Test performance of file-based loggers with timezones."""
         with tempfile.TemporaryDirectory() as temp_dir:

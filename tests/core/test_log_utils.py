@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-# -*- encoding: utf-8 -*-
 """Utility functions and tests for log_utils module."""
 import contextlib
 import functools
 import io
 import logging
 import os
+import stat
 import sys
 import tempfile
 import time
@@ -362,20 +362,38 @@ class TestLogUtils:
         """Test directory permission checking (Unix/Linux/macOS)."""
         # Unix-style permission testing
         directory = os.path.join(tempfile.gettempdir(), "test_permission")
-        os.makedirs(directory, mode=0o000, exist_ok=True)  # No permissions at all
-        assert os.path.exists(directory) == True
-        with pytest.raises(PermissionError) as exec_info:
-            log_utils.check_directory_permissions(directory)
-        os.chmod(directory, 0o755)  # Restore permissions for cleanup
-        assert type(exec_info.value) is PermissionError
-        assert "Unable to access directory" in str(exec_info.value)
-        log_utils.delete_file(directory)
-        assert os.path.exists(directory) == False
+        
+        # Clean up any existing directory first
+        if os.path.exists(directory):
+            try:
+                os.chmod(directory, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
+                log_utils.delete_file(directory)
+            except (OSError, PermissionError):
+                pass  # Continue if cleanup fails
+        
+        try:
+            os.makedirs(directory, mode=0, exist_ok=True)  # No permissions at all
+            assert os.path.exists(directory) == True
+            with pytest.raises(PermissionError) as exec_info:
+                log_utils.check_directory_permissions(directory)
+            assert type(exec_info.value) is PermissionError
+            assert "Unable to access directory" in str(exec_info.value)
+        finally:
+            # Always restore permissions for cleanup, even if test fails
+            if os.path.exists(directory):
+                try:
+                    os.chmod(directory, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
+                    log_utils.delete_file(directory)
+                except (OSError, PermissionError):
+                    pass  # Ignore cleanup errors
+        
+        assert not os.path.exists(directory)
 
         # test permission error on creation - use a readonly parent directory
         with tempfile.TemporaryDirectory() as temp_dir:
             readonly_parent = os.path.join(temp_dir, "readonly")
-            os.makedirs(readonly_parent, mode=0o555)  # Read-only parent
+              # Read-only parent 0o555
+            os.makedirs(readonly_parent, mode=stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
             try:
                 non_existent = os.path.join(readonly_parent, "non-existent-directory")
                 with pytest.raises(PermissionError) as exec_info:
@@ -383,11 +401,12 @@ class TestLogUtils:
                 assert type(exec_info.value) is PermissionError
                 assert "Unable to create directory" in str(exec_info.value)
             finally:
-                os.chmod(readonly_parent, 0o755)  # Restore permissions for cleanup
+                # Restore permissions for cleanup 0o755
+                os.chmod(readonly_parent, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
     def test_remove_old_logs(self):
         directory = os.path.join(tempfile.gettempdir(), "test_remove_logs")
-        os.makedirs(directory, mode=0o755, exist_ok=True)
+        os.makedirs(directory, mode=stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH, exist_ok=True)
         assert os.path.exists(directory) == True
 
         # Create a file and manually set its modification time to be old
@@ -475,13 +494,15 @@ class TestLogUtils:
             # This test only works on Unix/Linux/macOS systems with chmod
             if sys.platform != "win32":
                 readonly_dir = os.path.join(temp_dir, "readonly")
-                os.makedirs(readonly_dir, mode=0o555)
+                # 0o555
+                os.makedirs(readonly_dir, mode=stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
                 try:
                     with pytest.raises(PermissionError) as exc_info:
                         log_utils.get_log_path(readonly_dir, test_file)
                     assert "Unable to access directory" in str(exc_info.value)
                 finally:
-                    os.chmod(readonly_dir, 0o755)  # Cleanup permissions
+                      # Cleanup permissions 0o755
+                    os.chmod(readonly_dir, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
                     os.rmdir(readonly_dir)
 
     def test_get_format(self):
@@ -510,7 +531,7 @@ class TestLogUtils:
         result = log_utils.get_format(show_location, name, timezone)
         # On systems without timezone data (common on Windows), this falls back to localtime
         # Test should verify format structure rather than hardcoded timezone offset
-        expected_base_format = f"[%(asctime)s.%(msecs)03d"
+        expected_base_format = "[%(asctime)s.%(msecs)03d"
         assert result.startswith(expected_base_format)
         assert f"]:[%(levelname)s]:[{name}]:%(message)s" in result
         # Verify timezone offset is present (either +1000 or fallback)
@@ -708,6 +729,9 @@ class TestLogUtils:
         """Test is_older_than_x_days with edge cases"""
         with tempfile.NamedTemporaryFile() as tmp_file:
             # Test with days = 0
+            # Add small delay to ensure file is older than current time
+            import time
+            time.sleep(0.001)  # 1ms delay to handle Windows timing precision
             result = log_utils.is_older_than_x_days(tmp_file.name, 0)
             assert result == True  # Should use current time as cutoff
             
@@ -819,8 +843,8 @@ class TestLogUtils:
             old_time = time.time() - 2*24*60*60  # 2 days old
             os.utime(gz_file, (old_time, old_time))
             
-            # Make parent directory read-only to trigger deletion error
-            os.chmod(temp_dir, 0o555)
+            # Make parent directory read-only to trigger deletion error 0o555
+            os.chmod(temp_dir, stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
             
             try:
                 # Capture stderr to verify error was logged
@@ -832,8 +856,8 @@ class TestLogUtils:
                 output = stderr_capture.getvalue()
                 assert "Unable to delete old log" in output
             finally:
-                # Restore permissions for cleanup
-                os.chmod(temp_dir, 0o755)
+                # Restore permissions for cleanup 0o755
+                os.chmod(temp_dir, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
     def test_remove_old_logs_directory_error(self):
         """Test remove_old_logs error handling when directory scan fails"""
@@ -891,7 +915,8 @@ class TestLogUtils:
             # Create a subdirectory and make it read-only
             readonly_dir = os.path.join(temp_dir, "readonly")
             os.makedirs(readonly_dir)
-            os.chmod(readonly_dir, 0o555)  # Read and execute only
+            # Read and execute only 0o555
+            os.chmod(readonly_dir, stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
             
             try:
                 with pytest.raises(PermissionError) as exc_info:
@@ -900,7 +925,8 @@ class TestLogUtils:
                 assert ("Unable to access directory" in str(exc_info.value) or 
                         "Unable to write to log directory" in str(exc_info.value))
             finally:
-                os.chmod(readonly_dir, 0o755)  # Restore for cleanup
+                # Restore for cleanup 0o755
+                os.chmod(readonly_dir, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
     @pytest.mark.skipif(sys.platform == "win32", reason="Unix/Linux/macOS-specific chmod test")
     def test_gzip_file_io_error(self):
@@ -911,8 +937,8 @@ class TestLogUtils:
             with open(test_file, "w") as f:
                 f.write("test content")
             
-            # Make directory read-only to trigger gzip error
-            os.chmod(temp_dir, 0o555)
+            # Make directory read-only to trigger gzip error 0o555
+            os.chmod(temp_dir, stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
             
             try:
                 stderr_capture = io.StringIO()
@@ -923,7 +949,8 @@ class TestLogUtils:
                 output = stderr_capture.getvalue()
                 assert "Unable to gzip log file" in output
             finally:
-                os.chmod(temp_dir, 0o755)  # Restore for cleanup
+                # Restore for cleanup 0o755
+                os.chmod(temp_dir, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
     @pytest.mark.skipif(sys.platform == "win32", reason="Unix/Linux/macOS-specific chmod test")
     def test_gzip_file_deletion_error(self):
@@ -1376,8 +1403,8 @@ class TestLogUtils:
             # Add to cache first to bypass check_directory_permissions
             log_utils._checked_directories.add(test_dir)
             
-            # Make directory non-writable
-            os.chmod(test_dir, 0o555)  # Read and execute only
+            # Make directory non-writable, Read and execute only 0o555
+            os.chmod(test_dir, stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
             
             try:
                 with pytest.raises(PermissionError) as exc_info:
@@ -1387,7 +1414,8 @@ class TestLogUtils:
                 assert "Unable to write to log directory" in str(exc_info.value)
                 
             finally:
-                os.chmod(test_dir, 0o755)  # Restore for cleanup
+                # Restore for cleanup 0o755
+                os.chmod(test_dir, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
                 log_utils._checked_directories.discard(test_dir)
 
     def test_timezone_offset_fallback_exception(self):

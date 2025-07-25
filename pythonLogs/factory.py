@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 import atexit
 import logging
 import threading
@@ -8,7 +7,8 @@ from enum import Enum
 from typing import Dict, Optional, Tuple, Union
 from pythonLogs.basic_log import BasicLog
 from pythonLogs.constants import LogLevel, RotateWhen
-from pythonLogs.memory_utils import cleanup_logger_handlers
+from pythonLogs.log_utils import cleanup_logger_handlers
+from pythonLogs.settings import get_log_settings
 from pythonLogs.size_rotating import SizeRotatingLog
 from pythonLogs.timed_rotating import TimedRotatingLog
 
@@ -16,6 +16,7 @@ from pythonLogs.timed_rotating import TimedRotatingLog
 @dataclass
 class LoggerConfig:
     """Configuration class to group logger parameters"""
+
     level: Optional[Union[LogLevel, str]] = None
     name: Optional[str] = None
     directory: Optional[str] = None
@@ -34,6 +35,7 @@ class LoggerConfig:
 
 class LoggerType(str, Enum):
     """Available logger types"""
+
     BASIC = "basic"
     SIZE_ROTATING = "size_rotating"
     TIMED_ROTATING = "timed_rotating"
@@ -56,12 +58,11 @@ class LoggerFactory:
     def _ensure_initialized(cls) -> None:
         """Ensure memory limits are initialized from settings on first use."""
         if not cls._initialized:
-            from pythonLogs.settings import get_log_settings
             settings = get_log_settings()
             cls._max_loggers = settings.max_loggers
             cls._logger_ttl = settings.logger_ttl_seconds
             cls._initialized = True
-            
+
         # Register atexit cleanup on first use
         if not cls._atexit_registered:
             atexit.register(cls._atexit_cleanup)
@@ -71,30 +72,30 @@ class LoggerFactory:
     def get_or_create_logger(
         cls,
         logger_type: Union[LoggerType, str],
-        name: Optional[str] = None, **kwargs,
+        name: Optional[str] = None,
+        **kwargs,
     ) -> logging.Logger:
         """
-        Get an existing logger from registry or create new one.
+        Get an existing logger from registry or create a new one.
         Loggers are cached by name for performance.
-        
+
         Args:
             logger_type: Type of logger to create
             name: Logger name (used as cache key)
             **kwargs: Additional logger configuration
-            
+
         Returns:
             Cached or newly created logger instance
         """
         # Use the default name if none provided
         if name is None:
-            from pythonLogs.settings import get_log_settings
             name = get_log_settings().appname
 
         # Thread-safe check-and-create operation
         with cls._registry_lock:
             # Initialize memory limits from settings on first use
             cls._ensure_initialized()
-            
+
             # Clean up expired loggers first
             cls._cleanup_expired_loggers()
 
@@ -156,7 +157,7 @@ class LoggerFactory:
     @classmethod
     def set_memory_limits(cls, max_loggers: int = 100, ttl_seconds: int = 3600) -> None:
         """Configure memory management limits for the logger registry at runtime.
-        
+
         Args:
             max_loggers: Maximum number of cached loggers
             ttl_seconds: Time-to-live for cached loggers in seconds
@@ -177,7 +178,7 @@ class LoggerFactory:
         except Exception:
             # Silently ignore exceptions during shutdown cleanup
             pass
-    
+
     @staticmethod
     def _cleanup_logger(logger: logging.Logger) -> None:
         """Clean up logger resources by closing all handlers."""
@@ -186,10 +187,10 @@ class LoggerFactory:
     @classmethod
     def shutdown_logger(cls, name: str) -> bool:
         """Shutdown and remove a specific logger from registry.
-        
+
         Args:
             name: Logger name to shut down
-            
+
         Returns:
             True if logger was found and shutdown, False otherwise
         """
@@ -206,24 +207,34 @@ class LoggerFactory:
         with cls._registry_lock:
             return {name: logger for name, (logger, _) in cls._logger_registry.items()}
 
+    @classmethod
+    def get_memory_limits(cls) -> dict[str, int]:
+        """Get current memory management limits.
+        
+        Returns:
+            Dictionary with current max_loggers and ttl_seconds settings
+        """
+        with cls._registry_lock:
+            return {
+                'max_loggers': cls._max_loggers,
+                'ttl_seconds': cls._logger_ttl
+            }
+
     @staticmethod
     def create_logger(
-        logger_type: Union[LoggerType, str],
-        config: Optional[LoggerConfig] = None,
-        **kwargs
+        logger_type: Union[LoggerType, str], config: Optional[LoggerConfig] = None, **kwargs
     ) -> logging.Logger:
-
         """
         Factory method to create loggers based on type.
-        
+
         Args:
             logger_type: Type of logger to create (LoggerType enum or string)
             config: LoggerConfig object with logger parameters
             **kwargs: Individual logger parameters (for backward compatibility)
-            
+
         Returns:
             Configured logger instance
-            
+
         Raises:
             ValueError: If invalid logger_type is provided
         """
@@ -237,7 +248,7 @@ class LoggerFactory:
         # Merge config and kwargs (kwargs take precedence for backward compatibility)
         if config is None:
             config = LoggerConfig()
-        
+
         # Create a new config with kwargs overriding config values
         final_config = LoggerConfig(
             level=kwargs.get('level', config.level),
@@ -253,7 +264,7 @@ class LoggerFactory:
             when=kwargs.get('when', config.when),
             sufix=kwargs.get('sufix', config.sufix),
             rotateatutc=kwargs.get('rotateatutc', config.rotateatutc),
-            daystokeep=kwargs.get('daystokeep', config.daystokeep)
+            daystokeep=kwargs.get('daystokeep', config.daystokeep),
         )
 
         # Convert enum values to strings for logger classes
@@ -269,7 +280,8 @@ class LoggerFactory:
                     encoding=final_config.encoding,
                     datefmt=final_config.datefmt,
                     timezone=final_config.timezone,
-                    showlocation=final_config.showlocation, )
+                    showlocation=final_config.showlocation,
+                )
 
             case LoggerType.SIZE_ROTATING:
                 logger_instance = SizeRotatingLog(
@@ -283,7 +295,8 @@ class LoggerFactory:
                     datefmt=final_config.datefmt,
                     timezone=final_config.timezone,
                     streamhandler=final_config.streamhandler,
-                    showlocation=final_config.showlocation, )
+                    showlocation=final_config.showlocation,
+                )
 
             case LoggerType.TIMED_ROTATING:
                 logger_instance = TimedRotatingLog(
@@ -299,7 +312,8 @@ class LoggerFactory:
                     timezone=final_config.timezone,
                     streamhandler=final_config.streamhandler,
                     showlocation=final_config.showlocation,
-                    rotateatutc=final_config.rotateatutc, )
+                    rotateatutc=final_config.rotateatutc,
+                )
 
             case _:
                 raise ValueError(f"Unsupported logger type: {logger_type}")
@@ -315,7 +329,6 @@ class LoggerFactory:
         timezone: Optional[str] = None,
         showlocation: Optional[bool] = None,
     ) -> logging.Logger:
-
         """Convenience method for creating a basic logger"""
         return LoggerFactory.create_logger(
             LoggerType.BASIC,
@@ -324,7 +337,8 @@ class LoggerFactory:
             encoding=encoding,
             datefmt=datefmt,
             timezone=timezone,
-            showlocation=showlocation, )
+            showlocation=showlocation,
+        )
 
     @staticmethod
     def create_size_rotating_logger(
@@ -340,7 +354,6 @@ class LoggerFactory:
         streamhandler: Optional[bool] = None,
         showlocation: Optional[bool] = None,
     ) -> logging.Logger:
-
         """Convenience method for creating a size rotating logger"""
         return LoggerFactory.create_logger(
             LoggerType.SIZE_ROTATING,
@@ -354,7 +367,8 @@ class LoggerFactory:
             datefmt=datefmt,
             timezone=timezone,
             streamhandler=streamhandler,
-            showlocation=showlocation, )
+            showlocation=showlocation,
+        )
 
     @staticmethod
     def create_timed_rotating_logger(
@@ -365,14 +379,13 @@ class LoggerFactory:
         when: Optional[Union[RotateWhen, str]] = None,
         sufix: Optional[str] = None,
         daystokeep: Optional[int] = None,
-        encoding:Optional[str] = None,
+        encoding: Optional[str] = None,
         datefmt: Optional[str] = None,
         timezone: Optional[str] = None,
         streamhandler: Optional[bool] = None,
         showlocation: Optional[bool] = None,
         rotateatutc: Optional[bool] = None,
     ) -> logging.Logger:
-
         """Convenience method for creating a timed rotating logger"""
         return LoggerFactory.create_logger(
             LoggerType.TIMED_ROTATING,
@@ -388,7 +401,8 @@ class LoggerFactory:
             timezone=timezone,
             streamhandler=streamhandler,
             showlocation=showlocation,
-            rotateatutc=rotateatutc, )
+            rotateatutc=rotateatutc,
+        )
 
 
 # Convenience functions for backward compatibility and easier usage

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Test automatic thread safety implementation."""
+import sys
 import threading
+import pytest
 from pythonLogs.basic_log import BasicLog
 from pythonLogs.constants import RotateWhen
 from pythonLogs.size_rotating import SizeRotatingLog
@@ -38,6 +40,7 @@ class TestAutomaticThreadSafety:
         assert len(errors) == 0, f"Automatic thread safety errors: {errors}"
         assert len(results) == 10, f"Expected 10 results, got {len(results)}"
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_size_rotating_log_automatic_thread_safety(self):
         """Test SizeRotatingLog with automatic thread safety decorators."""
         import tempfile
@@ -73,6 +76,7 @@ class TestAutomaticThreadSafety:
             assert len(errors) == 0, f"Size rotating automatic thread safety errors: {errors}"
             assert len(results) == 5, f"Expected 5 results, got {len(results)}"
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_timed_rotating_log_automatic_thread_safety(self):
         """Test TimedRotatingLog with automatic thread safety decorators."""
         import tempfile

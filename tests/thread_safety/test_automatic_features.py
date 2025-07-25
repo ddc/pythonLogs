@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 """Test that all automatic features work together in logger classes."""
 import gc
+import sys
 import tempfile
 import threading
 import time
+import pytest
 from pythonLogs.basic_log import BasicLog
 from pythonLogs.constants import RotateWhen
 from pythonLogs.memory_utils import get_active_logger_count
@@ -44,6 +46,7 @@ class TestAutomaticFeatures:
         final_logger_count = get_active_logger_count()
         assert final_logger_count >= initial_logger_count  # May have some loggers still active
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_size_rotating_log_all_automatic_features(self):
         """Test SizeRotatingLog with all automatic features working together."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -74,6 +77,7 @@ class TestAutomaticFeatures:
             gc.collect()
             time.sleep(0.1)
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_timed_rotating_log_all_automatic_features(self):
         """Test TimedRotatingLog with all automatic features working together."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -137,6 +141,7 @@ class TestAutomaticFeatures:
         
         basic_log._cleanup_logger(logger)
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_stress_test_all_features(self):
         """Stress test all automatic features working together."""
         with tempfile.TemporaryDirectory() as temp_dir:

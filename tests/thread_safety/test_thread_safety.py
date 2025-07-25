@@ -110,6 +110,7 @@ class TestThreadSafety:
         # Some loggers might still be in the registry if shutdown happened after creation
         assert len(registry) <= num_threads
     
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_concurrent_directory_cache_access(self):
         """Test concurrent access to directory permission cache."""
         import pythonLogs.log_utils as log_utils
@@ -153,6 +154,7 @@ class TestThreadSafety:
             # Cleanup is handled automatically by TemporaryDirectory context managers
             pass
     
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_concurrent_context_manager_cleanup(self):
         """Test concurrent context manager cleanup doesn't cause issues."""
         num_threads = 10
@@ -246,6 +248,7 @@ class TestThreadSafety:
         for logger_name in logger_names:
             assert logger_name in registry
     
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_concurrent_file_operations(self):
         """Test concurrent file operations don't conflict."""
         num_threads = 8
@@ -397,6 +400,7 @@ class TestThreadSafety:
             log_content = thread_results[worker_id]['log_content']
             self._check_worker_log_isolation(worker_id, log_content, thread_results, num_threads)
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_thread_local_logger_independence(self):
         """Test that loggers in different threads don't interfere with each other."""
         num_threads = 5

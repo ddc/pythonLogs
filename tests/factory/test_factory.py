@@ -4,6 +4,7 @@ import os
 import sys
 import tempfile
 import pytest
+from unittest.mock import patch
 
 
 # Add parent directory to path for imports
@@ -36,6 +37,7 @@ class TestLoggerFactory:
         _basic_logger = LoggerFactory.create_logger(LoggerType.BASIC, name="test_basic")
         assert _basic_logger.name == "test_basic"
     
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see test_factory_windows.py")
     def test_size_rotating_logger_creation(self):
         """Test size rotating logger creation using convenience function."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -46,6 +48,7 @@ class TestLoggerFactory:
             )
             assert size_logger.name == "test_size"
     
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see test_factory_windows.py")
     def test_timed_rotating_logger_creation(self):
         """Test timed rotating logger creation."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -122,6 +125,7 @@ class TestLoggerFactory:
         clear_logger_registry()
         assert len(get_registered_loggers()) == 0
     
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see test_factory_windows.py")
     def test_logger_with_file_output(self):
         """Test logger creation with actual file output."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -165,6 +169,7 @@ class TestLoggerFactory:
         with pytest.raises(ValueError, match="Invalid logger type"):
             LoggerFactory.create_logger("invalid_type")
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see test_factory_windows.py")
     def test_factory_create_size_rotating_logger(self):
         """Test factory create_size_rotating_logger method."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -176,6 +181,7 @@ class TestLoggerFactory:
             )
             assert logger.name == "size_factory_test"
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see test_factory_windows.py")
     def test_factory_create_timed_rotating_logger(self):
         """Test factory create_timed_rotating_logger method."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -227,6 +233,7 @@ class TestLoggerFactory:
         logger = LoggerFactory.create_logger("BASIC", name="uppercase_test")
         assert logger.name == "uppercase_test"
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see test_factory_windows.py")
     def test_convenience_functions_comprehensive(self):
         """Test all convenience functions with various parameters."""
         # Test basic_logger
@@ -254,6 +261,7 @@ class TestLoggerFactory:
             )
             assert timed_log.name == "conv_timed"
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see test_factory_windows.py")
     def test_factory_pattern_match_case_coverage(self):
         """Test all pattern match cases in factory create_logger."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -367,6 +375,7 @@ class TestLoggerFactory:
         assert "ttl_edge2" not in registry
         assert "ttl_edge3" in registry
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows timing precision issues with LRU eviction - see test_factory_windows.py")
     def test_factory_lru_eviction_comprehensive(self):
         """Test comprehensive LRU eviction scenarios."""
         # Set a small limit for testing
@@ -399,7 +408,7 @@ class TestLoggerFactory:
         mock_settings.logger_ttl_seconds = 1800
         
         # Patch the import inside the function
-        with patch('pythonLogs.settings.get_log_settings', return_value=mock_settings):
+        with patch('pythonLogs.factory.get_log_settings', return_value=mock_settings):
             # Reset initialization flag
             LoggerFactory._initialized = False
             

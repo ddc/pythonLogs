@@ -19,6 +19,7 @@ from pythonLogs import RotateWhen
 class TestTimedRotatingLog:
     """Test cases for the TimedRotatingLog class."""
     
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_timed_rotating_log_initialization(self):
         """Test TimedRotatingLog initialization with default settings."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -31,6 +32,7 @@ class TestTimedRotatingLog:
             assert timed_log.directory == temp_dir
             assert timed_log.level == logging.INFO
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_timed_rotating_log_initialization_with_all_params(self):
         """Test TimedRotatingLog initialization with all parameters."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -58,6 +60,7 @@ class TestTimedRotatingLog:
             assert timed_log.showlocation is True
             assert timed_log.rotateatutc is True
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_timed_rotating_log_init_method(self):
         """Test the init method of TimedRotatingLog."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -72,6 +75,7 @@ class TestTimedRotatingLog:
             assert logger.name == "test_init"
             assert len(logger.handlers) > 0
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_timed_rotating_log_context_manager(self):
         """Test TimedRotatingLog as context manager."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -83,6 +87,7 @@ class TestTimedRotatingLog:
                 assert logger.name == "test_context"
                 logger.info("Test message in context")
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_timed_rotating_log_context_manager_cleanup(self):
         """Test context manager cleanup functionality."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -99,6 +104,7 @@ class TestTimedRotatingLog:
             final_handler_count = len(logger.handlers)
             assert final_handler_count == 0
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_timed_rotating_log_multiple_files(self):
         """Test TimedRotatingLog with multiple log files."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -113,6 +119,7 @@ class TestTimedRotatingLog:
             file_handlers = [h for h in logger.handlers if isinstance(h, logging.handlers.TimedRotatingFileHandler)]
             assert len(file_handlers) == 3
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_timed_rotating_log_with_stream_handler(self):
         """Test TimedRotatingLog with stream handler enabled."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -130,6 +137,7 @@ class TestTimedRotatingLog:
             assert len(stream_handlers) >= 1
             assert len(file_handlers) >= 1
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_timed_rotating_log_when_values(self):
         """Test TimedRotatingLog with different 'when' values."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -151,6 +159,7 @@ class TestTimedRotatingLog:
                 logger = timed_log.init()
                 assert logger is not None
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_timed_rotating_log_cleanup_logger_error_handling(self):
         """Test error handling in _cleanup_logger method."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -171,6 +180,7 @@ class TestTimedRotatingLog:
             # Mock handler should still be removed despite the error
             assert mock_handler not in logger.handlers
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_timed_rotating_log_invalid_filenames(self):
         """Test TimedRotatingLog with invalid filenames parameter."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -183,6 +193,7 @@ class TestTimedRotatingLog:
             with pytest.raises(TypeError, match="Unable to parse filenames"):
                 timed_log.init()
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_timed_rotating_log_actual_logging(self):
         """Test actual logging functionality with file creation."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -210,6 +221,7 @@ class TestTimedRotatingLog:
             assert "Test warning message" in log_content
             assert "Test error message" in log_content
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_timed_rotating_log_with_custom_suffix(self):
         """Test TimedRotatingLog with custom suffix."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -225,6 +237,7 @@ class TestTimedRotatingLog:
             assert len(file_handlers) > 0
             assert file_handlers[0].suffix == "%Y%m%d_%H%M%S"
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_timed_rotating_log_utc_rotation(self):
         """Test TimedRotatingLog with UTC rotation."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -244,6 +257,7 @@ class TestTimedRotatingLog:
 class TestGZipRotatorTimed:
     """Test cases for the GZipRotatorTimed class."""
     
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_gzip_rotator_timed_initialization(self):
         """Test GZipRotatorTimed initialization."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -251,6 +265,7 @@ class TestGZipRotatorTimed:
             assert rotator.dir == temp_dir
             assert rotator.days_to_keep == 7
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_gzip_rotator_timed_call_basic(self):
         """Test GZipRotatorTimed basic call functionality."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -273,6 +288,7 @@ class TestGZipRotatorTimed:
             gz_files = list(Path(temp_dir).glob("*.gz"))
             assert len(gz_files) > 0
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_gzip_rotator_timed_suffix_extraction(self):
         """Test suffix extraction from destination filename."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -297,6 +313,7 @@ class TestGZipRotatorTimed:
                     rotator(str(source_file), dest_filename)
                     mock_gzip.assert_called_once_with(str(source_file), expected_suffix)
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_gzip_rotator_timed_with_nonexistent_source(self):
         """Test GZipRotatorTimed with non-existent source file."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -310,6 +327,7 @@ class TestGZipRotatorTimed:
             assert len(gz_files) == 0
 
     @patch('pythonLogs.timed_rotating.remove_old_logs')
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_gzip_rotator_timed_calls_remove_old_logs(self, mock_remove_old_logs):
         """Test that GZipRotatorTimed calls remove_old_logs."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -325,6 +343,7 @@ class TestGZipRotatorTimed:
             mock_remove_old_logs.assert_called_once_with(temp_dir, 7)
 
     @patch('pythonLogs.timed_rotating.gzip_file_with_sufix')
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_gzip_rotator_timed_calls_gzip_file_with_sufix(self, mock_gzip):
         """Test that GZipRotatorTimed calls gzip_file_with_sufix with correct parameters."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -340,6 +359,7 @@ class TestGZipRotatorTimed:
             # Should have called gzip_file_with_sufix with extracted suffix
             mock_gzip.assert_called_once_with(str(source_file), "20240101")
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_gzip_rotator_timed_integration(self):
         """Test GZipRotatorTimed integration with TimedRotatingLog."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -366,6 +386,7 @@ class TestGZipRotatorTimed:
             log_files = list(Path(temp_dir).glob("*.log"))
             assert len(log_files) > 0
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_gzip_rotator_timed_suffix_edge_cases(self):
         """Test GZipRotatorTimed with edge cases in suffix extraction."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -391,6 +412,7 @@ class TestGZipRotatorTimed:
                     if dest_filename:  # Only call if dest_filename is not empty
                         mock_gzip.assert_called_once_with(str(source_file), expected_suffix)
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_timed_rotating_log_double_context_manager_entry(self):
         """Test TimedRotatingLog context manager when init already called."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -407,6 +429,7 @@ class TestGZipRotatorTimed:
                 # Should return the same logger instance
                 assert logger1 is logger2
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
     def test_timed_rotating_log_handler_configuration(self):
         """Test TimedRotatingLog handler configuration details."""
         with tempfile.TemporaryDirectory() as temp_dir:

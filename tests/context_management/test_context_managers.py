@@ -20,6 +20,7 @@ from pythonLogs import (
 )
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
 class TestContextManagers:
     """Test context manager functionality for resource management."""
 

@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 import errno
 import gzip
 import logging.handlers
@@ -10,7 +9,7 @@ import time
 from datetime import datetime, timedelta, timezone as dttz
 from functools import lru_cache
 from pathlib import Path
-from typing import Callable, Set
+from typing import Callable, Optional, Set
 from zoneinfo import ZoneInfo
 from pythonLogs.constants import DEFAULT_FILE_MODE, LEVEL_MAP
 
@@ -214,7 +213,7 @@ def get_timezone_offset(timezone_: str) -> str:
         try:
             return datetime.now(ZoneInfo(timezone_)).strftime("%z")
         except Exception:
-            # Fallback to localtime if the requested timezone is not available
+            # Fallback to localtime if the requested timezone is not available,
             # This is common on Windows systems without full timezone data
             return time.strftime("%z")
 
@@ -247,12 +246,12 @@ def gzip_file_with_sufix(file_path: str, sufix: str) -> str | None:
     # Windows-specific retry mechanism for file locking issues
     max_retries = 3 if sys.platform == "win32" else 1
     retry_delay = 0.1  # 100ms delay between retries
-    
+
     for attempt in range(max_retries):
         try:
             with open(file_path, "rb") as fin:
                 with gzip.open(renamed_dst, "wb", compresslevel=6) as fout:  # Balanced compression
-                    shutil.copyfileobj(fin, fout, length=64*1024)  # type: ignore # 64KB chunks for better performance
+                    shutil.copyfileobj(fin, fout, length=64 * 1024)  # type: ignore # 64KB chunks for better performance
             break  # Success, exit retry loop
         except PermissionError as e:
             # Windows file locking issue - retry with delay
@@ -297,3 +296,64 @@ def get_timezone_function(time_zone: str) -> Callable:
             except Exception:
                 # Fallback to localtime if the requested timezone is not available
                 return time.localtime
+
+
+# Shared handler cleanup utility
+def cleanup_logger_handlers(logger: Optional[logging.Logger]) -> None:
+    """Clean up logger resources by closing all handlers.
+
+    This is a centralized utility to ensure consistent cleanup behavior
+    across all logger types and prevent code duplication.
+
+    Args:
+        logger: The logger to clean up (can be None)
+    """
+    if logger is None:
+        return
+
+    # Create a snapshot of handlers to avoid modification during iteration
+    handlers_to_remove = list(logger.handlers)
+    for handler in handlers_to_remove:
+        try:
+            handler.close()
+        except (OSError, ValueError):
+            # Ignore errors during cleanup to prevent cascading failures
+            pass
+        finally:
+            logger.removeHandler(handler)
+
+
+# Public API for directory cache management
+def set_directory_cache_limit(max_directories: int) -> None:
+    """Set the maximum number of directories to cache.
+
+    Args:
+        max_directories: Maximum number of directories to keep in cache
+    """
+    global _max_cached_directories
+    
+    with _directory_lock:
+        _max_cached_directories = max_directories
+        # Trim cache if it exceeds new limit
+        while len(_checked_directories) > max_directories:
+            _checked_directories.pop()
+
+
+def clear_directory_cache() -> None:
+    """Clear the directory cache to free memory."""
+    with _directory_lock:
+        _checked_directories.clear()
+
+
+def get_directory_cache_stats() -> dict:
+    """Get statistics about the directory cache.
+    
+    Returns:
+        Dict with cache statistics including size and limit
+    """
+    with _directory_lock:
+        return {
+            "cached_directories": len(_checked_directories),
+            "max_directories": _max_cached_directories,
+            "directories": list(_checked_directories)
+        }
