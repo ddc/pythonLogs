@@ -122,6 +122,10 @@ class TestPerformance:
         assert elapsed_time < 0.5
         assert len(loggers) == 20
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="Windows timing precision issues - see test_performance_windows.py",
+    )
     def test_enum_vs_string_performance(self):
         """Test that enum usage doesn't significantly impact performance."""
         # Test with string values

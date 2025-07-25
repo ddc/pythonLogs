@@ -122,6 +122,32 @@ class TestPerformanceWindows:
             assert "stress_cached_win" in get_registered_loggers()
 
     @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific tests")
+    def test_enum_vs_string_performance_windows(self):
+        """Test that enum usage doesn't significantly impact performance on Windows."""
+        # Test with string values
+        start_time = time.perf_counter()
+        for i in range(25):
+            create_logger("basic", name=f"string_test_{i}_win", level="INFO")
+        string_time = time.perf_counter() - start_time
+
+        # Test with enum values
+        start_time = time.perf_counter()
+        for i in range(25):
+            create_logger(LoggerType.BASIC, name=f"enum_test_{i}_win", level=LogLevel.INFO)
+        enum_time = time.perf_counter() - start_time
+
+        # Handle Windows timing precision issues
+        # If string_time is too small to measure accurately
+        min_threshold = 0.001  # 1ms minimum threshold
+        if string_time < min_threshold:
+            # If timing is too precise, just ensure enum operations complete reasonably fast
+            assert enum_time < 0.1  # Should complete within 100ms
+        else:
+            # Normal case: enum performance should be comparable to strings
+            # Allow 60% tolerance for enum conversion overhead
+            assert enum_time <= string_time * 1.6
+
+    @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific tests")
     def test_windows_file_locking_resilience_performance(self):
         """Test performance with Windows file locking scenarios."""
         with windows_safe_temp_directory() as temp_dir:
