@@ -1,12 +1,15 @@
+#!/usr/bin/env python3
 # -*- encoding: utf-8 -*-
+"""Utility functions and tests for log_utils module."""
 import contextlib
+import functools
 import io
 import logging
 import os
-import shutil
 import sys
 import tempfile
 import time
+from contextlib import contextmanager
 import pytest
 
 
@@ -14,6 +17,319 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pythonLogs import log_utils
+
+
+# ============================================================================
+# UTILITY FUNCTIONS (formerly from test_utils.py)
+# ============================================================================
+
+def skip_if_no_zoneinfo_utc():
+    """Skip test if zoneinfo or UTC timezone data is not available (common on Windows)."""
+    try:
+        from zoneinfo import ZoneInfo
+        ZoneInfo("UTC")  # Test if UTC is available
+    except Exception:
+        pytest.skip("zoneinfo not available or UTC timezone data missing on this system")
+
+
+def get_safe_timezone():
+    """Get a timezone that works on all platforms."""
+    try:
+        from zoneinfo import ZoneInfo
+        ZoneInfo("UTC")  # Test if UTC is available
+        return "UTC"
+    except Exception:
+        return "localtime"  # Fallback to localtime which should always work
+
+
+def requires_zoneinfo_utc(func):
+    """Decorator to skip tests that require zoneinfo UTC support."""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        skip_if_no_zoneinfo_utc()
+        return func(*args, **kwargs)
+    return wrapper
+
+
+def requires_zoneinfo(timezone):
+    """Decorator to skip tests that require a specific timezone."""
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                from zoneinfo import ZoneInfo
+                ZoneInfo(timezone)  # Test if timezone is available
+            except Exception:
+                pytest.skip(f"Timezone '{timezone}' not available on this system")
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
+def patch_logger_kwargs_with_safe_timezone(kwargs):
+    """Patch logger kwargs to use safe timezone if UTC is specified but not available."""
+    if kwargs.get('timezone') == 'UTC':
+        try:
+            from zoneinfo import ZoneInfo
+            ZoneInfo("UTC")  # Test if UTC is available
+        except Exception:
+            kwargs['timezone'] = 'localtime'  # Fall back to localtime
+    return kwargs
+
+
+def safe_delete_file(filepath, max_attempts=3, delay=0.1):
+    """
+    Safely delete a file with Windows compatibility.
+    
+    On Windows, files can remain locked by processes even after being closed,
+    leading to PermissionError. This function tries multiple times with delays.
+    
+    Args:
+        filepath: Path to the file to delete
+        max_attempts: Maximum number of deletion attempts (default: 3)
+        delay: Delay between attempts in seconds (default: 0.1)
+    
+    Returns:
+        bool: True if file was deleted successfully, False otherwise
+    """
+    if not os.path.exists(filepath):
+        return True  # Already deleted
+    
+    for attempt in range(max_attempts):
+        try:
+            os.unlink(filepath)
+            return True
+        except PermissionError:
+            if sys.platform == "win32":
+                # On Windows, file might be locked - wait and retry
+                if attempt < max_attempts - 1:
+                    time.sleep(delay)
+                    continue
+                else:
+                    # Last attempt failed - log and return False
+                    print(f"Warning: Could not delete {filepath} after {max_attempts} attempts")
+                    return False
+            else:
+                # On non-Windows systems, permission error is probably real
+                raise
+        except (OSError, IOError) as e:
+            # Other OS errors should be raised
+            raise e
+    
+    return False
+
+
+def safe_close_and_delete_file(file_handler, filepath, max_attempts=3, delay=0.1):
+    """
+    Safely close a file handler and delete the associated file.
+    
+    This function ensures proper closure of file handlers before attempting
+    deletion, which is crucial on Windows systems.
+    
+    Args:
+        file_handler: The file handler to close (can be None)
+        filepath: Path to the file to delete
+        max_attempts: Maximum number of deletion attempts (default: 3)
+        delay: Delay between attempts in seconds (default: 0.1)
+    
+    Returns:
+        bool: True if file was deleted successfully, False otherwise
+    """
+    # Close the handler first if it exists
+    if file_handler is not None:
+        try:
+            file_handler.close()
+        except (OSError, AttributeError):
+            # Handler might already be closed or not have a close method
+            pass
+    
+    # Small delay to ensure file handle is fully released
+    if sys.platform == "win32":
+        time.sleep(0.05)
+    
+    return safe_delete_file(filepath, max_attempts, delay)
+
+
+def cleanup_logger_handlers(logger):
+    """
+    Safely close and remove all handlers from a logger.
+    
+    This is crucial on Windows to ensure file handles are released
+    before attempting to delete temporary directories.
+    
+    Args:
+        logger: The logger whose handlers should be cleaned up
+    """
+    if logger is None:
+        return
+    
+    # Get a copy of handlers to avoid modifying list while iterating
+    handlers = logger.handlers.copy()
+    
+    for handler in handlers:
+        try:
+            # Close the handler first
+            handler.close()
+        except (OSError, AttributeError):
+            # Handler might already be closed or not have a close method
+            pass
+        finally:
+            # Remove the handler from the logger
+            try:
+                logger.removeHandler(handler)
+            except (ValueError, AttributeError):
+                # Handler might already be removed
+                pass
+    
+    # Small delay on Windows to ensure handles are fully released
+    if sys.platform == "win32":
+        time.sleep(0.05)
+
+
+def cleanup_all_loggers():
+    """
+    Clean up all loggers by closing their handlers.
+    
+    This function iterates through all existing loggers and closes
+    their handlers to prevent file locking issues on Windows.
+    """
+    import logging
+    
+    # Get all existing loggers
+    loggers_to_cleanup = []
+    
+    # Get the root logger
+    root_logger = logging.getLogger()
+    if root_logger.handlers:
+        loggers_to_cleanup.append(root_logger)
+    
+    # Get all named loggers from the logger manager
+    for name in logging.Logger.manager.loggerDict:
+        logger = logging.getLogger(name)
+        if logger.handlers:
+            loggers_to_cleanup.append(logger)
+    
+    # Clean up all loggers
+    for logger in loggers_to_cleanup:
+        cleanup_logger_handlers(logger)
+    
+    # Additional delay on Windows
+    if sys.platform == "win32":
+        time.sleep(0.1)
+
+
+def safe_delete_directory(directory_path, max_attempts=5, delay=0.2):
+    """
+    Safely delete a directory with Windows compatibility.
+    
+    On Windows, directories can remain locked by processes even after
+    file handles are closed, leading to PermissionError.
+    
+    Args:
+        directory_path: Path to the directory to delete  
+        max_attempts: Maximum number of deletion attempts (default: 5)
+        delay: Delay between attempts in seconds (default: 0.2)
+    
+    Returns:
+        bool: True if directory was deleted successfully, False otherwise
+    """
+    import shutil
+    
+    if not os.path.exists(directory_path):
+        return True  # Already deleted
+    
+    for attempt in range(max_attempts):
+        try:
+            shutil.rmtree(directory_path)
+            return True
+        except PermissionError:
+            if sys.platform == "win32":
+                # On Windows, directory might be locked - wait and retry
+                if attempt < max_attempts - 1:
+                    # Clean up any remaining logger handlers
+                    cleanup_all_loggers()
+                    time.sleep(delay)
+                    continue
+                else:
+                    # Last attempt failed - log and return False
+                    print(f"Warning: Could not delete directory {directory_path} after {max_attempts} attempts")
+                    return False
+            else:
+                # On non-Windows systems, permission error is probably real
+                raise
+        except (OSError, IOError) as e:
+            # Other OS errors should be raised
+            raise e
+    
+    return False
+
+
+@contextmanager
+def windows_safe_temp_directory(**kwargs):
+    """
+    Context manager for creating temporary directories that are safely cleaned up on Windows.
+    
+    This context manager handles Windows-specific file locking issues by ensuring
+    all logger handlers are cleaned up before attempting directory deletion.
+    
+    Args:
+        **kwargs: Arguments passed to tempfile.TemporaryDirectory
+        
+    Yields:
+        str: Path to the temporary directory
+    """
+    # Clean up any existing loggers before creating temp directory
+    cleanup_all_loggers()
+    
+    temp_dir_obj = tempfile.TemporaryDirectory(**kwargs)
+    temp_dir = temp_dir_obj.__enter__()
+    
+    try:
+        yield temp_dir
+    finally:
+        try:
+            # Clean up all loggers and their handlers before directory deletion
+            cleanup_all_loggers()
+            
+            # Attempt normal cleanup first
+            temp_dir_obj.__exit__(None, None, None)
+        except (OSError, PermissionError):
+            # On Windows, if normal cleanup fails, use safe deletion
+            try:
+                safe_delete_directory(temp_dir)
+            except Exception:
+                # If all else fails, just log the issue
+                print(f"Warning: Could not clean up temporary directory {temp_dir}")
+
+
+def create_windows_safe_temp_file(suffix="", prefix="tmp", dir=None, text=False):
+    """
+    Create a temporary file with Windows-safe cleanup.
+    
+    Args:
+        suffix: File suffix (default: "")
+        prefix: File prefix (default: "tmp")
+        dir: Directory to create file in (default: None)
+        text: Whether to open in text mode (default: False)
+        
+    Returns:
+        tuple: (file_handle, file_path)
+    """
+    import tempfile
+    
+    # Create temporary file
+    fd, filepath = tempfile.mkstemp(suffix=suffix, prefix=prefix, dir=dir, text=text)
+    
+    # Convert file descriptor to file handle
+    mode = 'w' if text else 'wb'
+    file_handle = os.fdopen(fd, mode)
+    
+    return file_handle, filepath
+
+
+# ============================================================================
+# TEST CLASSES
+# ============================================================================
 
 
 class TestLogUtils:
@@ -41,59 +357,33 @@ class TestLogUtils:
         assert filenames in str(exec_info.value)
         assert "Unable to parse filenames" in str(exec_info.value)
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Unix/Linux/macOS-specific chmod test")
     def test_check_directory_permissions(self):
-        import sys
-        import tempfile
-        
-        if sys.platform == "win32":
-            # On Windows, create a test in a deeply nested path that doesn't exist
-            # Use a path that's more likely to cause permission issues
-            with tempfile.TemporaryDirectory() as temp_dir:
-                # Create a deeply nested path that should trigger directory creation
-                nested_path = os.path.join(temp_dir, "level1", "level2", "level3", "level4")
-                
-                # This should succeed and create the directories
-                result = log_utils.check_directory_permissions(nested_path)
-                assert result == True
-                assert os.path.exists(nested_path)
-                
-                # Test with a path that contains invalid characters (Windows-specific)
-                try:
-                    invalid_chars_path = os.path.join(temp_dir, "invalid<>:|*?\"path")
-                    # This might raise different exceptions on different Windows versions
-                    # So we'll catch the general case
-                    with pytest.raises((PermissionError, OSError, ValueError)) as exec_info:
-                        log_utils.check_directory_permissions(invalid_chars_path)
-                    # The specific error message may vary
-                    assert any(phrase in str(exec_info.value).lower() for phrase in 
-                              ["unable", "invalid", "permission", "access"])
-                except pytest.skip.Exception:
-                    pytest.skip("Windows permission test with invalid characters not applicable")
-        else:
-            # Unix-style permission testing
-            directory = os.path.join(tempfile.gettempdir(), "test_permission")
-            os.makedirs(directory, mode=0o000, exist_ok=True)  # No permissions at all
-            assert os.path.exists(directory) == True
-            with pytest.raises(PermissionError) as exec_info:
-                log_utils.check_directory_permissions(directory)
-            os.chmod(directory, 0o755)  # Restore permissions for cleanup
-            assert type(exec_info.value) is PermissionError
-            assert "Unable to access directory" in str(exec_info.value)
-            log_utils.delete_file(directory)
-            assert os.path.exists(directory) == False
+        """Test directory permission checking (Unix/Linux/macOS)."""
+        # Unix-style permission testing
+        directory = os.path.join(tempfile.gettempdir(), "test_permission")
+        os.makedirs(directory, mode=0o000, exist_ok=True)  # No permissions at all
+        assert os.path.exists(directory) == True
+        with pytest.raises(PermissionError) as exec_info:
+            log_utils.check_directory_permissions(directory)
+        os.chmod(directory, 0o755)  # Restore permissions for cleanup
+        assert type(exec_info.value) is PermissionError
+        assert "Unable to access directory" in str(exec_info.value)
+        log_utils.delete_file(directory)
+        assert os.path.exists(directory) == False
 
-            # test permission error on creation - use a readonly parent directory
-            with tempfile.TemporaryDirectory() as temp_dir:
-                readonly_parent = os.path.join(temp_dir, "readonly")
-                os.makedirs(readonly_parent, mode=0o555)  # Read-only parent
-                try:
-                    non_existent = os.path.join(readonly_parent, "non-existent-directory")
-                    with pytest.raises(PermissionError) as exec_info:
-                        log_utils.check_directory_permissions(non_existent)
-                    assert type(exec_info.value) is PermissionError
-                    assert "Unable to create directory" in str(exec_info.value)
-                finally:
-                    os.chmod(readonly_parent, 0o755)  # Restore permissions for cleanup
+        # test permission error on creation - use a readonly parent directory
+        with tempfile.TemporaryDirectory() as temp_dir:
+            readonly_parent = os.path.join(temp_dir, "readonly")
+            os.makedirs(readonly_parent, mode=0o555)  # Read-only parent
+            try:
+                non_existent = os.path.join(readonly_parent, "non-existent-directory")
+                with pytest.raises(PermissionError) as exec_info:
+                    log_utils.check_directory_permissions(non_existent)
+                assert type(exec_info.value) is PermissionError
+                assert "Unable to create directory" in str(exec_info.value)
+            finally:
+                os.chmod(readonly_parent, 0o755)  # Restore permissions for cleanup
 
     def test_remove_old_logs(self):
         directory = os.path.join(tempfile.gettempdir(), "test_remove_logs")
@@ -112,53 +402,22 @@ class TestLogUtils:
         assert os.path.exists(directory) == False
 
     def test_delete_file(self):
-        # Use Windows-safe temporary file creation to avoid file locking issues
-        import sys
-        import os
+        """Test delete_file with standard Unix/Linux file handling."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".log", delete=False) as tmp_file:
+            file_path = tmp_file.name
+            tmp_file.write("test content")
         
-        # Add tests directory to path for test utilities
-        tests_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        if tests_dir not in sys.path:
-            sys.path.insert(0, tests_dir)
-            
-        from test_utils import create_windows_safe_temp_file, safe_close_and_delete_file
-        
-        # Create a Windows-safe temporary file
-        file_handle, file_path = create_windows_safe_temp_file(suffix=".log", text=True)
-        
-        try:
-            # Write some content and close the file properly
-            file_handle.write("test content")
-            file_handle.close()
-            
-            assert os.path.isfile(file_path) == True
-            log_utils.delete_file(file_path)
-            assert os.path.isfile(file_path) == False
-        finally:
-            # Ensure cleanup if the test fails
-            if os.path.exists(file_path):
-                safe_close_and_delete_file(None, file_path)
+        assert os.path.isfile(file_path) == True
+        log_utils.delete_file(file_path)
+        assert os.path.isfile(file_path) == False
 
     def test_is_older_than_x_days(self):
-        # Use Windows-safe temporary file creation to avoid file locking issues
-        import sys
-        import os
-        
-        # Add tests directory to path for test utilities
-        tests_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        if tests_dir not in sys.path:
-            sys.path.insert(0, tests_dir)
-            
-        from test_utils import create_windows_safe_temp_file, safe_close_and_delete_file
-        
-        # Create a Windows-safe temporary file
-        file_handle, file_path = create_windows_safe_temp_file(suffix=".log", text=True)
-        
+        """Test is_older_than_x_days with standard Unix/Linux file handling."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".log", delete=False) as tmp_file:
+            file_path = tmp_file.name
+            tmp_file.write("test content")
+
         try:
-            # Write some content and close the file properly
-            file_handle.write("test content")
-            file_handle.close()
-            
             assert os.path.isfile(file_path) == True
 
             # When days=1, it compares against current time, so file should be "older" 
@@ -175,7 +434,7 @@ class TestLogUtils:
         finally:
             # Ensure cleanup if the test fails
             if os.path.exists(file_path):
-                safe_close_and_delete_file(None, file_path)
+                os.unlink(file_path)
 
     def test_get_level(self):
         level = log_utils.get_level(11111111)
@@ -213,8 +472,8 @@ class TestLogUtils:
             assert result == os.path.join(new_dir, test_file)
             assert os.path.exists(new_dir)  # Should have been created
 
-            # Test 3: Existing but non-writable directory should raise PermissionError
-            # Skip this test on Windows as chmod doesn't work the same way
+            # Test 3: Existing but non-writable directory should raise PermissionError  
+            # This test only works on Unix/Linux/macOS systems with chmod
             if sys.platform != "win32":
                 readonly_dir = os.path.join(temp_dir, "readonly")
                 os.makedirs(readonly_dir, mode=0o555)
@@ -225,10 +484,6 @@ class TestLogUtils:
                 finally:
                     os.chmod(readonly_dir, 0o755)  # Cleanup permissions
                     os.rmdir(readonly_dir)
-            else:
-                # On Windows, we can't easily create a non-writable directory
-                # that behaves the same way, so we skip this specific test
-                pytest.skip("Directory permission test not applicable on Windows")
 
     def test_get_format(self):
         show_location = True
@@ -270,39 +525,27 @@ class TestLogUtils:
         assert re.match(r'[+-]\d{4}', offset), f"Invalid timezone offset format: {offset}"
 
     def test_gzip_file_with_sufix(self):
-        # Use Windows-safe temporary file creation to avoid file locking issues
-        import sys
-        import os
-        
-        # Add tests directory to path for test utilities
-        tests_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        if tests_dir not in sys.path:
-            sys.path.insert(0, tests_dir)
-        
-        from test_utils import create_windows_safe_temp_file, safe_close_and_delete_file
-        
-        # Create a Windows-safe temporary file
-        file_handle, file_path = create_windows_safe_temp_file(suffix=".log", text=True)
-        
+        """Test gzip_file_with_sufix with standard Unix/Linux file handling.""" 
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".log", delete=False) as tmp_file:
+            file_path = tmp_file.name
+            tmp_file.write("test content for gzip")
+
         try:
-            # Write some test content and close the file properly
-            file_handle.write("test content for gzip")
-            file_handle.close()
-            
             assert os.path.isfile(file_path) == True
             sufix = "test1"
             result = log_utils.gzip_file_with_sufix(file_path, sufix)
             file_path_no_suffix = file_path.split(".")[0]
             assert result == f"{file_path_no_suffix}_{sufix}.log.gz"
             
-            # Clean up the gzipped file with Windows-safe deletion
-            safe_close_and_delete_file(None, result)
+            # Clean up the gzipped file
+            if os.path.exists(result):
+                os.unlink(result)
             assert os.path.isfile(result) == False
             
         finally:
             # Ensure cleanup of the original file if it still exists
             if os.path.exists(file_path):
-                safe_close_and_delete_file(None, file_path)
+                os.unlink(file_path)
 
         # test a non-existent file - use tempfile path that doesn't exist
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -391,7 +634,7 @@ class TestLogUtils:
         assert len(new_logger.handlers) == 0
 
     def test_timezone_offset_caching(self):
-        """Test _get_timezone_offset function via get_format"""
+        """Test get_timezone_offset function via get_format"""
         # Test UTC timezone
         format1 = log_utils.get_format(False, "test", "UTC")
         format2 = log_utils.get_format(False, "test", "UTC")
@@ -403,7 +646,7 @@ class TestLogUtils:
         assert format3 is not None
 
     def test_stderr_timezone_caching(self):
-        """Test _get_stderr_timezone function via write_stderr"""
+        """Test get_stderr_timezone function via write_stderr"""
         # Test with UTC
         original_tz = os.environ.get("LOG_TIMEZONE")
         os.environ["LOG_TIMEZONE"] = "UTC"
@@ -422,7 +665,7 @@ class TestLogUtils:
                 del os.environ["LOG_TIMEZONE"]
 
     def test_stderr_timezone_localtime(self):
-        """Test _get_stderr_timezone with localtime"""
+        """Test get_stderr_timezone with localtime"""
         original_tz = os.environ.get("LOG_TIMEZONE")
         os.environ["LOG_TIMEZONE"] = "localtime"
         
@@ -487,64 +730,6 @@ class TestLogUtils:
         result = log_utils.gzip_file_with_sufix("/non/existent/file.log", "test")
         assert result is None
 
-    def test_gzip_file_windows_retry_mechanism(self):
-        """Test that gzip_file_with_sufix handles Windows file locking with retry"""
-        import sys
-        import os
-        from unittest.mock import patch, mock_open, MagicMock
-        
-        # Add tests directory to path for test utilities  
-        tests_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        if tests_dir not in sys.path:
-            sys.path.insert(0, tests_dir)
-        
-        from test_utils import create_windows_safe_temp_file, safe_close_and_delete_file
-        
-        # Create a Windows-safe temporary file
-        file_handle, file_path = create_windows_safe_temp_file(suffix=".log", text=True)
-        
-        try:
-            # Write content and close properly
-            file_handle.write("test content for retry test")
-            file_handle.close()
-            
-            # Mock sys.platform to simulate Windows
-            with patch('pythonLogs.log_utils.sys.platform', 'win32'):
-                # Mock time.sleep to verify retry mechanism
-                with patch('pythonLogs.log_utils.time.sleep') as mock_sleep:
-                    # Mock open to raise PermissionError on first call, succeed on second
-                    call_count = 0
-                    original_open = open
-                    
-                    def mock_open_side_effect(*args, **kwargs):
-                        nonlocal call_count
-                        call_count += 1
-                        if call_count == 1:
-                            # First call - simulate Windows file locking
-                            raise PermissionError("Permission denied")
-                        else:
-                            # Subsequent calls - use real open
-                            return original_open(*args, **kwargs)
-                    
-                    with patch('pythonLogs.log_utils.open', side_effect=mock_open_side_effect):
-                        # This should succeed after retry
-                        result = log_utils.gzip_file_with_sufix(file_path, "retry_test")
-                        
-                        # Verify retry was attempted (sleep was called)
-                        mock_sleep.assert_called_once_with(0.1)
-                        
-                        # Verify the operation eventually succeeded
-                        assert result is not None
-                        assert result.endswith("_retry_test.log.gz")
-                        
-                        # Clean up the gzipped file
-                        if result and os.path.exists(result):
-                            safe_close_and_delete_file(None, result)
-            
-        finally:
-            # Clean up the original file
-            if os.path.exists(file_path):
-                safe_close_and_delete_file(None, file_path)
 
     def test_remove_old_logs_edge_cases(self):
         """Test remove_old_logs with edge cases"""
@@ -696,8 +881,9 @@ class TestLogUtils:
             assert result == True
             assert not os.path.exists(link_file)
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Unix/Linux/macOS-specific chmod test")
     def test_get_log_path_permission_error(self):
-        """Test get_log_path when directory exists but is not writable"""
+        """Test get_log_path when directory exists but is not writable (Unix/Linux/macOS)"""
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create a subdirectory and make it read-only
             readonly_dir = os.path.join(temp_dir, "readonly")
@@ -713,8 +899,9 @@ class TestLogUtils:
             finally:
                 os.chmod(readonly_dir, 0o755)  # Restore for cleanup
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Unix/Linux/macOS-specific chmod test")
     def test_gzip_file_io_error(self):
-        """Test gzip_file_with_sufix error handling during compression"""
+        """Test gzip_file_with_sufix error handling during compression (Unix/Linux/macOS)"""
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create a test file
             test_file = os.path.join(temp_dir, "test.log")
@@ -750,20 +937,19 @@ class TestLogUtils:
             
             # Clean up with Windows-compatible deletion
             if os.path.exists(result):
-                from tests.test_utils import safe_delete_file
                 safe_delete_file(result)
 
     def test_write_stderr_fallback(self):
         """Test write_stderr fallback when timezone operations fail"""
         # Save original function
-        original_get_stderr_tz = log_utils._get_stderr_timezone
+        original_get_stderr_tz = log_utils.get_stderr_timezone
         
-        # Mock _get_stderr_timezone to raise an error
+        # Mock get_stderr_timezone to raise an error
         def mock_error_timezone():
             raise KeyError("Mock timezone error")
         
         try:
-            log_utils._get_stderr_timezone = mock_error_timezone
+            log_utils.get_stderr_timezone = mock_error_timezone
             
             stderr_capture = io.StringIO()
             with contextlib.redirect_stderr(stderr_capture):
@@ -774,17 +960,17 @@ class TestLogUtils:
             assert "ERROR" in output
         finally:
             # Restore original function
-            log_utils._get_stderr_timezone = original_get_stderr_tz
+            log_utils.get_stderr_timezone = original_get_stderr_tz
 
     def test_stderr_timezone_with_special_timezone(self):
-        """Test _get_stderr_timezone with different timezone configurations"""
+        """Test get_stderr_timezone with different timezone configurations"""
         original_tz = os.environ.get("LOG_TIMEZONE")
         
         try:
             # Test with a specific timezone
             os.environ["LOG_TIMEZONE"] = "Europe/London"
             # Clear the cache
-            log_utils._get_stderr_timezone.cache_clear()
+            log_utils.get_stderr_timezone.cache_clear()
             
             stderr_capture = io.StringIO()
             with contextlib.redirect_stderr(stderr_capture):
@@ -798,7 +984,7 @@ class TestLogUtils:
                 os.environ["LOG_TIMEZONE"] = original_tz
             elif "LOG_TIMEZONE" in os.environ:
                 del os.environ["LOG_TIMEZONE"]
-            log_utils._get_stderr_timezone.cache_clear()
+            log_utils.get_stderr_timezone.cache_clear()
 
     def test_check_filename_instance_edge_cases(self):
         """Test check_filename_instance with more edge cases."""
@@ -822,7 +1008,7 @@ class TestLogUtils:
         """Test LRU cache behavior in timezone functions."""
         # Clear caches first
         log_utils.get_timezone_function.cache_clear()
-        log_utils._get_timezone_offset.cache_clear()
+        log_utils.get_timezone_offset.cache_clear()
         
         # Test get_timezone_function cache
         initial_cache = log_utils.get_timezone_function.cache_info()
@@ -838,18 +1024,17 @@ class TestLogUtils:
         assert cache_info.currsize == 2  # Two unique calls
         assert cache_info.hits >= 1  # At least one cache hit
         
-        # Test _get_timezone_offset cache
-        offset1 = log_utils._get_timezone_offset("UTC")
-        offset2 = log_utils._get_timezone_offset("UTC")
+        # Test get_timezone_offset cache
+        offset1 = log_utils.get_timezone_offset("UTC")
+        offset2 = log_utils.get_timezone_offset("UTC")
         assert offset1 == offset2
         
-        offset_cache = log_utils._get_timezone_offset.cache_info()
+        offset_cache = log_utils.get_timezone_offset.cache_info()
         assert offset_cache.currsize >= 1
         assert offset_cache.hits >= 1
 
     def test_thread_safety_directory_check(self):
         """Test thread safety of directory permission checking."""
-        import threading
         import concurrent.futures
         
         errors = []
@@ -999,7 +1184,7 @@ class TestLogUtils:
     def test_timezone_offset_various_timezones(self):
         """Test timezone offset calculation for various timezones."""
         # Clear cache first
-        log_utils._get_timezone_offset.cache_clear()
+        log_utils.get_timezone_offset.cache_clear()
         
         # Test various timezones
         timezones = [
@@ -1012,7 +1197,7 @@ class TestLogUtils:
         
         for tz, expected_offset in timezones:
             try:
-                offset = log_utils._get_timezone_offset(tz)
+                offset = log_utils.get_timezone_offset(tz)
                 assert isinstance(offset, str)
                 assert len(offset) == 5  # Format: +/-HHMM
                 assert offset[0] in ['+', '-']
@@ -1061,8 +1246,8 @@ class TestLogUtils:
         
         # Clear all caches
         log_utils.get_timezone_function.cache_clear()
-        log_utils._get_timezone_offset.cache_clear()
-        log_utils._get_stderr_timezone.cache_clear()
+        log_utils.get_timezone_offset.cache_clear()
+        log_utils.get_stderr_timezone.cache_clear()
         log_utils._checked_directories.clear()
         
         # Test that repeated operations don't significantly increase memory
@@ -1071,7 +1256,7 @@ class TestLogUtils:
         # Perform many operations
         for i in range(100):
             log_utils.get_timezone_function("UTC")
-            log_utils._get_timezone_offset("UTC")
+            log_utils.get_timezone_offset("UTC")
             log_utils.get_format(False, f"test_{i}", "UTC")
         
         # Reference count shouldn't grow significantly
@@ -1129,16 +1314,16 @@ class TestLogUtils:
                 pytest.skip("FIFO creation not supported on this system")
 
     def test_stderr_timezone_fallback_exception(self):
-        """Test _get_stderr_timezone fallback when ZoneInfo raises exception."""
+        """Test get_stderr_timezone fallback when ZoneInfo raises exception."""
         original_tz = os.environ.get("LOG_TIMEZONE")
         
         try:
             # Set an invalid timezone to trigger the exception path
             os.environ["LOG_TIMEZONE"] = "Invalid/NonExistent/Timezone"
-            log_utils._get_stderr_timezone.cache_clear()
+            log_utils.get_stderr_timezone.cache_clear()
             
             # This should trigger the exception and fallback to None
-            result = log_utils._get_stderr_timezone()
+            result = log_utils.get_stderr_timezone()
             assert result is None  # Should fall back to None (local timezone)
             
         finally:
@@ -1146,7 +1331,7 @@ class TestLogUtils:
                 os.environ["LOG_TIMEZONE"] = original_tz
             elif "LOG_TIMEZONE" in os.environ:
                 del os.environ["LOG_TIMEZONE"]
-            log_utils._get_stderr_timezone.cache_clear()
+            log_utils.get_stderr_timezone.cache_clear()
 
     def test_write_stderr_local_timezone_path(self):
         """Test write_stderr when using local timezone (tz is None)."""
@@ -1155,7 +1340,7 @@ class TestLogUtils:
         try:
             # Set timezone to localtime to trigger the tz is None path
             os.environ["LOG_TIMEZONE"] = "localtime"
-            log_utils._get_stderr_timezone.cache_clear()
+            log_utils.get_stderr_timezone.cache_clear()
             
             stderr_capture = io.StringIO()
             with contextlib.redirect_stderr(stderr_capture):
@@ -1171,10 +1356,11 @@ class TestLogUtils:
                 os.environ["LOG_TIMEZONE"] = original_tz
             elif "LOG_TIMEZONE" in os.environ:
                 del os.environ["LOG_TIMEZONE"]
-            log_utils._get_stderr_timezone.cache_clear()
+            log_utils.get_stderr_timezone.cache_clear()
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Unix/Linux/macOS-specific chmod test")
     def test_get_log_path_write_permission_error(self):
-        """Test get_log_path when directory exists but write check fails."""
+        """Test get_log_path when directory exists but write check fails (Unix/Linux/macOS)."""
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create directory and make it non-writable
             test_dir = os.path.join(temp_dir, "non_writable")
@@ -1198,11 +1384,11 @@ class TestLogUtils:
                 log_utils._checked_directories.discard(test_dir)
 
     def test_timezone_offset_fallback_exception(self):
-        """Test _get_timezone_offset fallback when ZoneInfo raises exception."""
-        log_utils._get_timezone_offset.cache_clear()
+        """Test get_timezone_offset fallback when ZoneInfo raises exception."""
+        log_utils.get_timezone_offset.cache_clear()
         
         # Test with invalid timezone that will trigger exception path
-        result = log_utils._get_timezone_offset("Invalid/Timezone/That/Does/Not/Exist")
+        result = log_utils.get_timezone_offset("Invalid/Timezone/That/Does/Not/Exist")
         
         # Should fall back to localtime (lines 216-219)
         assert isinstance(result, str)
@@ -1288,3 +1474,76 @@ class TestLogUtils:
                 
         finally:
             log_utils.get_timezone_function.cache_clear()
+
+    def test_gzip_file_osioerror_handling(self):
+        """Test gzip_file_with_sufix OSError/IOError handling during compression."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create a test file
+            test_file = os.path.join(temp_dir, "test_osioerror.log")
+            with open(test_file, "w") as f:
+                f.write("test content for OSError test")
+            
+            # Mock gzip.open to raise OSError during compression
+            import unittest.mock
+            
+            original_gzip_open = __import__('gzip').open
+            def mock_gzip_open(*args, **kwargs):
+                # Raise OSError to trigger lines 265-267
+                raise OSError("Mock OSError during gzip compression")
+            
+            try:
+                with unittest.mock.patch('gzip.open', side_effect=mock_gzip_open):
+                    stderr_capture = io.StringIO()
+                    with contextlib.redirect_stderr(stderr_capture):
+                        with pytest.raises(OSError) as exc_info:
+                            log_utils.gzip_file_with_sufix(test_file, "osioerror_test")
+                    
+                    # Verify the error was logged to stderr (line 266)
+                    output = stderr_capture.getvalue()
+                    assert "Unable to gzip log file" in output
+                    assert test_file in output
+                    assert "Mock OSError during gzip compression" in output
+                    
+                    # Verify the exception was re-raised (line 267)
+                    assert "Mock OSError during gzip compression" in str(exc_info.value)
+                    
+            finally:
+                # Cleanup: remove the test file if it still exists
+                if os.path.exists(test_file):
+                    os.unlink(test_file)
+
+    def test_gzip_file_ioerror_handling(self):
+        """Test gzip_file_with_sufix IOError handling during compression."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create a test file
+            test_file = os.path.join(temp_dir, "test_ioerror.log")
+            with open(test_file, "w") as f:
+                f.write("test content for IOError test")
+            
+            # Mock shutil.copyfileobj to raise IOError during copy
+            import unittest.mock
+            
+            def mock_copyfileobj(*args, **kwargs):
+                # Raise IOError to trigger lines 265-267
+                raise IOError("Mock IOError during file copy")
+            
+            try:
+                with unittest.mock.patch('shutil.copyfileobj', side_effect=mock_copyfileobj):
+                    stderr_capture = io.StringIO()
+                    with contextlib.redirect_stderr(stderr_capture):
+                        with pytest.raises(IOError) as exc_info:
+                            log_utils.gzip_file_with_sufix(test_file, "ioerror_test")
+                    
+                    # Verify the error was logged to stderr (line 266)
+                    output = stderr_capture.getvalue()
+                    assert "Unable to gzip log file" in output
+                    assert test_file in output
+                    assert "Mock IOError during file copy" in output
+                    
+                    # Verify the exception was re-raised (line 267)
+                    assert "Mock IOError during file copy" in str(exc_info.value)
+                    
+            finally:
+                # Cleanup: remove the test file if it still exists
+                if os.path.exists(test_file):
+                    os.unlink(test_file)

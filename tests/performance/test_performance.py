@@ -9,10 +9,10 @@ import pytest
 
 # Add parent directory to path for imports
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-tests_dir = os.path.join(project_root, 'tests')
 sys.path.insert(0, project_root)  # For pythonLogs
-sys.path.insert(0, tests_dir)  # For test_utils in tests/
-from test_utils import get_safe_timezone
+
+# Import test utilities
+from tests.core.test_log_utils import get_safe_timezone
 
 from pythonLogs import (
     LoggerFactory,

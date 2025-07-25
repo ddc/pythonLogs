@@ -9,7 +9,6 @@ import pytest
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-
 from pythonLogs import (
     LoggerFactory,
     LoggerType,
@@ -335,8 +334,8 @@ class TestLoggerFactory:
 
     def test_factory_atexit_cleanup_error_handling(self):
         """Test atexit cleanup error handling."""
-        from unittest.mock import patch, Mock
-        
+        from unittest.mock import patch
+
         # Mock the clear_registry method to raise an error
         with patch.object(LoggerFactory, 'clear_registry', side_effect=Exception("Test error")):
             # Should not raise an exception

@@ -3,15 +3,14 @@
 import os
 import sys
 import tempfile
-import pytest
 
 
 # Add parent directory to path for imports
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-tests_dir = os.path.join(project_root, 'tests')
 sys.path.insert(0, project_root)  # For pythonLogs
-sys.path.insert(0, tests_dir)  # For test_utils in tests/
-from test_utils import skip_if_no_zoneinfo_utc, get_safe_timezone, requires_zoneinfo_utc
+
+# Import test utilities
+from tests.core.test_log_utils import requires_zoneinfo_utc
 
 from pythonLogs import (
     basic_logger,
@@ -25,9 +24,9 @@ from pythonLogs import (
 )
 from pythonLogs.log_utils import (
     get_timezone_function,
-    _get_timezone_offset,
+    get_timezone_offset,
     write_stderr,
-    _get_stderr_timezone,
+    get_stderr_timezone,
 )
 
 
@@ -138,14 +137,14 @@ class TestTimezoneZoneinfo:
     def test_timezone_offset_calculation(self):
         """Test timezone offset calculation function."""
         # Test UTC (may fall back to localtime on systems without UTC data)
-        utc_offset = _get_timezone_offset("UTC")
+        utc_offset = get_timezone_offset("UTC")
         # UTC should return +0000, but may fall back to localtime on Windows
         assert isinstance(utc_offset, str)
         assert len(utc_offset) == 5
         assert utc_offset[0] in ['+', '-']
         
         # Test localtime
-        local_offset = _get_timezone_offset("localtime")
+        local_offset = get_timezone_offset("localtime")
         assert len(local_offset) == 5  # Format: ±HHMM
         assert local_offset[0] in ['+', '-']
     
@@ -198,10 +197,10 @@ class TestTimezoneZoneinfo:
     def test_stderr_timezone_caching(self):
         """Test that stderr timezone is cached."""
         # First call
-        tz1 = _get_stderr_timezone()
+        tz1 = get_stderr_timezone()
         
         # Second call should return cached result
-        tz2 = _get_stderr_timezone()
+        tz2 = get_stderr_timezone()
         
         # Should be the same object (cached)
         assert tz1 is tz2

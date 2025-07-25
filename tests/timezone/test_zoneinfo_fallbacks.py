@@ -9,10 +9,10 @@ import pytest
 
 # Add parent directory to path for imports
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-tests_dir = os.path.join(project_root, 'tests')
 sys.path.insert(0, project_root)  # For pythonLogs
-sys.path.insert(0, tests_dir)  # For test_utils in tests/
-from test_utils import skip_if_no_zoneinfo_utc, get_safe_timezone, requires_zoneinfo_utc
+
+# Import test utilities
+from tests.core.test_log_utils import skip_if_no_zoneinfo_utc, get_safe_timezone, requires_zoneinfo_utc
 
 
 class TestZoneinfoFallbacks:
@@ -44,23 +44,23 @@ class TestZoneinfoFallbacks:
     
     def test_timezone_offset_edge_cases(self):
         """Test timezone offset calculation for edge cases."""
-        from pythonLogs.log_utils import _get_timezone_offset
+        from pythonLogs.log_utils import get_timezone_offset
         
         # Test UTC (may fall back to localtime on systems without UTC data)
-        utc_offset = _get_timezone_offset("UTC")
+        utc_offset = get_timezone_offset("UTC")
         # UTC should return +0000, but may fall back to localtime on Windows
         assert isinstance(utc_offset, str)
         assert len(utc_offset) == 5
         assert utc_offset[0] in ['+', '-']
         
         # Test localtime (should work on any system)
-        local_offset = _get_timezone_offset("localtime")
+        local_offset = get_timezone_offset("localtime")
         assert isinstance(local_offset, str)
         assert len(local_offset) == 5
         assert local_offset[0] in ['+', '-']
         
         # Test case insensitivity for localtime
-        local_offset_upper = _get_timezone_offset("LOCALTIME")
+        local_offset_upper = get_timezone_offset("LOCALTIME")
         assert local_offset_upper == local_offset
     
     def test_stderr_timezone_fallback(self):
@@ -144,7 +144,7 @@ class TestZoneinfoFallbacks:
     
     def test_zoneinfo_caching_behavior(self):
         """Test that zoneinfo objects are properly cached."""
-        from pythonLogs.log_utils import get_timezone_function, _get_timezone_offset
+        from pythonLogs.log_utils import get_timezone_function, get_timezone_offset
         
         # Test function caching
         func1 = get_timezone_function("America/Chicago")
@@ -152,8 +152,8 @@ class TestZoneinfoFallbacks:
         assert func1 is func2  # Should be cached
         
         # Test offset caching  
-        offset1 = _get_timezone_offset("America/Chicago")
-        offset2 = _get_timezone_offset("America/Chicago")
+        offset1 = get_timezone_offset("America/Chicago")
+        offset2 = get_timezone_offset("America/Chicago")
         assert offset1 == offset2  # Should be cached
     
     def test_environment_variable_timezone_handling(self):
@@ -162,12 +162,12 @@ class TestZoneinfoFallbacks:
         # Test with environment variable
         with patch.dict(os.environ, {'LOG_TIMEZONE': 'Europe/Paris'}):
             # Environment variable should be used for stderr
-            from pythonLogs.log_utils import _get_stderr_timezone
+            from pythonLogs.log_utils import get_stderr_timezone
             
             # Clear cache to test new environment
-            _get_stderr_timezone.cache_clear()
+            get_stderr_timezone.cache_clear()
             
-            tz = _get_stderr_timezone()
+            tz = get_stderr_timezone()
             assert tz is not None
     
     def test_concurrent_timezone_access(self):
@@ -228,7 +228,7 @@ class TestZoneinfoFallbacks:
     @requires_zoneinfo_utc
     def test_timezone_validation_edge_cases(self):
         """Test timezone validation for various edge cases."""
-        from pythonLogs.log_utils import _get_timezone_offset
+        from pythonLogs.log_utils import get_timezone_offset
         
         # Test case variations (timezone names are case-sensitive except for localtime)
         test_cases = [
@@ -238,7 +238,7 @@ class TestZoneinfoFallbacks:
         ]
         
         for tz_input, expected in test_cases:
-            result = _get_timezone_offset(tz_input)
+            result = get_timezone_offset(tz_input)
             if expected is not None:
                 assert result == expected
             else:
@@ -248,7 +248,7 @@ class TestZoneinfoFallbacks:
                 assert result[0] in ['+', '-']
         
         # Test that invalid timezone names now fall back gracefully to localtime
-        result = _get_timezone_offset("invalid_timezone")
+        result = get_timezone_offset("invalid_timezone")
         # Should fall back to localtime format
         assert isinstance(result, str)
         assert len(result) == 5

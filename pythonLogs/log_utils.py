@@ -153,7 +153,7 @@ def is_older_than_x_days(path: str, days: int) -> bool:
 
 # Cache stderr timezone for better performance
 @lru_cache(maxsize=1)
-def _get_stderr_timezone():
+def get_stderr_timezone():
     timezone_name = os.getenv("LOG_TIMEZONE", "UTC")
     if timezone_name.lower() == "localtime":
         return None  # Use system local timezone
@@ -167,7 +167,7 @@ def _get_stderr_timezone():
 def write_stderr(msg: str) -> None:
     """Write msg to stderr with optimized timezone handling"""
     try:
-        tz = _get_stderr_timezone()
+        tz = get_stderr_timezone()
         if tz is None:
             # Use local timezone
             dt = datetime.now()
@@ -206,7 +206,7 @@ def get_log_path(directory: str, filename: str) -> str:
 
 
 @lru_cache(maxsize=32)
-def _get_timezone_offset(timezone_: str) -> str:
+def get_timezone_offset(timezone_: str) -> str:
     """Cache timezone offset calculation with fallback for missing timezone data"""
     if timezone_.lower() == "localtime":
         return time.strftime("%z")
@@ -230,7 +230,7 @@ def get_format(show_location: bool, name: str, timezone_: str) -> str:
     if show_location:
         _debug_fmt = "[%(filename)s:%(funcName)s:%(lineno)d]:"
 
-    utc_offset = _get_timezone_offset(timezone_)
+    utc_offset = get_timezone_offset(timezone_)
     return f"[%(asctime)s.%(msecs)03d{utc_offset}]:[%(levelname)s]:{_logger_name}{_debug_fmt}%(message)s"
 
 

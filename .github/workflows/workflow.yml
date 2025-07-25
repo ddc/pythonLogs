@@ -37,12 +37,19 @@ jobs:
         run: poetry run poe tests
         shell: bash
 
-      - name: Upload coverage reports to Codecov
+      - name: Upload coverage to Codecov
         if: matrix.python-version == '3.13' && matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v5
         with:
             token: ${{ secrets.CODECOV_TOKEN }}
             slug: ddc/pythonLogs
+
+      - name: Upload test results to Codecov
+        if: matrix.python-version == '3.13' && matrix.os == 'ubuntu-latest'
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: ddc/pythonLogs
 
   build:
     name: Build for Python ${{ matrix.python-version }} on ${{ matrix.os }}

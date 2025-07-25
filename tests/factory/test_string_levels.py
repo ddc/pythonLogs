@@ -25,15 +25,9 @@ class TestStringLevels:
     @pytest.fixture(autouse=True)
     def setup_temp_dir(self):
         """Set up test fixtures before each test method."""
-        import sys
-        import os
-        
-        # Add tests directory to path for test utilities
-        tests_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        if tests_dir not in sys.path:
-            sys.path.insert(0, tests_dir)
-        
-        from test_utils import cleanup_all_loggers, safe_delete_directory
+
+        # Import test utilities
+        from tests.core.test_log_utils import cleanup_all_loggers, safe_delete_directory
         
         # Clear any existing loggers
         cleanup_all_loggers()

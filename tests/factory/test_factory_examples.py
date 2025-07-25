@@ -192,18 +192,20 @@ class TestFactoryExamples:
             create_logger("nonexistent_type", name="error_test")
         
         # Invalid directory (should raise PermissionError when trying to create)
-        with tempfile.TemporaryDirectory() as temp_dir:
-            readonly_parent = os.path.join(temp_dir, "readonly")
-            os.makedirs(readonly_parent, mode=0o555)  # Read-only parent
-            try:
-                invalid_dir = os.path.join(readonly_parent, "invalid")
-                with pytest.raises(PermissionError):
-                    size_rotating_logger(
-                        name="permission_test",
-                        directory=invalid_dir
-                    )
-            finally:
-                os.chmod(readonly_parent, 0o755)  # Restore permissions for cleanup
+        # This test only works on Unix/Linux/macOS systems with chmod
+        if sys.platform != "win32":
+            with tempfile.TemporaryDirectory() as temp_dir:
+                readonly_parent = os.path.join(temp_dir, "readonly")
+                os.makedirs(readonly_parent, mode=0o555)  # Read-only parent
+                try:
+                    invalid_dir = os.path.join(readonly_parent, "invalid")
+                    with pytest.raises(PermissionError):
+                        size_rotating_logger(
+                            name="permission_test",
+                            directory=invalid_dir
+                        )
+                finally:
+                    os.chmod(readonly_parent, 0o755)  # Restore permissions for cleanup
     
     def test_logger_customization_example(self):
         """Test logger with extensive customization."""
