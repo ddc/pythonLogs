@@ -40,7 +40,8 @@ class TestEnumUsage:
     
     def test_rotate_when_enum_usage(self):
         """Test RotateWhen enum usage."""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        temp_dir = tempfile.mkdtemp()
+        try:
             logger = timed_rotating_logger(
                 name="rotate_test",
                 directory=temp_dir,
@@ -48,6 +49,17 @@ class TestEnumUsage:
                 when=RotateWhen.MIDNIGHT  # RotateWhen enum
             )
             assert logger.name == "rotate_test"
+            
+        finally:
+            # Ensure proper cleanup on Windows before directory removal
+            clear_logger_registry()
+            # Small delay on Windows to ensure file handles are released
+            if sys.platform == "win32":
+                import time
+                time.sleep(0.1)
+            # Manual cleanup
+            import shutil
+            shutil.rmtree(temp_dir, ignore_errors=True)
     
     def test_mixed_enum_and_string_usage(self):
         """Test mixed enum and string usage."""
@@ -98,7 +110,8 @@ class TestEnumUsage:
     
     def test_enum_string_conversion(self):
         """Test that enums are properly converted to strings internally."""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        temp_dir = tempfile.mkdtemp()
+        try:
             # Create logger with enums
             logger = LoggerFactory.create_logger(
                 LoggerType.TIMED_ROTATING,
@@ -111,10 +124,22 @@ class TestEnumUsage:
             # Verify logger was created successfully
             assert logger.name == "conversion_test"
             assert logger.level == 40  # ERROR level
+            
+        finally:
+            # Ensure proper cleanup on Windows before directory removal
+            clear_logger_registry()
+            # Small delay on Windows to ensure file handles are released
+            if sys.platform == "win32":
+                import time
+                time.sleep(0.1)
+            # Manual cleanup
+            import shutil
+            shutil.rmtree(temp_dir, ignore_errors=True)
     
     def test_backward_compatibility_with_strings(self):
         """Test that string values still work alongside enums."""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        temp_dir = tempfile.mkdtemp()
+        try:
             # Mix of enums and strings
             logger = timed_rotating_logger(
                 name="compat_test",
@@ -125,6 +150,17 @@ class TestEnumUsage:
             
             assert logger.name == "compat_test"
             assert logger.level == 20  # INFO level
+            
+        finally:
+            # Ensure proper cleanup on Windows before directory removal
+            clear_logger_registry()
+            # Small delay on Windows to ensure file handles are released
+            if sys.platform == "win32":
+                import time
+                time.sleep(0.1)
+            # Manual cleanup
+            import shutil
+            shutil.rmtree(temp_dir, ignore_errors=True)
     
     def test_logger_type_enum_values(self):
         """Test LoggerType enum values."""

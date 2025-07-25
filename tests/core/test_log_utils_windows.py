@@ -37,24 +37,18 @@ class TestLogUtilsWindows:
     @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific tests")
     def test_check_directory_permissions_windows(self):
         """Test Windows-specific directory permission behavior."""
-        import tempfile
-        
-        # On Windows, create a test in a deeply nested path that doesn't exist
-        # Use a path that's more likely to cause permission issues
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create a deeply nested path that should trigger directory creation
             nested_path = os.path.join(temp_dir, "level1", "level2", "level3", "level4")
             
-            # This should succeed and create the directories
-            result = log_utils.check_directory_permissions(nested_path)
-            assert result == True
+            # This should succeed and create the directories (function returns None)
+            log_utils.check_directory_permissions(nested_path)
             assert os.path.exists(nested_path)
             
             # Test with a path that contains invalid characters (Windows-specific)
             try:
                 invalid_chars_path = os.path.join(temp_dir, "invalid<>:|*?\"path")
                 # This might raise different exceptions on different Windows versions
-                # So we'll catch the general case
                 with pytest.raises((PermissionError, OSError, ValueError)) as exec_info:
                     log_utils.check_directory_permissions(invalid_chars_path)
                 # The specific error message may vary
@@ -160,12 +154,11 @@ class TestLogUtilsWindows:
             if os.path.exists(file_path):
                 safe_close_and_delete_file(None, file_path)
 
+
     @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific tests")
-    def test_gzip_file_cross_platform_retry_mechanism(self):
-        """Test that gzip_file_with_sufix handles Windows file locking with retry (cross-platform)"""
+    def test_gzip_file_windows_retry_mechanism(self):
+        """Test that gzip_file_with_sufix handles Windows file locking with retry."""
         from unittest.mock import patch
-        
-        # Import test utilities from the same directory
         
         # Create a Windows-safe temporary file
         file_handle, file_path = create_windows_safe_temp_file(suffix=".log", text=True)
@@ -175,8 +168,8 @@ class TestLogUtilsWindows:
             file_handle.write("test content for retry test")
             file_handle.close()
             
-            # Mock sys.platform to simulate Windows
-            with patch('pythonLogs.log_utils.sys.platform', 'win32'):
+            # Test both with and without platform mocking to ensure retry works
+            for mock_platform in [False, True]:
                 # Mock time.sleep to verify retry mechanism
                 with patch('pythonLogs.log_utils.time.sleep') as mock_sleep:
                     # Mock open to raise PermissionError on first call, succeed on second
@@ -193,71 +186,31 @@ class TestLogUtilsWindows:
                             # Subsequent calls - use real open
                             return original_open(*args, **kwargs)
                     
-                    with patch('pythonLogs.log_utils.open', side_effect=mock_open_side_effect):
-                        # This should succeed after retry
-                        result = log_utils.gzip_file_with_sufix(file_path, "retry_test")
+                    context_manager = (
+                        patch('pythonLogs.log_utils.sys.platform', 'win32') if mock_platform 
+                        else patch('pythonLogs.log_utils.open', side_effect=mock_open_side_effect)
+                    )
+                    
+                    with context_manager:
+                        if mock_platform:
+                            with patch('pythonLogs.log_utils.open', side_effect=mock_open_side_effect):
+                                result = log_utils.gzip_file_with_sufix(file_path, f"retry_test_{mock_platform}")
+                        else:
+                            result = log_utils.gzip_file_with_sufix(file_path, f"retry_test_{mock_platform}")
                         
                         # Verify retry was attempted (sleep was called)
                         mock_sleep.assert_called_once_with(0.1)
                         
                         # Verify the operation eventually succeeded
                         assert result is not None
-                        assert result.endswith("_retry_test.log.gz")
+                        assert f"retry_test_{mock_platform}" in result
                         
                         # Clean up the gzipped file
                         if result and os.path.exists(result):
                             safe_close_and_delete_file(None, result)
-            
-        finally:
-            # Clean up the original file
-            if os.path.exists(file_path):
-                safe_close_and_delete_file(None, file_path)
-
-    @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific tests")
-    def test_gzip_file_windows_retry_mechanism(self):
-        """Test that gzip_file_with_sufix handles Windows file locking with retry."""
-        from unittest.mock import patch
-        
-        # Import test utilities from the same directory
-        
-        # Create a Windows-safe temporary file
-        file_handle, file_path = create_windows_safe_temp_file(suffix=".log", text=True)
-        
-        try:
-            # Write content and close properly
-            file_handle.write("test content for retry test")
-            file_handle.close()
-            
-            # Mock time.sleep to verify retry mechanism
-            with patch('pythonLogs.log_utils.time.sleep') as mock_sleep:
-                # Mock open to raise PermissionError on first call, succeed on second
-                call_count = 0
-                original_open = open
-                
-                def mock_open_side_effect(*args, **kwargs):
-                    nonlocal call_count
-                    call_count += 1
-                    if call_count == 1:
-                        # First call - simulate Windows file locking
-                        raise PermissionError("Permission denied")
-                    else:
-                        # Subsequent calls - use real open
-                        return original_open(*args, **kwargs)
-                
-                with patch('pythonLogs.log_utils.open', side_effect=mock_open_side_effect):
-                    # This should succeed after retry
-                    result = log_utils.gzip_file_with_sufix(file_path, "retry_test")
-                    
-                    # Verify retry was attempted (sleep was called)
-                    mock_sleep.assert_called_once_with(0.1)
-                    
-                    # Verify the operation eventually succeeded
-                    assert result is not None
-                    assert result.endswith("_retry_test.log.gz")
-                    
-                    # Clean up the gzipped file
-                    if result and os.path.exists(result):
-                        safe_close_and_delete_file(None, result)
+                        
+                        # Reset for next iteration
+                        call_count = 0
             
         finally:
             # Clean up the original file
@@ -459,44 +412,7 @@ class TestLogUtilsWindows:
             assert result['gzip_result'] is not None
             assert f"worker_{result['worker_id']}" in result['gzip_result']
 
-    @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific tests")
-    def test_get_log_path_unix_chmod_behavior(self):
-        """Test get_log_path behavior with Unix-style chmod (Windows alternative test)."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            test_file = "test.log"
-            # Test 1: Valid directory should return the correct path
-            result = log_utils.get_log_path(temp_dir, test_file)
-            assert result == os.path.join(temp_dir, test_file)
 
-            # Test 2: Directory that gets created should work fine
-            new_dir = os.path.join(temp_dir, "newdir")
-            result = log_utils.get_log_path(new_dir, test_file)
-            assert result == os.path.join(new_dir, test_file)
-            assert os.path.exists(new_dir)  # Should have been created
-
-            # Test 3: On Windows, we don't test chmod-based permission errors
-            # since Windows permission model is different from Unix
-            # This test would be: readonly directory + PermissionError expectation
-            # But Windows handles this differently, so we skip it
-            pytest.skip("Unix-style chmod permission test not applicable on Windows")
-
-    @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific tests")
-    def test_get_log_path_permission_error_windows(self):
-        """Test get_log_path permission handling specific to Windows."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # On Windows, we test different permission scenarios
-            # Windows doesn't use Unix-style chmod, so we test other error conditions
-            
-            # Test with invalid path characters (Windows-specific)
-            try:
-                invalid_path = os.path.join(temp_dir, "invalid<>path")
-                # This might succeed on some Windows systems, so we don't assert failure
-                result = log_utils.get_log_path(invalid_path, "test.log")
-                # If it succeeds, just verify the path is returned
-                assert "test.log" in result
-            except (PermissionError, OSError, ValueError):
-                # Expected on Windows with invalid characters
-                pass
 
     @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific tests")
     def test_gzip_file_windows_permission_error(self):
@@ -532,25 +448,40 @@ class TestLogUtilsWindows:
                 safe_close_and_delete_file(None, file_path)
 
     @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific tests")
-    def test_get_log_path_write_permission_windows(self):
-        """Test get_log_path write permission check specific to Windows."""
+    def test_get_log_path_windows_comprehensive(self):
+        """Comprehensive test for get_log_path Windows-specific behaviors."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            # Create directory 
+            test_file = "test.log"
+            
+            # Test 1: Valid directory should return the correct path
+            result = log_utils.get_log_path(temp_dir, test_file)
+            assert result == os.path.join(temp_dir, test_file)
+
+            # Test 2: Directory that gets created should work fine
+            new_dir = os.path.join(temp_dir, "newdir")
+            result = log_utils.get_log_path(new_dir, test_file)
+            assert result == os.path.join(new_dir, test_file)
+            assert os.path.exists(new_dir)  # Should have been created
+            
+            # Test 3: Test with invalid path characters (Windows-specific)
+            try:
+                invalid_path = os.path.join(temp_dir, "invalid<>path")
+                result = log_utils.get_log_path(invalid_path, "test.log")
+                assert "test.log" in result
+            except (PermissionError, OSError, ValueError):
+                # Expected on Windows with invalid characters
+                pass
+            
+            # Test 4: Test normal operation in created directory
             test_dir = os.path.join(temp_dir, "test_write_perm")
             os.makedirs(test_dir)
-            
-            # On Windows, we test different permission scenarios
-            # Windows permission model is different from Unix chmod
-            
-            # Test normal operation (should succeed)
             result = log_utils.get_log_path(test_dir, "test.log")
             assert result == os.path.join(test_dir, "test.log")
             
-            # Windows-specific: Test with long path names (Windows limitation)
+            # Test 5: Windows-specific long path names (Windows limitation)
             long_filename = "a" * 200 + ".log"  # Very long filename
             try:
                 result = log_utils.get_log_path(test_dir, long_filename)
-                # May succeed or fail depending on Windows version and filesystem
                 assert long_filename in result
             except (OSError, PermissionError):
                 # Expected on some Windows systems with path length limitations
