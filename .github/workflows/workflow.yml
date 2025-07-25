@@ -64,6 +64,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: ddc/pythonLogs
 
+
   build:
     name: Build for Python ${{ matrix.python-version }} on ${{ matrix.os }}
     runs-on: ${{ matrix.runs-on || matrix.os }}
@@ -93,12 +94,7 @@ jobs:
           virtualenvs-in-project: true
 
       - name: Install build dependencies only
-        run: |
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            poetry install --only main --no-interaction --no-ansi -E mongodb -E mssql -E mysql -E oracle
-          else
-            poetry install --only main --no-interaction --no-ansi -E all
-          fi
+        run: poetry install --only main --no-interaction --no-ansi
         shell: bash
 
       - name: Build package with custom build script
@@ -121,79 +117,11 @@ jobs:
           path: dist-py${{ matrix.python-version }}-${{ matrix.os }}/
           retention-days: 7
 
-  build-linux-arm64:
-    name: Build Linux ARM64 wheels
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-    strategy:
-      matrix:
-        python-version: ["3.12", "3.13"]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          platforms: linux/arm64
-
-      - name: Build ARM64 wheel using Docker
-        run: |
-          # Create a multi-stage Dockerfile for ARM64 builds
-          cat << 'EOF' > Dockerfile.arm64
-          FROM python:${{ matrix.python-version }}-slim
-          
-          WORKDIR /build
-          
-          # Install build dependencies
-          RUN apt-get update && apt-get install -y \
-              build-essential \
-              git \
-              && rm -rf /var/lib/apt/lists/*
-          
-          # Install Poetry
-          RUN pip install poetry
-          
-          # Copy project files
-          COPY . .
-          
-          # Configure Poetry and build
-          RUN poetry config virtualenvs.create false \
-              && poetry install --only main --no-interaction --no-ansi \
-              && poetry run python build.py \
-              && poetry build
-          
-          # Copy artifacts to output volume
-          CMD ["cp", "-r", "dist/", "/output/"]
-          EOF
-          
-          # Build using buildx for ARM64
-          docker buildx build \
-            --platform linux/arm64 \
-            --file Dockerfile.arm64 \
-            --tag pythonlogs-arm64-builder:${{ matrix.python-version }} \
-            --load \
-            .
-          
-          # Create output directory
-          mkdir -p dist-arm64-py${{ matrix.python-version }}
-          
-          # Run container to extract artifacts
-          docker run --rm \
-            --platform linux/arm64 \
-            -v $(pwd)/dist-arm64-py${{ matrix.python-version }}:/output \
-            pythonlogs-arm64-builder:${{ matrix.python-version }}
-
-      - name: Upload Linux ARM64 Python ${{ matrix.python-version }} artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-packages-${{ matrix.python-version }}-linux-arm64
-          path: dist-arm64-py${{ matrix.python-version }}/
-          retention-days: 7
 
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    needs: [build, build-linux-arm64]
+    needs: [build]
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
