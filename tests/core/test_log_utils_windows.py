@@ -564,10 +564,10 @@ class TestLogUtilsWindows:
             if os.path.exists(file_path):
                 safe_close_and_delete_file(None, file_path)
 
-        # Test 2: Non-existent file (should not error)
+        # Test 2: Non-existent file (should raise FileNotFoundError)
         non_existent = os.path.join(tempfile.gettempdir(), "non_existent_windows_test.log")
-        result = log_utils.delete_file(non_existent)
-        # Should not raise error and handle gracefully
+        with pytest.raises(FileNotFoundError):
+            log_utils.delete_file(non_existent)
 
     @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific tests")
     def test_windows_logger_cleanup_integration(self):
