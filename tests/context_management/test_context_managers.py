@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import logging
 import os
 import sys
@@ -20,7 +19,10 @@ from pythonLogs import (
 )
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file",
+)
 class TestContextManagers:
     """Test context manager functionality for resource management."""
 
@@ -35,7 +37,7 @@ class TestContextManagers:
             self.temp_dir = temp_dir
             self.log_file = "test.log"
             yield
-        
+
         # Clear registry after each test
         clear_logger_registry()
 
@@ -64,7 +66,7 @@ class TestContextManagers:
             directory=self.temp_dir,
             filenames=[self.log_file],
             maxmbytes=1,
-            daystokeep=2
+            daystokeep=2,
         ) as logger:
             assert isinstance(logger, logging.Logger)
             assert logger.name == logger_name
@@ -91,7 +93,7 @@ class TestContextManagers:
             directory=self.temp_dir,
             filenames=[self.log_file],
             when=RotateWhen.HOURLY.value,
-            daystokeep=3
+            daystokeep=3,
         ) as logger:
             assert isinstance(logger, logging.Logger)
             assert logger.name == logger_name
@@ -180,7 +182,10 @@ class TestContextManagers:
         logger_name = "test_stream_cleanup"
 
         with SizeRotatingLog(
-            name=logger_name, directory=self.temp_dir, filenames=[self.log_file], streamhandler=True
+            name=logger_name,
+            directory=self.temp_dir,
+            filenames=[self.log_file],
+            streamhandler=True,
             # Enable stream handler
         ) as logger:
             # Should have both file and stream handlers
@@ -217,26 +222,26 @@ class TestContextManagers:
     def test_shutdown_logger(self):
         """Test shutdown_logger functionality."""
         logger_name = "test_shutdown_logger"
-        
+
         # Create a logger using factory (with registry caching)
         logger = LoggerFactory.get_or_create_logger("basic", name=logger_name, level=LogLevel.INFO.value)
-        
+
         # Verify logger is in registry
         assert logger_name in LoggerFactory._logger_registry
-        
+
         # Add some handlers
         handler = logging.StreamHandler()
         logger.addHandler(handler)
-        
+
         # Verify handler is attached
         assert len(logger.handlers) > 0
-        
+
         # Shutdown the specific logger
         LoggerFactory.shutdown_logger(logger_name)
-        
+
         # Verify logger handlers are cleaned up
         assert len(logger.handlers) == 0
-        
+
         # Verify logger is removed from registry
         assert logger_name not in LoggerFactory._logger_registry
 

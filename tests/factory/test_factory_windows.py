@@ -4,6 +4,7 @@ import os
 import sys
 import pytest
 
+
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -12,13 +13,11 @@ from pythonLogs import (
     LoggerType,
     LogLevel,
     RotateWhen,
-    create_logger,
     get_or_create_logger,
     basic_logger,
     size_rotating_logger,
     timed_rotating_logger,
     clear_logger_registry,
-    get_registered_loggers,
 )
 
 # Import Windows-safe utilities for test cleanup
@@ -30,54 +29,43 @@ from tests.core.test_log_utils import (
 
 class TestLoggerFactoryWindows:
     """Windows-specific test cases for the LoggerFactory pattern."""
-    
+
     def setup_method(self):
         """Clear registry before each test."""
         cleanup_all_loggers()
         clear_logger_registry()
-    
+
     def teardown_method(self):
         """Clean up after each test."""
         cleanup_all_loggers()
         clear_logger_registry()
-    
+
     @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific tests")
     def test_size_rotating_logger_creation_windows(self):
         """Test size rotating logger creation using convenience function on Windows."""
         with windows_safe_temp_directory() as temp_dir:
-            size_logger = size_rotating_logger(
-                name="test_size_win",
-                directory=temp_dir,
-                maxmbytes=5
-            )
+            size_logger = size_rotating_logger(name="test_size_win", directory=temp_dir, maxmbytes=5)
             assert size_logger.name == "test_size_win"
-    
+
     @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific tests")
     def test_timed_rotating_logger_creation_windows(self):
         """Test timed rotating logger creation on Windows."""
         with windows_safe_temp_directory() as temp_dir:
-            timed_logger = timed_rotating_logger(
-                name="test_timed_win",
-                directory=temp_dir,
-                when="midnight"
-            )
+            timed_logger = timed_rotating_logger(name="test_timed_win", directory=temp_dir, when="midnight")
             assert timed_logger.name == "test_timed_win"
-    
+
     @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific tests")
     def test_logger_with_file_output_windows(self):
         """Test logger creation with actual file output on Windows."""
         with windows_safe_temp_directory() as temp_dir:
             logger = size_rotating_logger(
-                name="file_test_win",
-                directory=temp_dir,
-                filenames=["test.log"],
-                level="INFO"
+                name="file_test_win", directory=temp_dir, filenames=["test.log"], level="INFO"
             )
-            
+
             # Test logging
             logger.info("Test message")
             logger.warning("Test warning")
-            
+
             # Verify logger is working
             assert logger.name == "file_test_win"
             assert logger.level == 20  # INFO level
@@ -90,7 +78,7 @@ class TestLoggerFactoryWindows:
                 name="size_factory_test_win",
                 directory=temp_dir,
                 maxmbytes=10,
-                level=LogLevel.INFO
+                level=LogLevel.INFO,
             )
             assert logger.name == "size_factory_test_win"
 
@@ -102,7 +90,7 @@ class TestLoggerFactoryWindows:
                 name="timed_factory_test_win",
                 directory=temp_dir,
                 when=RotateWhen.DAILY,
-                level="ERROR"
+                level="ERROR",
             )
             assert logger.name == "timed_factory_test_win"
 
@@ -112,7 +100,7 @@ class TestLoggerFactoryWindows:
         # Test basic_logger
         basic_log = basic_logger(name="conv_basic_win", level="DEBUG")
         assert basic_log.name == "conv_basic_win"
-        
+
         # Test size_rotating_logger
         with windows_safe_temp_directory() as temp_dir:
             size_log = size_rotating_logger(
@@ -120,17 +108,17 @@ class TestLoggerFactoryWindows:
                 directory=temp_dir,
                 filenames=["test1.log", "test2.log"],
                 maxmbytes=5,
-                daystokeep=30
+                daystokeep=30,
             )
             assert size_log.name == "conv_size_win"
-            
+
             # Test timed_rotating_logger
             timed_log = timed_rotating_logger(
                 name="conv_timed_win",
                 directory=temp_dir,
                 when="midnight",
                 sufix="%Y%m%d",
-                daystokeep=7
+                daystokeep=7,
             )
             assert timed_log.name == "conv_timed_win"
 
@@ -139,26 +127,15 @@ class TestLoggerFactoryWindows:
         """Test all pattern match cases in factory create_logger on Windows."""
         with windows_safe_temp_directory() as temp_dir:
             # Test BASIC case
-            basic = LoggerFactory.create_logger(
-                LoggerType.BASIC,
-                name="match_basic_win"
-            )
+            basic = LoggerFactory.create_logger(LoggerType.BASIC, name="match_basic_win")
             assert basic.name == "match_basic_win"
-            
+
             # Test SIZE_ROTATING case
-            size = LoggerFactory.create_logger(
-                LoggerType.SIZE_ROTATING,
-                name="match_size_win",
-                directory=temp_dir
-            )
+            size = LoggerFactory.create_logger(LoggerType.SIZE_ROTATING, name="match_size_win", directory=temp_dir)
             assert size.name == "match_size_win"
-            
+
             # Test TIMED_ROTATING case
-            timed = LoggerFactory.create_logger(
-                LoggerType.TIMED_ROTATING,
-                name="match_timed_win",
-                directory=temp_dir
-            )
+            timed = LoggerFactory.create_logger(LoggerType.TIMED_ROTATING, name="match_timed_win", directory=temp_dir)
             assert timed.name == "match_timed_win"
 
     @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific tests")
@@ -259,12 +236,17 @@ class TestLoggerFactoryWindows:
         with windows_safe_temp_directory() as temp_dir:
             # First module gets logger
             module1_logger = get_or_create_logger(
-                LoggerType.SIZE_ROTATING, name="shared_app_logger_win", directory=temp_dir, level=LogLevel.INFO
+                LoggerType.SIZE_ROTATING,
+                name="shared_app_logger_win",
+                directory=temp_dir,
+                level=LogLevel.INFO,
             )
 
             # The Second module gets the same logger (cached)
             module2_logger = get_or_create_logger(
-                LoggerType.SIZE_ROTATING, name="shared_app_logger_win", directory=temp_dir  # Must provide same params
+                LoggerType.SIZE_ROTATING,
+                name="shared_app_logger_win",
+                directory=temp_dir,  # Must provide same params
             )
 
             # Should be the same instance
@@ -358,42 +340,42 @@ class TestLoggerFactoryWindows:
     def test_factory_lru_eviction_comprehensive_windows(self):
         """Test comprehensive LRU eviction scenarios on Windows with timing considerations."""
         import time
-        
+
         # Set a small limit for testing
         LoggerFactory.set_memory_limits(max_loggers=2, ttl_seconds=3600)
-        
+
         # Create loggers in specific order with deliberate delays to ensure timestamp ordering
         logger1 = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="lru1_win")
         time.sleep(0.01)  # Small delay to ensure different timestamps
-        
+
         logger2 = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="lru2_win")
         time.sleep(0.01)  # Small delay to ensure different timestamps
-        
+
         # Access logger1 to update its timestamp
         logger1_again = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="lru1_win")
         assert logger1 is logger1_again
         time.sleep(0.01)  # Small delay to ensure timestamp update
-        
+
         # Create third logger - should evict logger2 (oldest)
         logger3 = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="lru3_win")
-        
+
         registry = LoggerFactory.get_registered_loggers()
         assert len(registry) == 2
-        
+
         # On Windows, timing might be less precise, so let's be more flexible
         # We know one of the first two loggers should be evicted
         assert "lru3_win" in registry  # Newly created should always be there
-        
+
         # Either lru1 or lru2 was evicted, but not both
         lru1_present = "lru1_win" in registry
         lru2_present = "lru2_win" in registry
         assert lru1_present != lru2_present  # Exactly one should be present (XOR)
-        
-        # Ideally lru1 should be present (recently accessed) and lru2 should be evicted
+
+        # Ideally, lru1 should be present (recently accessed) and lru2 should be evicted,
         # But on Windows, we'll accept either outcome due to timing precision issues
         evicted_logger = "lru2_win" if lru1_present else "lru1_win"
         remaining_logger = "lru1_win" if lru1_present else "lru2_win"
-        
+
         assert remaining_logger in registry
         assert evicted_logger not in registry
 
@@ -407,22 +389,22 @@ class TestLoggerFactoryWindows:
                 directory=temp_dir,
                 filenames=["resilience1.log"],
                 maxmbytes=1,
-                level=LogLevel.INFO
+                level=LogLevel.INFO,
             )
-            
+
             logger2 = LoggerFactory.create_timed_rotating_logger(
                 name="resilience_test2_win",
                 directory=temp_dir,
                 filenames=["resilience2.log"],
                 when=RotateWhen.HOURLY,
-                level=LogLevel.INFO
+                level=LogLevel.INFO,
             )
-            
+
             # Log messages to both loggers
             for i in range(10):
                 logger1.info(f"Size rotating message {i}")
                 logger2.info(f"Timed rotating message {i}")
-            
+
             # Verify loggers are working
             assert logger1.name == "resilience_test1_win"
             assert logger2.name == "resilience_test2_win"

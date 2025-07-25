@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Practical examples and integration tests for the Logger Factory Pattern."""
 import os
-import stat
 import sys
 import tempfile
 from pathlib import Path
@@ -44,7 +43,10 @@ class TestFactoryExamples:
         assert logger.name == "console_app"
         assert logger.level == 20  # INFO level
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see test_factory_windows.py")
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="Windows file locking issues with TemporaryDirectory - see test_factory_windows.py",
+    )
     def test_file_based_size_rotating_logger(self):
         """Test file-based size rotating logger example."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -68,7 +70,10 @@ class TestFactoryExamples:
             log_files = list(Path(temp_dir).glob("*.log"))
             assert len(log_files) >= 1  # At least one log file should exist
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see test_factory_windows.py")
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="Windows file locking issues with TemporaryDirectory - see test_factory_windows.py",
+    )
     def test_time_based_rotating_logger(self):
         """Test time-based rotating logger example."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -89,7 +94,10 @@ class TestFactoryExamples:
             log_files = list(Path(temp_dir).glob("*.log"))
             assert len(log_files) >= 1
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see test_factory_windows.py")
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="Windows file locking issues with TemporaryDirectory - see test_factory_windows.py",
+    )
     def test_production_like_multi_logger_setup(self):
         """Test production-like setup with multiple loggers."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -142,18 +150,26 @@ class TestFactoryExamples:
             log_files = list(Path(temp_dir).glob("*.log"))
             assert len(log_files) >= 3
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see test_factory_windows.py")
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="Windows file locking issues with TemporaryDirectory - see test_factory_windows.py",
+    )
     def test_logger_registry_in_production_scenario(self):
         """Test logger registry usage in production scenario."""
         with tempfile.TemporaryDirectory() as temp_dir:
             # First module gets logger
             module1_logger = get_or_create_logger(
-                LoggerType.SIZE_ROTATING, name="shared_app_logger", directory=temp_dir, level=LogLevel.INFO
+                LoggerType.SIZE_ROTATING,
+                name="shared_app_logger",
+                directory=temp_dir,
+                level=LogLevel.INFO,
             )
 
             # The Second module gets the same logger (cached)
             module2_logger = get_or_create_logger(
-                LoggerType.SIZE_ROTATING, name="shared_app_logger", directory=temp_dir  # Must provide same params
+                LoggerType.SIZE_ROTATING,
+                name="shared_app_logger",
+                directory=temp_dir,  # Must provide same params
             )
 
             # Should be the same instance
@@ -163,7 +179,10 @@ class TestFactoryExamples:
             module1_logger.info("Message from module 1")
             module2_logger.info("Message from module 2")
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see test_factory_windows.py")
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="Windows file locking issues with TemporaryDirectory - see test_factory_windows.py",
+    )
     def test_mixed_enum_string_usage_example(self):
         """Test realistic mixed usage of enums and strings."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -195,22 +214,19 @@ class TestFactoryExamples:
             with tempfile.TemporaryDirectory() as temp_dir:
                 readonly_parent = os.path.join(temp_dir, "readonly")
                 # Read-only parent
-                os.makedirs(
-                    readonly_parent,
-                    mode=0o555,
-                )
+                os.makedirs(readonly_parent, mode=0o555)
                 try:
                     invalid_dir = os.path.join(readonly_parent, "invalid")
                     with pytest.raises(PermissionError):
-                        size_rotating_logger(
-                            name="permission_test",
-                            directory=invalid_dir,
-                        )
+                        size_rotating_logger(name="permission_test", directory=invalid_dir)
                 finally:
                     # Restore permissions for cleanup
                     os.chmod(readonly_parent, 0o755)
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see test_factory_windows.py")
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="Windows file locking issues with TemporaryDirectory - see test_factory_windows.py",
+    )
     def test_logger_customization_example(self):
         """Test logger with extensive customization."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -240,7 +256,10 @@ class TestFactoryExamples:
             assert logger.name == "custom_app"
             assert logger.level == 10  # DEBUG level
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see test_factory_windows.py")
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="Windows file locking issues with TemporaryDirectory - see test_factory_windows.py",
+    )
     def test_convenience_functions_examples(self):
         """Test all convenience functions with realistic scenarios."""
         # Basic logger for console output

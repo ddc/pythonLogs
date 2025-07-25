@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import logging
 import os
 import sys
@@ -43,7 +42,7 @@ class TestBasicLog:
             encoding="utf-8",
             datefmt="%Y-%m-%d %H:%M:%S",
             timezone="UTC",
-            showlocation=True
+            showlocation=True,
         )
         assert basic_log.level == logging.DEBUG
         assert basic_log.appname == "test_app"
@@ -56,7 +55,7 @@ class TestBasicLog:
         """Test BasicLog init method creates logger."""
         basic_log = BasicLog(name="test_init", level=LogLevel.INFO.value)
         logger = basic_log.init()
-        
+
         assert isinstance(logger, logging.Logger)
         assert logger.name == "test_init"
         assert logger.level == logging.INFO
@@ -67,19 +66,19 @@ class TestBasicLog:
         """Test that BasicLog logger can log messages."""
         basic_log = BasicLog(name="test_logging", level=LogLevel.INFO.value)
         logger = basic_log.init()
-        
+
         # Test logging at different levels
         logger.info("Test info message")
         logger.warning("Test warning message")
         logger.error("Test error message")
-        
+
         # Should not raise any exceptions
 
     def test_basic_log_level_filtering(self):
         """Test that BasicLog respects log level filtering."""
         basic_log = BasicLog(name="test_level", level=LogLevel.WARNING.value)
         logger = basic_log.init()
-        
+
         assert logger.level == logging.WARNING
         assert logger.isEnabledFor(logging.WARNING)
         assert logger.isEnabledFor(logging.ERROR)
@@ -90,12 +89,12 @@ class TestBasicLog:
         """Test BasicLog static cleanup method."""
         basic_log = BasicLog(name="test_cleanup", level=LogLevel.INFO.value)
         logger = basic_log.init()
-        
+
         # Add a handler
         handler = logging.StreamHandler()
         logger.addHandler(handler)
         assert len(logger.handlers) > 0
-        
+
         # Clean up using static method
         BasicLog.cleanup_logger(logger)
         assert len(logger.handlers) == 0
@@ -104,12 +103,12 @@ class TestBasicLog:
         """Test BasicLog instance cleanup method."""
         basic_log = BasicLog(name="test_instance_cleanup", level=LogLevel.INFO.value)
         logger = basic_log.init()
-        
+
         # Add a handler
         handler = logging.StreamHandler()
         logger.addHandler(handler)
         assert len(logger.handlers) > 0
-        
+
         # Clean up using instance method
         basic_log._cleanup_logger(logger)
         assert len(logger.handlers) == 0
@@ -118,11 +117,11 @@ class TestBasicLog:
         """Test BasicLog thread safety with concurrent operations."""
         import threading
         import time
-        
+
         basic_log = BasicLog(name="test_thread_safety", level=LogLevel.INFO.value)
         logger = basic_log.init()
         results = []
-        
+
         def log_messages(thread_id):
             try:
                 for i in range(10):
@@ -131,18 +130,18 @@ class TestBasicLog:
                 results.append(f"thread_{thread_id}_success")
             except Exception as e:
                 results.append(f"thread_{thread_id}_error_{e}")
-        
+
         # Create multiple threads
         threads = []
         for i in range(5):
             thread = threading.Thread(target=log_messages, args=(i,))
             threads.append(thread)
             thread.start()
-        
+
         # Wait for all threads to complete
         for thread in threads:
             thread.join()
-        
+
         # All threads should complete successfully
         assert len(results) == 5
         assert all("success" in result for result in results)
@@ -156,27 +155,27 @@ class TestBasicLog:
             (LogLevel.ERROR.value, logging.ERROR),
             (LogLevel.CRITICAL.value, logging.CRITICAL),
         ]
-        
+
         for level_str, level_int in log_levels:
             basic_log = BasicLog(name=f"test_{level_str}", level=level_str)
             logger = basic_log.init()
             assert logger.level == level_int
-            
+
             # Clean up
             BasicLog.cleanup_logger(logger)
 
     def test_basic_log_multiple_instances(self):
         """Test creating multiple BasicLog instances."""
         loggers = []
-        
+
         for i in range(5):
             basic_log = BasicLog(name=f"test_multi_{i}", level=LogLevel.INFO.value)
             logger = basic_log.init()
             loggers.append((basic_log, logger))
-            
+
             assert logger.name == f"test_multi_{i}"
             assert logger.level == logging.INFO
-        
+
         # Clean up all loggers
         for basic_log, logger in loggers:
             BasicLog.cleanup_logger(logger)

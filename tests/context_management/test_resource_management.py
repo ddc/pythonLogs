@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import concurrent.futures
 import gc
 import logging
@@ -14,17 +13,21 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 from pythonLogs import (
-    LoggerFactory, basic_logger,
+    LoggerFactory,
+    basic_logger,
     size_rotating_logger,
     clear_logger_registry,
     shutdown_logger,
     get_registered_loggers,
-    LogLevel
+    LogLevel,
 )
 from pythonLogs.basic_log import BasicLog
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file",
+)
 class TestResourceManagement:
     """Test resource management functionality."""
 
@@ -39,7 +42,7 @@ class TestResourceManagement:
             self.temp_dir = temp_dir
             self.log_file = "resource_test.log"
             yield
-        
+
         # Clear registry after each test
         clear_logger_registry()
 
@@ -52,7 +55,7 @@ class TestResourceManagement:
             name=logger_name,
             directory=self.temp_dir,
             filenames=[self.log_file],
-            maxmbytes=1
+            maxmbytes=1,
         )
 
         # Add to registry
@@ -156,7 +159,7 @@ class TestResourceManagement:
             directory=self.temp_dir,
             filenames=[self.log_file, "second.log"],
             maxmbytes=1,
-            streamhandler=True  # Add stream handler too
+            streamhandler=True,  # Add stream handler too
         )
 
         # Add to registry
@@ -191,7 +194,7 @@ class TestResourceManagement:
                 name=name,
                 directory=self.temp_dir,
                 filenames=[f"{name}.log"],
-                maxmbytes=1
+                maxmbytes=1,
             )
             LoggerFactory._logger_registry[name] = (logger, time.time())
 
@@ -223,7 +226,7 @@ class TestResourceManagement:
             name=logger_name,
             directory=self.temp_dir,
             filenames=[self.log_file],
-            maxmbytes=1
+            maxmbytes=1,
         )
 
         # Add to registry
@@ -259,31 +262,31 @@ class TestResourceManagement:
             """Create a logger and immediately clean it up."""
             logger_name = f"concurrent_test_{index}"
             logger = basic_logger(name=logger_name, level=LogLevel.INFO.value)
-            
+
             # Add to registry
             LoggerFactory._logger_registry[logger_name] = (logger, time.time())
-            
+
             # Small delay to increase chance of concurrent access
             time.sleep(0.01)
-            
+
             # Shutdown this specific logger
             return shutdown_logger(logger_name)
-        
+
         # Create multiple threads doing concurrent operations
         num_threads = 5
         with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
             futures = []
             for i in range(num_threads):
                 futures.append(executor.submit(create_and_cleanup_logger, i))
-            
+
             # Wait for all to complete
             results = []
             for future in concurrent.futures.as_completed(futures):
                 results.append(future.result())
-        
+
         # All operations should succeed
         assert all(results)
-        
+
         # The Registry should be empty
         assert len(get_registered_loggers()) == 0
 
