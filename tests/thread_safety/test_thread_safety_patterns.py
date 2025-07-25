@@ -18,7 +18,6 @@ class TestAdvancedThreadSafetyPatterns:
     def test_producer_consumer_pattern(self):
         """Test thread safety in producer-consumer pattern."""
         
-        @auto_thread_safe(['put', 'get'])
         class ThreadSafeQueue:
             def __init__(self, maxsize=10):
                 self.queue = []
@@ -28,20 +27,25 @@ class TestAdvancedThreadSafetyPatterns:
             def put(self, item):
                 with self.condition:
                     while len(self.queue) >= self.maxsize:
-                        self.condition.wait()
+                        self.condition.wait(timeout=1.0)  # Add timeout to prevent infinite wait
+                        if len(self.queue) >= self.maxsize:
+                            raise TimeoutError("Queue full timeout")
                     self.queue.append(item)
                     self.condition.notify_all()
             
             def get(self):
                 with self.condition:
                     while not self.queue:
-                        self.condition.wait()
+                        self.condition.wait(timeout=1.0)  # Add timeout to prevent infinite wait
+                        if not self.queue:
+                            raise TimeoutError("Queue empty timeout")
                     item = self.queue.pop(0)
                     self.condition.notify_all()
                     return item
             
             def size(self):
-                return len(self.queue)
+                with self.condition:
+                    return len(self.queue)
         
         queue = ThreadSafeQueue(maxsize=5)
         results = []
@@ -84,29 +88,32 @@ class TestAdvancedThreadSafetyPatterns:
     def test_reader_writer_pattern(self):
         """Test thread safety in reader-writer pattern."""
         
-        @auto_thread_safe(['read', 'write'])
         class ThreadSafeDataStore:
             def __init__(self):
                 self.data = {}
                 self.read_count = 0
                 self.write_count = 0
+                self._lock = threading.RLock()
             
             def read(self, key):
-                self.read_count += 1
-                time.sleep(0.001)  # Simulate read time
-                return self.data.get(key)
+                with self._lock:
+                    self.read_count += 1
+                    time.sleep(0.001)  # Simulate read time
+                    return self.data.get(key)
             
             def write(self, key, value):
-                self.write_count += 1
-                time.sleep(0.001)  # Simulate write time
-                self.data[key] = value
+                with self._lock:
+                    self.write_count += 1
+                    time.sleep(0.001)  # Simulate write time
+                    self.data[key] = value
             
             def get_stats(self):
-                return {
-                    'reads': self.read_count,
-                    'writes': self.write_count,
-                    'data_size': len(self.data)
-                }
+                with self._lock:
+                    return {
+                        'reads': self.read_count,
+                        'writes': self.write_count,
+                        'data_size': len(self.data)
+                    }
         
         store = ThreadSafeDataStore()
         
@@ -194,7 +201,6 @@ class TestAdvancedThreadSafetyPatterns:
     def test_resource_pool_pattern(self):
         """Test thread-safe resource pool pattern."""
         
-        @auto_thread_safe(['get_resource', 'return_resource'])
         class ThreadSafeResourcePool:
             def __init__(self, create_resource_func, pool_size=5):
                 self.create_resource = create_resource_func
@@ -202,6 +208,7 @@ class TestAdvancedThreadSafetyPatterns:
                 self.available = []
                 self.in_use = set()
                 self.condition = threading.Condition()
+                self._lock = threading.RLock()
                 
                 # Pre-populate pool
                 for _ in range(pool_size):
@@ -227,11 +234,12 @@ class TestAdvancedThreadSafetyPatterns:
                         self.condition.notify()
             
             def stats(self):
-                return {
-                    'available': len(self.available),
-                    'in_use': len(self.in_use),
-                    'total': len(self.available) + len(self.in_use)
-                }
+                with self._lock:
+                    return {
+                        'available': len(self.available),
+                        'in_use': len(self.in_use),
+                        'total': len(self.available) + len(self.in_use)
+                    }
         
         # Create a simple resource (just a counter)
         resource_counter = [0]
@@ -266,40 +274,44 @@ class TestAdvancedThreadSafetyPatterns:
     def test_cache_with_expiry_thread_safety(self):
         """Test thread-safe cache with expiry."""
         
-        @auto_thread_safe(['get', 'put', 'cleanup'])
         class ThreadSafeExpiryCache:
             def __init__(self, default_ttl=1.0):
                 self.cache = {}
                 self.timestamps = {}
                 self.default_ttl = default_ttl
+                self._lock = threading.RLock()
             
             def get(self, key):
-                if key in self.cache:
-                    if time.time() - self.timestamps[key] < self.default_ttl:
-                        return self.cache[key]
-                    else:
-                        # Expired
-                        del self.cache[key]
-                        del self.timestamps[key]
-                return None
+                with self._lock:
+                    if key in self.cache:
+                        if time.time() - self.timestamps[key] < self.default_ttl:
+                            return self.cache[key]
+                        else:
+                            # Expired
+                            del self.cache[key]
+                            del self.timestamps[key]
+                    return None
             
             def put(self, key, value, ttl=None):
-                self.cache[key] = value
-                self.timestamps[key] = time.time()
+                with self._lock:
+                    self.cache[key] = value
+                    self.timestamps[key] = time.time()
             
             def cleanup(self):
-                current_time = time.time()
-                expired_keys = [
-                    key for key, timestamp in self.timestamps.items()
-                    if current_time - timestamp >= self.default_ttl
-                ]
-                for key in expired_keys:
-                    del self.cache[key]
-                    del self.timestamps[key]
-                return len(expired_keys)
+                with self._lock:
+                    current_time = time.time()
+                    expired_keys = [
+                        key for key, timestamp in self.timestamps.items()
+                        if current_time - timestamp >= self.default_ttl
+                    ]
+                    for key in expired_keys:
+                        del self.cache[key]
+                        del self.timestamps[key]
+                    return len(expired_keys)
             
             def size(self):
-                return len(self.cache)
+                with self._lock:
+                    return len(self.cache)
         
         cache = ThreadSafeExpiryCache(default_ttl=0.1)
         
@@ -335,39 +347,43 @@ class TestAdvancedThreadSafetyPatterns:
     def test_event_bus_thread_safety(self):
         """Test thread-safe event bus pattern."""
         
-        @auto_thread_safe(['subscribe', 'unsubscribe', 'publish'])
         class ThreadSafeEventBus:
             def __init__(self):
                 self.subscribers = {}
                 self.event_count = {}
+                self._lock = threading.RLock()
             
             def subscribe(self, event_type, callback):
-                if event_type not in self.subscribers:
-                    self.subscribers[event_type] = []
-                self.subscribers[event_type].append(callback)
+                with self._lock:
+                    if event_type not in self.subscribers:
+                        self.subscribers[event_type] = []
+                    self.subscribers[event_type].append(callback)
             
             def unsubscribe(self, event_type, callback):
-                if event_type in self.subscribers:
-                    try:
-                        self.subscribers[event_type].remove(callback)
-                    except ValueError:
-                        pass
+                with self._lock:
+                    if event_type in self.subscribers:
+                        try:
+                            self.subscribers[event_type].remove(callback)
+                        except ValueError:
+                            pass
             
             def publish(self, event_type, data):
-                self.event_count[event_type] = self.event_count.get(event_type, 0) + 1
-                if event_type in self.subscribers:
-                    for callback in self.subscribers[event_type][:]:  # Copy to avoid modification during iteration
-                        try:
-                            callback(data)
-                        except Exception:
-                            pass  # Ignore callback errors
+                with self._lock:
+                    self.event_count[event_type] = self.event_count.get(event_type, 0) + 1
+                    if event_type in self.subscribers:
+                        for callback in self.subscribers[event_type][:]:  # Copy to avoid modification during iteration
+                            try:
+                                callback(data)
+                            except Exception:
+                                pass  # Ignore callback errors
             
             def get_stats(self):
-                return {
-                    'subscriber_count': sum(len(subs) for subs in self.subscribers.values()),
-                    'event_types': len(self.subscribers),
-                    'events_published': dict(self.event_count)
-                }
+                with self._lock:
+                    return {
+                        'subscriber_count': sum(len(subs) for subs in self.subscribers.values()),
+                        'event_types': len(self.subscribers),
+                        'events_published': dict(self.event_count)
+                    }
         
         event_bus = ThreadSafeEventBus()
         received_events = []
@@ -425,38 +441,43 @@ class TestAdvancedThreadSafetyPatterns:
     def test_weak_reference_cleanup_thread_safety(self):
         """Test thread safety with weak references and cleanup."""
         
-        @auto_thread_safe(['register', 'cleanup', 'get_count'])
         class ThreadSafeWeakRegistry:
             def __init__(self):
                 self.registry = {}
                 self.cleanup_count = 0
+                self._lock = threading.RLock()
             
             def register(self, obj, name):
                 def cleanup_callback(weak_ref):
-                    self.cleanup_count += 1
-                    if name in self.registry:
-                        del self.registry[name]
+                    with self._lock:
+                        self.cleanup_count += 1
+                        if name in self.registry:
+                            del self.registry[name]
                 
-                weak_ref = weakref.ref(obj, cleanup_callback)
-                self.registry[name] = weak_ref
+                with self._lock:
+                    weak_ref = weakref.ref(obj, cleanup_callback)
+                    self.registry[name] = weak_ref
             
             def cleanup(self):
-                # Manual cleanup of dead references
-                dead_refs = []
-                for name, weak_ref in self.registry.items():
-                    if weak_ref() is None:
-                        dead_refs.append(name)
-                
-                for name in dead_refs:
-                    del self.registry[name]
-                
-                return len(dead_refs)
+                with self._lock:
+                    # Manual cleanup of dead references
+                    dead_refs = []
+                    for name, weak_ref in self.registry.items():
+                        if weak_ref() is None:
+                            dead_refs.append(name)
+                    
+                    for name in dead_refs:
+                        del self.registry[name]
+                    
+                    return len(dead_refs)
             
             def get_count(self):
-                return len(self.registry)
+                with self._lock:
+                    return len(self.registry)
             
             def get_cleanup_count(self):
-                return self.cleanup_count
+                with self._lock:
+                    return self.cleanup_count
         
         registry = ThreadSafeWeakRegistry()
         
