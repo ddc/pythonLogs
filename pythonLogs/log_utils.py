@@ -139,7 +139,7 @@ def is_older_than_x_days(path: str, days: int) -> bool:
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), path)
 
     try:
-        if int(days) in (0, 1):
+        if int(days) == 0:
             cutoff_time = datetime.now()
         else:
             cutoff_time = datetime.now() - timedelta(days=int(days))

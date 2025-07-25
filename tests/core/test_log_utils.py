@@ -420,10 +420,9 @@ class TestLogUtils:
         try:
             assert os.path.isfile(file_path) == True
 
-            # When days=1, it compares against current time, so the file should be "older" 
-            # due to the small time difference since creation
+            # When days=1, it compares against 1 day ago, so newly created file should NOT be older
             result = log_utils.is_older_than_x_days(file_path, 1)
-            assert result == True
+            assert result == False
 
             # When days=5, it compares against 5 days ago, so newly created file should NOT be older
             result = log_utils.is_older_than_x_days(file_path, 5)
@@ -1555,3 +1554,88 @@ class TestLogUtils:
                 # Cleanup: remove the test file if it still exists
                 if os.path.exists(test_file):
                     os.unlink(test_file)
+
+    def test_gzip_file_windows_retry_mechanism_coverage(self):
+        """Test gzip_file_with_sufix Windows retry mechanism for coverage."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create a test file
+            test_file = os.path.join(temp_dir, "test_retry.log")
+            with open(test_file, "w") as f:
+                f.write("test content for retry mechanism")
+            
+            import unittest.mock
+            
+            # Mock to simulate Windows platform and PermissionError on first attempt
+            call_count = 0
+            original_open = open
+            
+            def mock_open_side_effect(*args, **kwargs):
+                nonlocal call_count
+                call_count += 1
+                if args[0] == test_file and call_count == 1:
+                    # First call - simulate Windows file locking
+                    raise PermissionError("The process cannot access the file")
+                else:
+                    # Subsequent calls - use real open
+                    return original_open(*args, **kwargs)
+            
+            # Mock sys.platform to be Windows and time.sleep to verify retry
+            with unittest.mock.patch('pythonLogs.log_utils.sys.platform', 'win32'):
+                with unittest.mock.patch('pythonLogs.log_utils.time.sleep') as mock_sleep:
+                    with unittest.mock.patch('pythonLogs.log_utils.open', side_effect=mock_open_side_effect):
+                        # This should succeed after retry, covering lines 259-261
+                        result = log_utils.gzip_file_with_sufix(test_file, "retry_coverage")
+                        
+                        # Verify retry was attempted (sleep was called) - line 260
+                        mock_sleep.assert_called_once_with(0.1)
+                        
+                        # Verify the operation eventually succeeded
+                        assert result is not None
+                        assert result.endswith("_retry_coverage.log.gz")
+                        assert not os.path.exists(test_file)  # Original should be deleted
+                        
+                        # Clean up the gzipped file
+                        if result and os.path.exists(result):
+                            os.unlink(result)
+
+    def test_gzip_file_windows_retry_exhausted_coverage(self):
+        """Test gzip_file_with_sufix when Windows retries are exhausted for coverage."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create a test file
+            test_file = os.path.join(temp_dir, "test_retry_fail.log")
+            with open(test_file, "w") as f:
+                f.write("test content for retry exhaustion")
+            
+            import unittest.mock
+            
+            # Mock to always raise PermissionError to exhaust retries
+            def mock_open_side_effect(*args, **kwargs):
+                if args[0] == test_file:
+                    # Always fail - simulate persistent Windows file locking
+                    raise PermissionError("The process cannot access the file - persistent lock")
+                else:
+                    # Other opens work normally
+                    return open(*args, **kwargs)
+            
+            # Mock sys.platform to be Windows and capture stderr
+            with unittest.mock.patch('pythonLogs.log_utils.sys.platform', 'win32'):
+                with unittest.mock.patch('pythonLogs.log_utils.time.sleep') as mock_sleep:
+                    with unittest.mock.patch('pythonLogs.log_utils.open', side_effect=mock_open_side_effect):
+                        # Capture stderr to verify error logging
+                        stderr_capture = io.StringIO()
+                        with contextlib.redirect_stderr(stderr_capture):
+                            with pytest.raises(PermissionError) as exc_info:
+                                # This should exhaust retries and fail, covering lines 262-264
+                                log_utils.gzip_file_with_sufix(test_file, "retry_fail")
+                        
+                        # Verify retries were attempted (should be called twice for 3 attempts)
+                        assert mock_sleep.call_count == 2
+                        
+                        # Verify error was logged to stderr (line 263)
+                        output = stderr_capture.getvalue()
+                        assert "Unable to gzip log file" in output
+                        assert test_file in output
+                        assert "persistent lock" in output
+                        
+                        # Verify the exception was re-raised (line 264)
+                        assert "persistent lock" in str(exc_info.value)

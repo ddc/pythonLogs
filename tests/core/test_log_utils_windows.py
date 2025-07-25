@@ -112,10 +112,9 @@ class TestLogUtilsWindows:
             
             assert os.path.isfile(file_path) == True
 
-            # When days=1, it compares against current time, so file should be "older" 
-            # due to the small time difference since creation
+            # When days=1, it compares against 1 day ago, so newly created file should NOT be older
             result = log_utils.is_older_than_x_days(file_path, 1)
-            assert result == True
+            assert result == False
 
             # When days=5, it compares against 5 days ago, so newly created file should NOT be older
             result = log_utils.is_older_than_x_days(file_path, 5)
@@ -408,7 +407,7 @@ class TestLogUtilsWindows:
         
         # Verify all workers completed successfully
         for result in results:
-            assert result['is_old'] == True  # Files should be considered "old"
+            assert result['is_old'] == False  # Files should NOT be considered "old" (created recently)
             assert result['gzip_result'] is not None
             assert f"worker_{result['worker_id']}" in result['gzip_result']
 
