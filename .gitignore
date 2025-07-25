@@ -162,3 +162,4 @@ cython_debug/
 /profile_fixed.prof
 /profile_output.prof
 /profile_pytest.prof
+/junit.xml

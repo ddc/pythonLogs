@@ -1,9 +1,11 @@
-# -*- coding: utf-8 -*-
+import concurrent.futures
+import gc
 import logging
 import os
 import sys
 import tempfile
 import time
+import weakref
 
 
 # Add the parent directory to sys.path for imports
@@ -11,15 +13,21 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 from pythonLogs import (
-    LoggerFactory, basic_logger,
+    LoggerFactory,
+    basic_logger,
     size_rotating_logger,
     clear_logger_registry,
     shutdown_logger,
     get_registered_loggers,
-    LogLevel
+    LogLevel,
 )
+from pythonLogs.basic_log import BasicLog
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file",
+)
 class TestResourceManagement:
     """Test resource management functionality."""
 
@@ -34,7 +42,7 @@ class TestResourceManagement:
             self.temp_dir = temp_dir
             self.log_file = "resource_test.log"
             yield
-        
+
         # Clear registry after each test
         clear_logger_registry()
 
@@ -47,7 +55,7 @@ class TestResourceManagement:
             name=logger_name,
             directory=self.temp_dir,
             filenames=[self.log_file],
-            maxmbytes=1
+            maxmbytes=1,
         )
 
         # Add to registry
@@ -62,6 +70,7 @@ class TestResourceManagement:
 
         # Verify handlers were closed and removed
         assert len(logger.handlers) == 0
+        assert initial_handler_count > 0  # Ensure we actually had handlers to clean up
         assert len(LoggerFactory._logger_registry) == 0
 
     def test_shutdown_specific_logger(self):
@@ -99,7 +108,6 @@ class TestResourceManagement:
 
     def test_handler_cleanup_static_method(self):
         """Test the static cleanup method directly."""
-        from pythonLogs.basic_log import BasicLog
 
         # Create a logger with handlers
         logger = logging.getLogger("test_static_cleanup")
@@ -119,7 +127,6 @@ class TestResourceManagement:
 
     def test_handler_cleanup_with_errors(self):
         """Test handler cleanup handles errors gracefully."""
-        from pythonLogs.basic_log import BasicLog
 
         logger = logging.getLogger("test_error_cleanup")
 
@@ -152,7 +159,7 @@ class TestResourceManagement:
             directory=self.temp_dir,
             filenames=[self.log_file, "second.log"],
             maxmbytes=1,
-            streamhandler=True  # Add stream handler too
+            streamhandler=True,  # Add stream handler too
         )
 
         # Add to registry
@@ -187,7 +194,7 @@ class TestResourceManagement:
                 name=name,
                 directory=self.temp_dir,
                 filenames=[f"{name}.log"],
-                maxmbytes=1
+                maxmbytes=1,
             )
             LoggerFactory._logger_registry[name] = (logger, time.time())
 
@@ -211,8 +218,6 @@ class TestResourceManagement:
 
     def test_memory_usage_after_cleanup(self):
         """Test that memory is properly released after cleanup."""
-        import gc
-        import weakref
 
         logger_name = "memory_test_logger"
 
@@ -221,7 +226,7 @@ class TestResourceManagement:
             name=logger_name,
             directory=self.temp_dir,
             filenames=[self.log_file],
-            maxmbytes=1
+            maxmbytes=1,
         )
 
         # Add to registry
@@ -236,6 +241,8 @@ class TestResourceManagement:
 
         # Logger should still exist due to registry
         assert logger_weakref() is not None
+        # Handlers should also still exist
+        assert all(ref() is not None for ref in handler_weakrefs)
 
         # Clear registry
         clear_logger_registry()
@@ -244,43 +251,42 @@ class TestResourceManagement:
         gc.collect()
 
         # Logger should be garbage collected
-        # Note: This test might be flaky depending on Python's garbage collector
+        # Note: This test might be flaky depending on Python's garbage collector,
         # but it helps verify we're not holding unnecessary references
         print(f"Logger weakref after cleanup: {logger_weakref()}")
 
     def test_concurrent_cleanup(self):
         """Test resource cleanup works correctly with concurrent access."""
-        import concurrent.futures
 
         def create_and_cleanup_logger(index):
             """Create a logger and immediately clean it up."""
             logger_name = f"concurrent_test_{index}"
             logger = basic_logger(name=logger_name, level=LogLevel.INFO.value)
-            
+
             # Add to registry
             LoggerFactory._logger_registry[logger_name] = (logger, time.time())
-            
+
             # Small delay to increase chance of concurrent access
             time.sleep(0.01)
-            
+
             # Shutdown this specific logger
             return shutdown_logger(logger_name)
-        
+
         # Create multiple threads doing concurrent operations
         num_threads = 5
         with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
             futures = []
             for i in range(num_threads):
                 futures.append(executor.submit(create_and_cleanup_logger, i))
-            
+
             # Wait for all to complete
             results = []
             for future in concurrent.futures.as_completed(futures):
                 results.append(future.result())
-        
+
         # All operations should succeed
         assert all(results)
-        
+
         # The Registry should be empty
         assert len(get_registered_loggers()) == 0
 

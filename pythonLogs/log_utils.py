@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 import errno
 import gzip
 import logging.handlers
@@ -10,7 +9,7 @@ import time
 from datetime import datetime, timedelta, timezone as dttz
 from functools import lru_cache
 from pathlib import Path
-from typing import Callable, Set
+from typing import Callable, Optional, Set
 from zoneinfo import ZoneInfo
 from pythonLogs.constants import DEFAULT_FILE_MODE, LEVEL_MAP
 
@@ -139,7 +138,7 @@ def is_older_than_x_days(path: str, days: int) -> bool:
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), path)
 
     try:
-        if int(days) in (0, 1):
+        if int(days) == 0:
             cutoff_time = datetime.now()
         else:
             cutoff_time = datetime.now() - timedelta(days=int(days))
@@ -153,17 +152,21 @@ def is_older_than_x_days(path: str, days: int) -> bool:
 
 # Cache stderr timezone for better performance
 @lru_cache(maxsize=1)
-def _get_stderr_timezone():
+def get_stderr_timezone():
     timezone_name = os.getenv("LOG_TIMEZONE", "UTC")
     if timezone_name.lower() == "localtime":
         return None  # Use system local timezone
-    return ZoneInfo(timezone_name)
+    try:
+        return ZoneInfo(timezone_name)
+    except Exception:
+        # Fallback to local timezone if requested timezone is not available
+        return None
 
 
 def write_stderr(msg: str) -> None:
     """Write msg to stderr with optimized timezone handling"""
     try:
-        tz = _get_stderr_timezone()
+        tz = get_stderr_timezone()
         if tz is None:
             # Use local timezone
             dt = datetime.now()
@@ -202,12 +205,17 @@ def get_log_path(directory: str, filename: str) -> str:
 
 
 @lru_cache(maxsize=32)
-def _get_timezone_offset(timezone_: str) -> str:
-    """Cache timezone offset calculation"""
+def get_timezone_offset(timezone_: str) -> str:
+    """Cache timezone offset calculation with fallback for missing timezone data"""
     if timezone_.lower() == "localtime":
         return time.strftime("%z")
     else:
-        return datetime.now(ZoneInfo(timezone_)).strftime("%z")
+        try:
+            return datetime.now(ZoneInfo(timezone_)).strftime("%z")
+        except Exception:
+            # Fallback to localtime if the requested timezone is not available,
+            # This is common on Windows systems without full timezone data
+            return time.strftime("%z")
 
 
 def get_format(show_location: bool, name: str, timezone_: str) -> str:
@@ -221,7 +229,7 @@ def get_format(show_location: bool, name: str, timezone_: str) -> str:
     if show_location:
         _debug_fmt = "[%(filename)s:%(funcName)s:%(lineno)d]:"
 
-    utc_offset = _get_timezone_offset(timezone_)
+    utc_offset = get_timezone_offset(timezone_)
     return f"[%(asctime)s.%(msecs)03d{utc_offset}]:[%(levelname)s]:{_logger_name}{_debug_fmt}%(message)s"
 
 
@@ -235,13 +243,27 @@ def gzip_file_with_sufix(file_path: str, sufix: str) -> str | None:
     # Use pathlib for cleaner path operations
     renamed_dst = path_obj.with_name(f"{path_obj.stem}_{sufix}{path_obj.suffix}.gz")
 
-    try:
-        with open(file_path, "rb") as fin:
-            with gzip.open(renamed_dst, "wb", compresslevel=6) as fout:  # Balanced compression
-                shutil.copyfileobj(fin, fout, length=64*1024)  # type: ignore # 64KB chunks for better performance
-    except (OSError, IOError) as e:
-        write_stderr(f"Unable to gzip log file | {file_path} | {repr(e)}")
-        raise e
+    # Windows-specific retry mechanism for file locking issues
+    max_retries = 3 if sys.platform == "win32" else 1
+    retry_delay = 0.1  # 100ms delay between retries
+
+    for attempt in range(max_retries):
+        try:
+            with open(file_path, "rb") as fin:
+                with gzip.open(renamed_dst, "wb", compresslevel=6) as fout:  # Balanced compression
+                    shutil.copyfileobj(fin, fout, length=64 * 1024)  # type: ignore # 64KB chunks for better performance
+            break  # Success, exit retry loop
+        except PermissionError as e:
+            # Windows file locking issue - retry with delay
+            if attempt < max_retries - 1 and sys.platform == "win32":
+                time.sleep(retry_delay)
+                continue
+            # Final attempt failed or not Windows - treat as regular error
+            write_stderr(f"Unable to gzip log file | {file_path} | {repr(e)}")
+            raise e
+        except (OSError, IOError) as e:
+            write_stderr(f"Unable to gzip log file | {file_path} | {repr(e)}")
+            raise e
 
     try:
         path_obj.unlink()  # Use pathlib for deletion
@@ -254,13 +276,84 @@ def gzip_file_with_sufix(file_path: str, sufix: str) -> str | None:
 
 @lru_cache(maxsize=32)
 def get_timezone_function(time_zone: str) -> Callable:
-    """Get timezone function with caching for better performance"""
+    """Get timezone function with caching and fallback for missing timezone data"""
     match time_zone.lower():
         case "utc":
-            return time.gmtime
+            try:
+                # Try to create UTC timezone to verify it's available
+                ZoneInfo("UTC")
+                return time.gmtime
+            except Exception:
+                # Fallback to localtime if UTC timezone data is missing
+                return time.localtime
         case "localtime":
             return time.localtime
         case _:
-            # Cache the timezone object
-            tz = ZoneInfo(time_zone)
-            return lambda *args: datetime.now(tz=tz).timetuple()
+            try:
+                # Cache the timezone object
+                tz = ZoneInfo(time_zone)
+                return lambda *args: datetime.now(tz=tz).timetuple()
+            except Exception:
+                # Fallback to localtime if the requested timezone is not available
+                return time.localtime
+
+
+# Shared handler cleanup utility
+def cleanup_logger_handlers(logger: Optional[logging.Logger]) -> None:
+    """Clean up logger resources by closing all handlers.
+
+    This is a centralized utility to ensure consistent cleanup behavior
+    across all logger types and prevent code duplication.
+
+    Args:
+        logger: The logger to clean up (can be None)
+    """
+    if logger is None:
+        return
+
+    # Create a snapshot of handlers to avoid modification during iteration
+    handlers_to_remove = list(logger.handlers)
+    for handler in handlers_to_remove:
+        try:
+            handler.close()
+        except (OSError, ValueError):
+            # Ignore errors during cleanup to prevent cascading failures
+            pass
+        finally:
+            logger.removeHandler(handler)
+
+
+# Public API for directory cache management
+def set_directory_cache_limit(max_directories: int) -> None:
+    """Set the maximum number of directories to cache.
+
+    Args:
+        max_directories: Maximum number of directories to keep in cache
+    """
+    global _max_cached_directories
+    
+    with _directory_lock:
+        _max_cached_directories = max_directories
+        # Trim cache if it exceeds new limit
+        while len(_checked_directories) > max_directories:
+            _checked_directories.pop()
+
+
+def clear_directory_cache() -> None:
+    """Clear the directory cache to free memory."""
+    with _directory_lock:
+        _checked_directories.clear()
+
+
+def get_directory_cache_stats() -> dict:
+    """Get statistics about the directory cache.
+    
+    Returns:
+        Dict with cache statistics including size and limit
+    """
+    with _directory_lock:
+        return {
+            "cached_directories": len(_checked_directories),
+            "max_directories": _max_cached_directories,
+            "directories": list(_checked_directories)
+        }

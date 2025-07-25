@@ -1,12 +1,13 @@
-# -*- encoding: utf-8 -*-
 import logging.handlers
 import os
 import re
+from pathlib import Path
 from typing import Optional
 from pythonLogs.constants import MB_TO_BYTES
 from pythonLogs.log_utils import (
     check_directory_permissions,
     check_filename_instance,
+    cleanup_logger_handlers,
     get_level,
     get_log_path,
     get_logger_and_formatter,
@@ -15,7 +16,7 @@ from pythonLogs.log_utils import (
     remove_old_logs,
     write_stderr,
 )
-from pythonLogs.memory_utils import cleanup_logger_handlers, register_logger_weakref
+from pythonLogs.memory_utils import register_logger_weakref
 from pythonLogs.settings import get_log_settings
 from pythonLogs.thread_safety import auto_thread_safe
 
@@ -23,6 +24,7 @@ from pythonLogs.thread_safety import auto_thread_safe
 @auto_thread_safe(['init', '_cleanup_logger'])
 class SizeRotatingLog:
     """Size-based rotating logger with context manager support for automatic resource cleanup."""
+
     def __init__(
         self,
         level: Optional[str] = None,
@@ -83,22 +85,22 @@ class SizeRotatingLog:
         # Register weak reference for memory tracking
         register_logger_weakref(logger)
         return logger
-    
+
     def __enter__(self):
         """Context manager entry."""
         if not hasattr(self, 'logger') or self.logger is None:
             self.init()
         return self.logger
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit with automatic cleanup."""
         if hasattr(self, 'logger'):
             self._cleanup_logger(self.logger)
-    
+
     def _cleanup_logger(self, logger: logging.Logger) -> None:
         """Clean up logger resources by closing all handlers with thread safety."""
         cleanup_logger_handlers(logger)
-    
+
     @staticmethod
     def cleanup_logger(logger: logging.Logger) -> None:
         """Static method for cleaning up logger resources (backward compatibility)."""
@@ -124,7 +126,6 @@ class GZipRotatorSize:
         max_num = 0
         try:
             # Use pathlib for better performance with large directories
-            from pathlib import Path
             dir_path = Path(directory)
             for file_path in dir_path.iterdir():
                 if file_path.is_file():

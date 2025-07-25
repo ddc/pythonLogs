@@ -1,18 +1,18 @@
-# -*- encoding: utf-8 -*-
 import logging.handlers
 import os
 from typing import Optional
 from pythonLogs.log_utils import (
     check_directory_permissions,
     check_filename_instance,
+    cleanup_logger_handlers,
     get_level,
     get_log_path,
     get_logger_and_formatter,
     get_stream_handler,
     gzip_file_with_sufix,
-     remove_old_logs,
+    remove_old_logs,
 )
-from pythonLogs.memory_utils import cleanup_logger_handlers, register_logger_weakref
+from pythonLogs.memory_utils import register_logger_weakref
 from pythonLogs.settings import get_log_settings
 from pythonLogs.thread_safety import auto_thread_safe
 
@@ -21,7 +21,7 @@ from pythonLogs.thread_safety import auto_thread_safe
 class TimedRotatingLog:
     """
     Time-based rotating logger with context manager support for automatic resource cleanup.
-    
+
     Current 'rotating_when' events supported for TimedRotatingLogs:
     Use RotateWhen enum values:
         RotateWhen.MIDNIGHT - roll over at midnight
@@ -40,11 +40,11 @@ class TimedRotatingLog:
         sufix: Optional[str] = None,
         daystokeep: Optional[int] = None,
         encoding: Optional[str] = None,
-         datefmt: Optional[str] = None,
-         timezone: Optional[str] = None,
-         streamhandler: Optional[bool] = None,
-         showlocation: Optional[bool] = None,
-         rotateatutc: Optional[bool] = None,
+        datefmt: Optional[str] = None,
+        timezone: Optional[str] = None,
+        streamhandler: Optional[bool] = None,
+        showlocation: Optional[bool] = None,
+        rotateatutc: Optional[bool] = None,
     ):
         _settings = get_log_settings()
         self.level = get_level(level or _settings.level)
@@ -77,7 +77,8 @@ class TimedRotatingLog:
                 encoding=self.encoding,
                 when=self.when,
                 utc=self.rotateatutc,
-                backupCount=self.daystokeep, )
+                backupCount=self.daystokeep,
+            )
             file_handler.suffix = self.sufix
             file_handler.rotator = GZipRotatorTimed(self.directory, self.daystokeep)
             file_handler.setFormatter(formatter)

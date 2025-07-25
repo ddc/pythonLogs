@@ -1,6 +1,8 @@
-# -*- coding: utf-8 -*-
 """Test automatic thread safety implementation."""
+
+import sys
 import threading
+import pytest
 from pythonLogs.basic_log import BasicLog
 from pythonLogs.constants import RotateWhen
 from pythonLogs.size_rotating import SizeRotatingLog
@@ -38,6 +40,10 @@ class TestAutomaticThreadSafety:
         assert len(errors) == 0, f"Automatic thread safety errors: {errors}"
         assert len(results) == 10, f"Expected 10 results, got {len(results)}"
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file",
+    )
     def test_size_rotating_log_automatic_thread_safety(self):
         """Test SizeRotatingLog with automatic thread safety decorators."""
         import tempfile
@@ -47,7 +53,7 @@ class TestAutomaticThreadSafety:
                 name="test_auto_size_rotating",
                 directory=temp_dir,
                 filenames=("test.log",),
-                maxmbytes=1
+                maxmbytes=1,
             )
             results = []
             errors = []
@@ -73,17 +79,21 @@ class TestAutomaticThreadSafety:
             assert len(errors) == 0, f"Size rotating automatic thread safety errors: {errors}"
             assert len(results) == 5, f"Expected 5 results, got {len(results)}"
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file",
+    )
     def test_timed_rotating_log_automatic_thread_safety(self):
         """Test TimedRotatingLog with automatic thread safety decorators."""
         import tempfile
-        
+
         with tempfile.TemporaryDirectory() as temp_dir:
             log = TimedRotatingLog(
                 name="test_auto_timed_rotating",
                 directory=temp_dir,
                 filenames=("test.log",),
                 when=RotateWhen.DAILY,
-                daystokeep=1
+                daystokeep=1,
             )
             results = []
             errors = []
@@ -112,12 +122,12 @@ class TestAutomaticThreadSafety:
     def test_automatic_locking_verification(self):
         """Verify that automatic locking is actually working by checking decorator presence."""
         basic_log = BasicLog(name="test_lock_verification")
-        
+
         # Verify the class has the automatic thread safety decorator applied
         assert hasattr(basic_log.__class__, '_lock'), "Class should have automatic lock"
         assert hasattr(basic_log.init, '_thread_safe_wrapped'), "Method should be wrapped for thread safety"
         assert hasattr(basic_log._cleanup_logger, '_thread_safe_wrapped'), "Method should be wrapped for thread safety"
-        
+
         # Test that methods can still be called normally
         logger = basic_log.init()
         assert logger is not None, "Logger should be initialized"

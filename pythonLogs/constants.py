@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 import logging
 from enum import Enum
 
@@ -20,6 +19,7 @@ DEFAULT_TIMEZONE = "UTC"
 
 class LogLevel(str, Enum):
     """Log levels"""
+
     CRITICAL = "CRITICAL"
     CRIT = "CRIT"
     ERROR = "ERROR"
@@ -31,6 +31,7 @@ class LogLevel(str, Enum):
 
 class RotateWhen(str, Enum):
     """Rotation timing options for TimedRotatingLog"""
+
     MIDNIGHT = "midnight"
     MONDAY = "W0"
     TUESDAY = "W1"
