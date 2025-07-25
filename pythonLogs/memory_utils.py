@@ -175,12 +175,12 @@ def optimize_lru_cache_sizes() -> None:
     log_utils.get_timezone_function = lru_cache(maxsize=8)(log_utils.get_timezone_function.__wrapped__)
 
     # Clear and recreate timezone offset cache with smaller size  
-    log_utils._get_timezone_offset.cache_clear()
-    log_utils._get_timezone_offset = lru_cache(maxsize=8)(log_utils._get_timezone_offset.__wrapped__)
+    log_utils.get_timezone_offset.cache_clear()
+    log_utils.get_timezone_offset = lru_cache(maxsize=8)(log_utils.get_timezone_offset.__wrapped__)
 
     # Clear and recreate stderr timezone cache with smaller size
-    log_utils._get_stderr_timezone.cache_clear()
-    log_utils._get_stderr_timezone = lru_cache(maxsize=4)(log_utils._get_stderr_timezone.__wrapped__)
+    log_utils.get_stderr_timezone.cache_clear()
+    log_utils.get_stderr_timezone = lru_cache(maxsize=4)(log_utils.get_stderr_timezone.__wrapped__)
 
 
 def force_garbage_collection() -> Dict[str, int]:

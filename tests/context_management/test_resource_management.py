@@ -62,6 +62,7 @@ class TestResourceManagement:
 
         # Verify handlers were closed and removed
         assert len(logger.handlers) == 0
+        assert initial_handler_count > 0  # Ensure we actually had handlers to clean up
         assert len(LoggerFactory._logger_registry) == 0
 
     def test_shutdown_specific_logger(self):
@@ -236,6 +237,8 @@ class TestResourceManagement:
 
         # Logger should still exist due to registry
         assert logger_weakref() is not None
+        # Handlers should also still exist
+        assert all(ref() is not None for ref in handler_weakrefs)
 
         # Clear registry
         clear_logger_registry()
@@ -244,7 +247,7 @@ class TestResourceManagement:
         gc.collect()
 
         # Logger should be garbage collected
-        # Note: This test might be flaky depending on Python's garbage collector
+        # Note: This test might be flaky depending on Python's garbage collector,
         # but it helps verify we're not holding unnecessary references
         print(f"Logger weakref after cleanup: {logger_weakref()}")
 

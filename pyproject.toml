@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "pythonLogs"
-version = "5.0.0"
+version = "5.0.1"
 description = "High-performance Python logging library with file rotation and optimized caching for better performance"
 license = "MIT"
 readme = "README.md"
@@ -43,16 +43,14 @@ pydantic-settings = "^2.10.1"
 python-dotenv = "^1.1.1"
 
 [tool.poetry.group.test.dependencies]
-coverage = "^7.9.2"
 poethepoet = "^0.36.0"
 psutil = "^7.0.0"
 pytest = "^8.4.1"
+pytest-cov = "^6.2.1"
 
 [tool.poe.tasks]
-_test = "coverage run -m pytest -v"
-_coverage_report = "coverage report"
-_coverage_xml = "coverage xml"
-tests = ["_test", "_coverage_report", "_coverage_xml"]
+_test = "python -m pytest -v --cov=pythonLogs --cov-report=term --cov-report=xml --junitxml=junit.xml -o junit_family=legacy"
+tests = ["_test"]
 test = ["tests"]
 
 [tool.black]
@@ -66,6 +64,7 @@ markers = [
 
 [tool.coverage.run]
 omit = [
+    "build.py",
     "tests/*",
 ]
 

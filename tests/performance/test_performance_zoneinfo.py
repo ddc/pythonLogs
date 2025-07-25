@@ -26,10 +26,10 @@ class TestZoneinfoPerformance:
         clear_logger_registry()
         
         # Clear timezone caches
-        from pythonLogs.log_utils import get_timezone_function, _get_timezone_offset, _get_stderr_timezone
+        from pythonLogs.log_utils import get_timezone_function, get_timezone_offset, get_stderr_timezone
         get_timezone_function.cache_clear()
-        _get_timezone_offset.cache_clear()
-        _get_stderr_timezone.cache_clear()
+        get_timezone_offset.cache_clear()
+        get_stderr_timezone.cache_clear()
     
     def test_timezone_function_caching_performance(self):
         """Test that timezone function caching improves performance."""
@@ -53,12 +53,12 @@ class TestZoneinfoPerformance:
     
     def test_timezone_offset_caching_performance(self):
         """Test timezone offset calculation caching performance."""
-        from pythonLogs.log_utils import _get_timezone_offset
+        from pythonLogs.log_utils import get_timezone_offset
         
         # Test with multiple calls to the same timezone
         start_time = time.time()
         for _ in range(100):
-            _get_timezone_offset("UTC")  # Should be cached after first call
+            get_timezone_offset("UTC")  # Should be cached after first call
         cached_time = time.time() - start_time
         
         # Should complete very quickly due to caching

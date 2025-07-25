@@ -428,9 +428,9 @@ class TestMemoryOptimization:
             cleanup_logger_handlers(logger)
             assert len(logger.handlers) == 0
         finally:
-            # Clean up temporary file
-            if os.path.exists(temp_filename):
-                os.unlink(temp_filename)
+            # Clean up temporary file with Windows-compatible deletion
+            from tests.core.test_log_utils import safe_close_and_delete_file
+            safe_close_and_delete_file(handler2, temp_filename)
 
     def test_cleanup_logger_handlers_error_handling(self):
         """Test cleanup_logger_handlers with handler errors."""
@@ -586,8 +586,7 @@ class TestMemoryOptimization:
         """Test thread safety of formatter cache operations."""
         from pythonLogs.memory_utils import get_cached_formatter, clear_formatter_cache
         import concurrent.futures
-        import threading
-        
+
         clear_formatter_cache()
         errors = []
         created_formatters = []
@@ -619,8 +618,7 @@ class TestMemoryOptimization:
     def test_weak_reference_cleanup_mechanism(self):
         """Test weak reference cleanup mechanism without relying on GC timing."""
         from pythonLogs.memory_utils import get_active_logger_count, _active_loggers, _weak_ref_lock
-        import weakref
-        
+
         # Test the cleanup detection logic in get_active_logger_count
         with _weak_ref_lock:
             initial_size = len(_active_loggers)
