@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
+import concurrent.futures
+import gc
 import logging
 import os
 import sys
 import tempfile
 import time
+import weakref
 
 
 # Add the parent directory to sys.path for imports
@@ -18,6 +21,7 @@ from pythonLogs import (
     get_registered_loggers,
     LogLevel
 )
+from pythonLogs.basic_log import BasicLog
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file")
@@ -101,7 +105,6 @@ class TestResourceManagement:
 
     def test_handler_cleanup_static_method(self):
         """Test the static cleanup method directly."""
-        from pythonLogs.basic_log import BasicLog
 
         # Create a logger with handlers
         logger = logging.getLogger("test_static_cleanup")
@@ -121,7 +124,6 @@ class TestResourceManagement:
 
     def test_handler_cleanup_with_errors(self):
         """Test handler cleanup handles errors gracefully."""
-        from pythonLogs.basic_log import BasicLog
 
         logger = logging.getLogger("test_error_cleanup")
 
@@ -213,8 +215,6 @@ class TestResourceManagement:
 
     def test_memory_usage_after_cleanup(self):
         """Test that memory is properly released after cleanup."""
-        import gc
-        import weakref
 
         logger_name = "memory_test_logger"
 
@@ -254,7 +254,6 @@ class TestResourceManagement:
 
     def test_concurrent_cleanup(self):
         """Test resource cleanup works correctly with concurrent access."""
-        import concurrent.futures
 
         def create_and_cleanup_logger(index):
             """Create a logger and immediately clean it up."""

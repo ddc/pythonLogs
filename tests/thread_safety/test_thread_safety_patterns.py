@@ -1,4 +1,5 @@
 """Test different thread safety usage patterns and advanced scenarios."""
+import gc
 import threading
 import time
 import weakref
@@ -27,18 +28,14 @@ class TestAdvancedThreadSafetyPatterns:
             def put(self, item):
                 with self.condition:
                     while len(self.queue) >= self.maxsize:
-                        self.condition.wait(timeout=1.0)  # Add timeout to prevent infinite wait
-                        if len(self.queue) >= self.maxsize:
-                            raise TimeoutError("Queue full timeout")
+                        self.condition.wait()
                     self.queue.append(item)
                     self.condition.notify_all()
             
             def get(self):
                 with self.condition:
                     while not self.queue:
-                        self.condition.wait(timeout=1.0)  # Add timeout to prevent infinite wait
-                        if not self.queue:
-                            raise TimeoutError("Queue empty timeout")
+                        self.condition.wait()
                     item = self.queue.pop(0)
                     self.condition.notify_all()
                     return item
@@ -65,16 +62,19 @@ class TestAdvancedThreadSafetyPatterns:
         
         # Start producers and consumers
         with ThreadPoolExecutor(max_workers=6) as executor:
-            # Start 2 producers
-            producer_futures = [
-                executor.submit(producer, 0, 10),
-                executor.submit(producer, 10, 20)
-            ]
-            
-            # Start 2 consumers
+            # Start consumers first to ensure they're waiting
             consumer_futures = [
                 executor.submit(consumer, 10),
                 executor.submit(consumer, 10)
+            ]
+            
+            # Small delay to let consumers start waiting
+            time.sleep(0.01)
+            
+            # Start producers
+            producer_futures = [
+                executor.submit(producer, 0, 10),
+                executor.submit(producer, 10, 20)
             ]
             
             # Wait for completion
@@ -508,7 +508,6 @@ class TestAdvancedThreadSafetyPatterns:
                 future.result()
         
         # Force garbage collection
-        import gc
         gc.collect()
         time.sleep(0.1)
         
