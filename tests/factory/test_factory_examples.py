@@ -194,10 +194,10 @@ class TestFactoryExamples:
         if sys.platform != "win32":
             with tempfile.TemporaryDirectory() as temp_dir:
                 readonly_parent = os.path.join(temp_dir, "readonly")
-                # Read-only parent 0o555
+                # Read-only parent
                 os.makedirs(
                     readonly_parent,
-                    mode=stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH,
+                    mode=0o555,
                 )
                 try:
                     invalid_dir = os.path.join(readonly_parent, "invalid")
@@ -207,8 +207,8 @@ class TestFactoryExamples:
                             directory=invalid_dir,
                         )
                 finally:
-                    # Restore permissions for cleanup 0o755
-                    os.chmod(readonly_parent, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
+                    # Restore permissions for cleanup
+                    os.chmod(readonly_parent, 0o755)
 
     @pytest.mark.skipif(sys.platform == "win32", reason="Windows file locking issues with TemporaryDirectory - see test_factory_windows.py")
     def test_logger_customization_example(self):

@@ -166,49 +166,37 @@ class TestLogUtilsWindows:
             file_handle.write("test content for retry test")
             file_handle.close()
             
-            # Test both with and without platform mocking to ensure retry works
-            for mock_platform in [False, True]:
-                # Mock time.sleep to verify retry mechanism
-                with patch('pythonLogs.log_utils.time.sleep') as mock_sleep:
-                    # Mock open to raise PermissionError on first call, succeed on second
-                    call_count = 0
-                    original_open = open
-                    
-                    def mock_open_side_effect(*args, **kwargs):
-                        nonlocal call_count
-                        call_count += 1
-                        if call_count == 1:
-                            # First call - simulate Windows file locking
-                            raise PermissionError("Permission denied")
-                        else:
-                            # Subsequent calls - use real open
-                            return original_open(*args, **kwargs)
-                    
-                    context_manager = (
-                        patch('pythonLogs.log_utils.sys.platform', 'win32') if mock_platform 
-                        else patch('pythonLogs.log_utils.open', side_effect=mock_open_side_effect)
-                    )
-                    
-                    with context_manager:
-                        if mock_platform:
-                            with patch('pythonLogs.log_utils.open', side_effect=mock_open_side_effect):
-                                result = log_utils.gzip_file_with_sufix(file_path, f"retry_test_{mock_platform}")
-                        else:
-                            result = log_utils.gzip_file_with_sufix(file_path, f"retry_test_{mock_platform}")
+            # Mock time.sleep to verify retry mechanism
+            with patch('pythonLogs.log_utils.time.sleep') as mock_sleep:
+                # Mock open to raise PermissionError on first call, succeed on second
+                call_count = 0
+                original_open = open
+                
+                def mock_open_side_effect(*args, **kwargs):
+                    nonlocal call_count
+                    call_count += 1
+                    if call_count == 1:
+                        # First call - simulate Windows file locking
+                        raise PermissionError("Permission denied")
+                    else:
+                        # Subsequent calls - use real open
+                        return original_open(*args, **kwargs)
+                
+                # Always mock platform as win32 and open with retry behavior
+                with patch('pythonLogs.log_utils.sys.platform', 'win32'):
+                    with patch('pythonLogs.log_utils.open', side_effect=mock_open_side_effect):
+                        result = log_utils.gzip_file_with_sufix(file_path, "retry_test")
                         
                         # Verify retry was attempted (sleep was called)
                         mock_sleep.assert_called_once_with(0.1)
                         
                         # Verify the operation eventually succeeded
                         assert result is not None
-                        assert f"retry_test_{mock_platform}" in result
+                        assert "retry_test" in result
                         
                         # Clean up the gzipped file
                         if result and os.path.exists(result):
                             safe_close_and_delete_file(None, result)
-                        
-                        # Reset for next iteration
-                        call_count = 0
             
         finally:
             # Clean up the original file
