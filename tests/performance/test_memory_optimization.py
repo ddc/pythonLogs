@@ -428,9 +428,9 @@ class TestMemoryOptimization:
             cleanup_logger_handlers(logger)
             assert len(logger.handlers) == 0
         finally:
-            # Clean up temporary file
-            if os.path.exists(temp_filename):
-                os.unlink(temp_filename)
+            # Clean up temporary file with Windows-compatible deletion
+            from tests.test_utils import safe_close_and_delete_file
+            safe_close_and_delete_file(handler2, temp_filename)
 
     def test_cleanup_logger_handlers_error_handling(self):
         """Test cleanup_logger_handlers with handler errors."""

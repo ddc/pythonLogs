@@ -25,17 +25,41 @@ class TestStringLevels:
     @pytest.fixture(autouse=True)
     def setup_temp_dir(self):
         """Set up test fixtures before each test method."""
+        import sys
+        import os
+        
+        # Add tests directory to path for test utilities
+        tests_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if tests_dir not in sys.path:
+            sys.path.insert(0, tests_dir)
+        
+        from test_utils import cleanup_all_loggers, safe_delete_directory
+        
         # Clear any existing loggers
+        cleanup_all_loggers()
         clear_logger_registry()
         
-        # Create temporary directory for log files using context manager
-        with tempfile.TemporaryDirectory() as temp_dir:
-            self.temp_dir = temp_dir
-            self.log_file = "string_test.log"
-            yield
+        # Create temporary directory for log files
+        self.temp_dir_obj = tempfile.TemporaryDirectory()
+        self.temp_dir = self.temp_dir_obj.__enter__()
+        self.log_file = "string_test.log"
         
-        # Clear registry after each test
-        clear_logger_registry()
+        yield
+        
+        try:
+            # Clean up all loggers and their handlers before directory deletion
+            cleanup_all_loggers()
+            clear_logger_registry()
+            
+            # Ensure temporary directory is properly cleaned up
+            self.temp_dir_obj.__exit__(None, None, None)
+        except (OSError, PermissionError):
+            # On Windows, if normal cleanup fails, use safe deletion
+            try:
+                safe_delete_directory(self.temp_dir)
+            except:
+                # If all else fails, just log the issue
+                print(f"Warning: Could not clean up temporary directory {self.temp_dir}")
     
     def test_basic_logger_string_levels(self):
         """Test BasicLog with string levels."""

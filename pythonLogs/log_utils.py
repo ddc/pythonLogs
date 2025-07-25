@@ -244,13 +244,27 @@ def gzip_file_with_sufix(file_path: str, sufix: str) -> str | None:
     # Use pathlib for cleaner path operations
     renamed_dst = path_obj.with_name(f"{path_obj.stem}_{sufix}{path_obj.suffix}.gz")
 
-    try:
-        with open(file_path, "rb") as fin:
-            with gzip.open(renamed_dst, "wb", compresslevel=6) as fout:  # Balanced compression
-                shutil.copyfileobj(fin, fout, length=64*1024)  # type: ignore # 64KB chunks for better performance
-    except (OSError, IOError) as e:
-        write_stderr(f"Unable to gzip log file | {file_path} | {repr(e)}")
-        raise e
+    # Windows-specific retry mechanism for file locking issues
+    max_retries = 3 if sys.platform == "win32" else 1
+    retry_delay = 0.1  # 100ms delay between retries
+    
+    for attempt in range(max_retries):
+        try:
+            with open(file_path, "rb") as fin:
+                with gzip.open(renamed_dst, "wb", compresslevel=6) as fout:  # Balanced compression
+                    shutil.copyfileobj(fin, fout, length=64*1024)  # type: ignore # 64KB chunks for better performance
+            break  # Success, exit retry loop
+        except PermissionError as e:
+            # Windows file locking issue - retry with delay
+            if attempt < max_retries - 1 and sys.platform == "win32":
+                time.sleep(retry_delay)
+                continue
+            # Final attempt failed or not Windows - treat as regular error
+            write_stderr(f"Unable to gzip log file | {file_path} | {repr(e)}")
+            raise e
+        except (OSError, IOError) as e:
+            write_stderr(f"Unable to gzip log file | {file_path} | {repr(e)}")
+            raise e
 
     try:
         path_obj.unlink()  # Use pathlib for deletion
