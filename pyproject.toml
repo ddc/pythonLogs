@@ -49,26 +49,37 @@ pytest = "^8.4.1"
 pytest-cov = "^6.2.1"
 
 [tool.poe.tasks]
-_test = "python -m pytest -v --cov=pythonLogs --cov-report=term --cov-report=xml --junitxml=junit.xml -o junit_family=legacy"
+_test = "python -m pytest -v --cov --cov-report=term --cov-report=xml --junitxml=junit.xml -o junit_family=legacy"
 tests = ["_test"]
 test = ["tests"]
 
-[tool.black]
-line-length = 120
-skip-string-normalization = true
+[tool.coverage.run]
+omit = [
+    "tests/*",
+    "*/__init__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+show_missing = false
+skip_covered = false
 
 [tool.pytest.ini_options]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')"
 ]
 
-[tool.coverage.run]
-omit = [
-    "build.py",
-    "tests/*",
-]
-
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-]
+[tool.black]
+line-length = 120
+skip-string-normalization = true
