@@ -26,7 +26,7 @@ class LogSettings(BaseSettings):
     encoding: Optional[str] = Field(default=DEFAULT_ENCODING)
     appname: Optional[str] = Field(default="app")
     filename: Optional[str] = Field(default="app.log")
-    directory: Optional[str] = Field(default="/app/logs")
+    directory: Optional[str] = Field(default="./logs")
     days_to_keep: Optional[int] = Field(default=DEFAULT_BACKUP_COUNT)
     date_format: Optional[str] = Field(default=DEFAULT_DATE_FORMAT)
     stream_handler: Optional[bool] = Field(default=True)
