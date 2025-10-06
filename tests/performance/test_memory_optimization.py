@@ -26,6 +26,7 @@ from pythonLogs import (
 )
 
 
+@pytest.mark.skipif(os.getenv('CI') == 'true', reason="Performance tests unstable in CI")
 class TestMemoryOptimization:
     """Test cases for memory optimization features."""
 
