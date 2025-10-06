@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "pythonLogs"
-version = "5.0.2"
+version = "5.0.3"
 description = "High-performance Python logging library with file rotation and optimized caching for better performance"
 license = "MIT"
 readme = "README.md"
@@ -39,7 +39,7 @@ optional = true
 
 [tool.poetry.dependencies]
 python = "^3.12"
-pydantic-settings = "2.11.0"
+pydantic-settings = "^2.10.1"
 python-dotenv = "^1.1.1"
 
 [tool.poetry.group.test.dependencies]

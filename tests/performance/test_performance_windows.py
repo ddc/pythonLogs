@@ -25,6 +25,7 @@ from pythonLogs import (
 )
 
 
+@pytest.mark.skipif(os.getenv('CI') == 'true', reason="Performance tests unstable in CI")
 class TestPerformanceWindows:
     """Windows-specific performance tests for factory pattern and optimizations."""
 

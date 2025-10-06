@@ -18,6 +18,7 @@ from pythonLogs import (
 )
 
 
+@pytest.mark.skipif(os.getenv('CI') == 'true', reason="Performance tests unstable in CI")
 class TestZoneinfoPerformance:
     """Performance tests for zoneinfo timezone operations."""
 
