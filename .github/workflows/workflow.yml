@@ -39,7 +39,7 @@ jobs:
         with:
           timeout_minutes: 2
           max_attempts: 3
-          command: uv run poe test
+          command: uv run pytest
           shell: bash
 
       - name: Upload coverage to Codecov
