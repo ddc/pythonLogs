@@ -1,22 +1,33 @@
-# High-performance Python logging library
+<h1 align="center">
+  <img src="https://raw.githubusercontent.com/ddc/pythonLogs/main/assets/pythonLogs-icon.svg" alt="pythonLogs" width="150">
+  <br>
+  pythonLogs
+</h1>
 
-[![Donate](https://img.shields.io/badge/Donate-PayPal-brightgreen.svg?style=plastic)](https://www.paypal.com/ncp/payment/6G9Z78QHUD4RJ)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![PyPi](https://img.shields.io/pypi/v/pythonLogs.svg)](https://pypi.python.org/pypi/pythonLogs)
-[![PyPI Downloads](https://static.pepy.tech/badge/pythonLogs)](https://pepy.tech/projects/pythonLogs)
-[![codecov](https://codecov.io/gh/ddc/pythonLogs/graph/badge.svg?token=QsjwsmYzgD)](https://codecov.io/gh/ddc/pythonLogs)
-[![CI/CD Pipeline](https://github.com/ddc/pythonLogs/actions/workflows/workflow.yml/badge.svg)](https://github.com/ddc/pythonLogs/actions/workflows/workflow.yml)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=ddc_pythonLogs&metric=alert_status)](https://sonarcloud.io/dashboard?id=ddc_pythonLogs)  
-[![Build Status](https://img.shields.io/endpoint.svg?url=https%3A//actions-badge.atrox.dev/ddc/pythonLogs/badge?ref=main&label=build&logo=none)](https://actions-badge.atrox.dev/ddc/pythonLogs/goto?ref=main)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Python](https://img.shields.io/pypi/pyversions/pythonLogs.svg)](https://www.python.org/downloads)
+<p align="center">
+    <a href="https://www.paypal.com/ncp/payment/6G9Z78QHUD4RJ"><img src="https://img.shields.io/badge/Donate-PayPal-brightgreen.svg?style=plastic" alt="Donate"/></a>
+    <a href="https://github.com/sponsors/ddc"><img src="https://img.shields.io/static/v1?style=plastic&label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=ff69b4" alt="Sponsor"/></a>
+    <br>
+    <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json?style=plastic" alt="uv"/></a>
+    <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json?style=plastic" alt="Ruff"/></a>
+    <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg?style=plastic" alt="Code style: black"/></a>
+    <br>
+    <a href="https://www.python.org/downloads"><img src="https://img.shields.io/pypi/pyversions/pythonLogs.svg?style=plastic&logo=python&cacheSeconds=3600" alt="Python"/></a>
+    <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=plastic" alt="License: MIT"/></a>
+    <a href="https://pepy.tech/projects/pythonLogs"><img src="https://static.pepy.tech/badge/pythonLogs?style=plastic" alt="PyPI Downloads"/></a>
+    <a href="https://pypi.python.org/pypi/pythonLogs"><img src="https://img.shields.io/pypi/v/pythonLogs.svg?style=plastic&logo=python&cacheSeconds=3600" alt="PyPi"/></a>
+    <br>
+    <a href="https://github.com/ddc/pythonLogs/issues"><img src="https://img.shields.io/github/issues/ddc/pythonLogs?style=plastic" alt="issues"/></a>
+    <a href="https://codecov.io/gh/ddc/pythonLogs"><img src="https://codecov.io/gh/ddc/pythonLogs/graph/badge.svg?token=XWB53034GI&style=plastic" alt="codecov"/></a>
+    <a href="https://sonarcloud.io/dashboard?id=ddc_pythonLogs"><img src="https://sonarcloud.io/api/project_badges/measure?project=ddc_pythonLogs&metric=alert_status&style=plastic" alt="Quality Gate Status"/></a>
+    <a href="https://github.com/ddc/pythonLogs/actions/workflows/workflow.yml"><img src="https://github.com/ddc/pythonLogs/actions/workflows/workflow.yml/badge.svg?style=plastic" alt="CI/CD Pipeline"/></a>
+    <a href="https://actions-badge.atrox.dev/ddc/pythonLogs/goto?ref=main"><img src="https://img.shields.io/endpoint.svg?url=https%3A//actions-badge.atrox.dev/ddc/pythonLogs/badge?ref=main&label=build&logo=none&style=plastic" alt="Build Status"/></a>
+</p>
 
-[![Support me on GitHub](https://img.shields.io/badge/Support_me_on_GitHub-154c79?style=for-the-badge&logo=github)](https://github.com/sponsors/ddc)
-
-High-performance Python logging library with file rotation and optimized caching for better performance
+<p align="center">High-performance Python logging library with file rotation and optimized caching for better performance</p>
 
 
-## Table of Contents
+# Table of Contents
 
 - [Features](#features)
 - [Installation](#installation)
@@ -25,15 +36,12 @@ High-performance Python logging library with file rotation and optimized caching
   - [Size Rotating Logger](#size-rotating-logger)
   - [Timed Rotating Logger](#timed-rotating-logger)
 - [Context Manager Support](#context-manager-support)
-- [Advanced Factory Features](#advanced-factory-features)
-- [Environment Variables](#env-variables-optional--production)
-- [Memory Management](#memory-management)
+- [Setup Example](#setup-example)
+- [Environment Variables](#env-variables-optional)
 - [Flexible Configuration Options](#flexible-configuration-options)
-- [Migration Guide](#migration-guide)
 - [Development](#development)
-- [Development](#development)
-  - [Building from Source](#building-from-source)
-  - [Running Tests](#running-tests)
+  - [Building DEV Environment and Running Tests](#building-dev-environment-and-running-tests)
+  - [Building Wheel from Source](#building-wheel-from-source)
 - [License](#license)
 - [Support](#support)
 
@@ -55,6 +63,7 @@ High-performance Python logging library with file rotation and optimized caching
 
 
 # Installation
+
 ```shell
 pip install pythonLogs
 ```
@@ -62,46 +71,29 @@ pip install pythonLogs
 
 # Logger Types
 
+> **Tip:** All logger types support both string values (e.g., `level="debug"`) and type-safe enums (e.g., `level=LogLevel.DEBUG`). \
+> See [Flexible Configuration Options](#flexible-configuration-options) for all available enums.
+
 ## Basic Logger
+
 Console-only logging without file output. Perfect for development and simple applications.
 
-### Using Factory Pattern (Recommended)
-```python
-from pythonLogs import basic_logger, LogLevel
+### Usage
 
-# Option 1: Using string (simple) (case-insensitive)
-logger = basic_logger(
+```python
+from pythonLogs import BasicLog
+
+logger = BasicLog(
     name="my_app",
     level="debug",  # "debug", "info", "warning", "error", "critical"
     timezone="America/Sao_Paulo",
     showlocation=False
 )
 logger.warning("This is a warning example")
-
-# Option 2: Using enum (type-safe)
-logger = basic_logger(
-    name="my_app",
-    level=LogLevel.DEBUG,
-    timezone="America/Sao_Paulo",
-    showlocation=False
-)
-logger.warning("This is a warning example")
 ```
 
-### Legacy Method (Still Supported)
-```python
-from pythonLogs import BasicLog
+### Example Output
 
-logger = BasicLog(
-    level="debug",
-    name="app",
-    timezone="America/Sao_Paulo",
-    showlocation=False,
-).init()
-logger.warning("This is a warning example")
-```
-
-#### Example Output
 `[2024-10-08T19:08:56.918-0300]:[WARNING]:[my_app]:This is a warning example`
 
 
@@ -109,18 +101,19 @@ logger.warning("This is a warning example")
 
 
 ## Size Rotating Logger
+
 File-based logging with automatic rotation when files reach a specified size. Rotated files are compressed as `.gz`.
 
-+ **Rotation**: Based on file size (`maxmbytes` parameter)
-+ **Naming**: Rotated logs have sequence numbers: `app.log_1.gz`, `app.log_2.gz`
-+ **Cleanup**: Old logs deleted based on `daystokeep` (default: 30 days)
+- **Rotation**: Based on file size (`maxmbytes` parameter)
+- **Naming**: Rotated logs have sequence numbers: `app.log_1.gz`, `app.log_2.gz`
+- **Cleanup**: Old logs deleted based on `daystokeep` (default: 30 days)
 
-### Using Factory Pattern (Recommended)
+### Usage
+
 ```python
-from pythonLogs import size_rotating_logger, LogLevel
+from pythonLogs import SizeRotatingLog
 
-# Option 1: Using string (simple) (case-insensitive)
-logger = size_rotating_logger(
+logger = SizeRotatingLog(
     name="my_app",
     level="debug",  # "debug", "info", "warning", "error", "critical"
     directory="/app/logs",
@@ -132,41 +125,10 @@ logger = size_rotating_logger(
     showlocation=False
 )
 logger.warning("This is a warning example")
-
-# Option 2: Using enum (type-safe)
-logger = size_rotating_logger(
-    name="my_app",
-    level=LogLevel.DEBUG,
-    directory="/app/logs",
-    filenames=["main.log", "app1.log"],
-    maxmbytes=5,
-    daystokeep=7,
-    timezone="America/Chicago",
-    streamhandler=True,
-    showlocation=False
-)
-logger.warning("This is a warning example")
 ```
 
-### Legacy Method (Still Supported)
-```python
-from pythonLogs import SizeRotatingLog
+### Example Output
 
-logger = SizeRotatingLog(
-    level="debug",
-    name="app",
-    directory="/app/logs",
-    filenames=["main.log", "app1.log"],
-    maxmbytes=5,
-    daystokeep=7,
-    timezone="America/Chicago",
-    streamhandler=True,
-    showlocation=False
-).init()
-logger.warning("This is a warning example")
-```
-
-#### Example Output
 `[2024-10-08T19:08:56.918-0500]:[WARNING]:[my_app]:This is a warning example`
 
 
@@ -174,65 +136,35 @@ logger.warning("This is a warning example")
 
 
 ## Timed Rotating Logger
+
 File-based logging with automatic rotation based on time intervals. Rotated files are compressed as `.gz`.
 
-+ **Rotation**: Based on time (`when` parameter, defaults to `midnight`)
-+ **Naming**: Rotated logs have date suffix: `app_20240816.log.gz`  
-+ **Cleanup**: Old logs deleted based on `daystokeep` (default: 30 days)
-+ **Supported Intervals**: `midnight`, `hourly`, `daily`, `W0-W6` (weekdays, 0=Monday)
+- **Rotation**: Based on time (`when` parameter, defaults to `midnight`)
+- **Naming**: Rotated logs have date suffix: `app_20240816.log.gz`
+- **Cleanup**: Old logs deleted based on `daystokeep` (default: 30 days)
+- **Supported Intervals**: `midnight`, `hourly`, `daily`, `W0-W6` (weekdays, 0=Monday)
 
-### Using Factory Pattern (Recommended)
-```python
-from pythonLogs import timed_rotating_logger, LogLevel, RotateWhen
+### Usage
 
-# Option 1: Using string (simple) (case-insensitive)
-logger = timed_rotating_logger(
-    name="my_app",
-    level="debug",  # "debug", "info", "warning", "error", "critical"
-    directory="/app/logs", 
-    filenames=["main.log", "app2.log"],
-    when="midnight",  # String when value
-    daystokeep=7,
-    timezone="UTC",
-    streamhandler=True,
-    showlocation=False
-)
-logger.warning("This is a warning example")
-
-# Option 2: Using enum (type-safe)
-logger = timed_rotating_logger(
-    name="my_app",
-    level=LogLevel.DEBUG,  # Type-safe enum
-    directory="/app/logs", 
-    filenames=["main.log", "app2.log"],
-    when=RotateWhen.MIDNIGHT,  # Type-safe enum
-    daystokeep=7,
-    timezone="UTC",
-    streamhandler=True,
-    showlocation=False
-)
-logger.warning("This is a warning example")
-```
-
-### Legacy Method (Still Supported)
 ```python
 from pythonLogs import TimedRotatingLog
 
 logger = TimedRotatingLog(
-    level="debug",
-    name="app",
+    name="my_app",
+    level="debug",  # "debug", "info", "warning", "error", "critical"
     directory="/app/logs",
     filenames=["main.log", "app2.log"],
-    when="midnight",
+    when="midnight",  # "midnight", "H", "D", "W0"-"W6"
     daystokeep=7,
     timezone="UTC",
     streamhandler=True,
     showlocation=False
-).init()
+)
 logger.warning("This is a warning example")
 ```
 
-#### Example Output
+### Example Output
+
 `[2024-10-08T19:08:56.918-0000]:[WARNING]:[my_app]:This is a warning example`
 
 
@@ -241,12 +173,15 @@ logger.warning("This is a warning example")
 
 # Context Manager Support
 
-Slow, but if you want immediate, deterministic cleanup for a specific scope.\
-All logger types support context managers for automatic resource cleanup and exception safety:
+All logger types support context managers for automatic resource cleanup and exception safety.
 
-## Basic Usage
+## Usage Examples
+
 ```python
-from pythonLogs import BasicLog, SizeRotatingLog, TimedRotatingLog, LogLevel
+from pythonLogs import LogLevel
+from pythonLogs.basic_log import BasicLog
+from pythonLogs.size_rotating import SizeRotatingLog
+from pythonLogs.timed_rotating import TimedRotatingLog
 
 # Automatic cleanup with context managers
 with BasicLog(name="app", level=LogLevel.INFO) as logger:
@@ -266,57 +201,17 @@ except ValueError:
     pass  # Logger was still cleaned up properly
 ```
 
-## Benefits of Context Manager Usage
-- 🔒 **Automatic Cleanup** - Handlers are closed and removed automatically
-- ⚡ **Exception Safety** - Resources cleaned up even when exceptions occur
-- 💾 **Memory Management** - Prevents memory leaks from unclosed handlers
-- 🧵 **Thread Safety** - Cleanup operations are thread-safe
-- 🔧 **No Manual Management** - No need to manually call cleanup methods
-
-## Factory Pattern + Context Managers
-```python
-from pythonLogs import LoggerFactory, LoggerType
-
-# Create logger through factory and use with context manager
-logger_instance = LoggerFactory.get_or_create_logger(
-    LoggerType.SIZE_ROTATING,
-    name="production_app",
-    directory="/var/log"
-)
-
-# Use the logger instance directly
-with logger_instance as logger:
-    logger.info("Factory created logger with automatic cleanup")
-```
 
 
-# Advanced Factory Features
 
-## Logger Registry (Performance Optimization)
-The factory pattern includes a built-in registry that caches loggers for improved performance:
+
+# Setup Example With Multiple Levels and Files
 
 ```python
-from pythonLogs import get_or_create_logger, LoggerType, clear_logger_registry
-
-# First call creates the logger
-logger1 = get_or_create_logger(LoggerType.BASIC, name="cached_app")
-
-# The Second call returns the same logger instance (90% faster)
-logger2 = get_or_create_logger(LoggerType.BASIC, name="cached_app")
-
-# Both variables point to the same logger instance
-assert logger1 is logger2
-
-# Clear registry when needed (useful for testing)
-clear_logger_registry()
-```
-
-## Production Setup Example
-```python
-from pythonLogs import size_rotating_logger, timed_rotating_logger, LogLevel, RotateWhen
+from pythonLogs import SizeRotatingLog, TimedRotatingLog, LogLevel, RotateWhen
 
 # Application logger
-app_logger = size_rotating_logger(
+app_logger = SizeRotatingLog(
     name="production_app",
     directory="/var/log/myapp",
     filenames=["app.log"],
@@ -329,8 +224,8 @@ app_logger = size_rotating_logger(
 )
 
 # Error logger with longer retention
-error_logger = size_rotating_logger(
-    name="production_errors", 
+error_logger = SizeRotatingLog(
+    name="production_errors",
     directory="/var/log/myapp",
     filenames=["errors.log"],
     maxmbytes=10,
@@ -340,7 +235,7 @@ error_logger = size_rotating_logger(
 )
 
 # Audit logger with daily rotation
-audit_logger = timed_rotating_logger(
+audit_logger = TimedRotatingLog(
     name="audit_log",
     directory="/var/log/myapp",
     filenames=["audit.log"],
@@ -354,13 +249,17 @@ error_logger.error("Database connection failed")
 audit_logger.info("User admin logged in")
 ```
 
-## Env Variables (Optional | Production)
-The .env variables file can be used by leaving all options blank when calling the function.\
-If not specified inside the .env file, it will use the dafault value.\
+
+
+
+# Env Variables (Optional)
+
+The .env variables file can be used by leaving all options blank when calling the class.\
+If not specified inside the .env file, it will use the default value.\
 This is a good approach for production environments, since options can be changed easily.
 ```python
-from pythonLogs import timed_rotating_logger
-log = timed_rotating_logger()
+from pythonLogs import TimedRotatingLog
+log = TimedRotatingLog()
 ```
 
 ```
@@ -387,77 +286,20 @@ LOG_ROTATE_FILE_SUFIX="%Y%m%d"
 ```
 
 
-# Memory Management
 
-The library includes comprehensive memory management features to prevent memory leaks and optimize resource usage:
 
-## Automatic Resource Cleanup
-```python
-from pythonLogs import clear_logger_registry, shutdown_logger, LoggerFactory
 
-# Clear the entire logger registry with proper cleanup
-clear_logger_registry()
-
-# Shutdown specific logger and remove from registry
-shutdown_logger("my_app_logger")
-
-# Manual registry management
-LoggerFactory.shutdown_logger("specific_logger")
-LoggerFactory.clear_registry()
-```
-
-## Memory Optimization Features
-```python
-from pythonLogs import (
-    get_memory_stats, 
-    clear_formatter_cache, 
-    clear_directory_cache,
-    optimize_lru_cache_sizes,
-    force_garbage_collection
-)
-
-# Get current memory usage statistics
-stats = get_memory_stats()
-print(f"Registry size: {stats['registry_size']}")
-print(f"Formatter cache: {stats['formatter_cache_size']}")
-print(f"Active loggers: {stats['active_logger_count']}")
-
-# Clear various caches to free memory
-clear_formatter_cache()  # Clear cached formatters
-clear_directory_cache()  # Clear directory permission cache
-
-# Optimize LRU cache sizes for memory-constrained environments
-optimize_lru_cache_sizes()
-
-# Force garbage collection and get collection statistics
-gc_stats = force_garbage_collection()
-print(f"Objects collected: {gc_stats['objects_collected']}")
-```
-
-## Registry Configuration
-```python
-from pythonLogs import LoggerFactory
-
-# Configure registry limits for memory management
-LoggerFactory.set_memory_limits(
-    max_loggers=50,    # Maximum cached loggers
-    ttl_seconds=1800   # Logger time-to-live (30 minutes)
-)
-
-# Monitor registered loggers
-registered = LoggerFactory.get_registered_loggers()
-print(f"Currently registered: {list(registered.keys())}")
-```
 
 # Flexible Configuration Options
+
 You can use either enums (for type safety) or strings (for simplicity):
 
 ```python
-from pythonLogs import LogLevel, RotateWhen, LoggerType
+from pythonLogs import LogLevel, RotateWhen
 
 # Option 1: Type-safe enums (recommended)
 LogLevel.DEBUG     # "DEBUG"
-LogLevel.INFO      # "INFO"  
+LogLevel.INFO      # "INFO"
 LogLevel.WARNING   # "WARNING"
 LogLevel.ERROR     # "ERROR"
 LogLevel.CRITICAL  # "CRITICAL"
@@ -465,7 +307,7 @@ LogLevel.CRITICAL  # "CRITICAL"
 # Option 2: String values (case-insensitive)
 "debug"       # Same as LogLevel.DEBUG
 "info"        # Same as LogLevel.INFO
-"warning"     # Same as LogLevel.WARNING  
+"warning"     # Same as LogLevel.WARNING
 "warn"        # Same as LogLevel.WARN (alias)
 "error"       # Same as LogLevel.ERROR
 "critical"    # Same as LogLevel.CRITICAL
@@ -479,65 +321,45 @@ RotateWhen.DAILY      # "D"
 RotateWhen.MONDAY     # "W0"
 # ... through SUNDAY  # "W6"
 # String equivalents: "midnight", "H", "D", "W0"-"W6"
-
-# LoggerType values
-LoggerType.BASIC            # "basic"
-LoggerType.SIZE_ROTATING    # "size_rotating"  
-LoggerType.TIMED_ROTATING   # "timed_rotating"
-# String equivalents: "basic", "size_rotating", "timed_rotating"
 ```
 
 
-# Migration Guide
 
-## Upgrading from Legacy to Factory Pattern
-
-The factory pattern is **100% backward compatible**. Your existing code will continue to work unchanged.
-
-### Before (Legacy - Still Works)
-```python
-from pythonLogs import BasicLog, SizeRotatingLog, TimedRotatingLog
-
-# Old way
-basic_logger = BasicLog(level="info", name="app").init()
-size_logger = SizeRotatingLog(level="debug", name="app", directory="/logs").init() 
-timed_logger = TimedRotatingLog(level="warning", name="app", directory="/logs").init()
-```
-
-### After (Factory Pattern - Recommended)
-```python
-from pythonLogs import basic_logger, size_rotating_logger, timed_rotating_logger, LogLevel
-
-# New way - cleaner and faster
-basic_logger = basic_logger(level=LogLevel.INFO, name="app")
-size_logger = size_rotating_logger(level=LogLevel.DEBUG, name="app", directory="/logs")
-timed_logger = timed_rotating_logger(level=LogLevel.WARNING, name="app", directory="/logs")
-```
-
-### Benefits of Migration
-- 🚀 **90% faster logger creation** with registry caching
-- 🎯 **Type safety** with enum-based parameters
-- 💡 **Better IDE support** with autocomplete and validation
-- 🔧 **Cleaner API** without manual `.init()` calls
-- 📚 **Centralized configuration** through factory pattern
 
 
 # Development
 
-### Building from Source
+Must have [UV](https://uv.run/docs/getting-started/installation), 
+[Black](https://black.readthedocs.io/en/stable/getting_started.html), and 
+[Ruff](https://docs.astral.sh/ruff/installation/) installed.
+
+## Building DEV Environment and Running Tests
+
 ```shell
-poetry build -f wheel
+uv venv
+uv sync --all-extras
+poe linter
+poe test
+poe test-integration
 ```
 
-### Running Tests
+## Building Wheel from Source
+
 ```shell
-poetry update --with test
-poe tests
+poe build
 ```
+
+
+
+
 
 # License
 
 Released under the [MIT License](LICENSE)
+
+
+
+
 
 # Support
 

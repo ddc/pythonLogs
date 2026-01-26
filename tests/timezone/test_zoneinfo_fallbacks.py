@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Test zoneinfo fallback mechanisms and edge cases."""
+
 import os
+import pytest
 import sys
 import tempfile
 from unittest.mock import patch
-import pytest
-
 
 # Add parent directory to path for imports
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -30,11 +30,11 @@ class TestZoneinfoFallbacks:
 
     def test_timezone_error_handling(self):
         """Test proper error handling for timezone operations."""
-        from pythonLogs import basic_logger, LogLevel
+        from pythonLogs import BasicLog, LogLevel
 
         # With the new fallback system, invalid timezones should gracefully fall back
         # to localtime instead of raising exceptions for better robustness
-        logger = basic_logger(
+        logger = BasicLog(
             name="error_test", timezone="NonExistent/Timezone", level=LogLevel.INFO  # Should fall back to localtime
         )
         # Logger should be created successfully with fallback
@@ -43,7 +43,7 @@ class TestZoneinfoFallbacks:
 
     def test_timezone_offset_edge_cases(self):
         """Test timezone offset calculation for edge cases."""
-        from pythonLogs.log_utils import get_timezone_offset
+        from pythonLogs.core.log_utils import get_timezone_offset
 
         # Test UTC (may fall back to localtime on systems without UTC data)
         utc_offset = get_timezone_offset("UTC")
@@ -64,9 +64,9 @@ class TestZoneinfoFallbacks:
 
     def test_stderr_timezone_fallback(self):
         """Test stderr timezone fallback behavior."""
-        from pythonLogs.log_utils import write_stderr
-        import io
         from contextlib import redirect_stderr
+        import io
+        from pythonLogs.core.log_utils import write_stderr
 
         # Mock environment variable
         with patch.dict(os.environ, {'LOG_TIMEZONE': 'UTC'}):
@@ -80,7 +80,7 @@ class TestZoneinfoFallbacks:
 
     def test_timezone_function_fallback(self):
         """Test timezone function fallback for edge cases."""
-        from pythonLogs.log_utils import get_timezone_function
+        from pythonLogs.core.log_utils import get_timezone_function
         import time
 
         # Test standard cases - UTC may fall back to localtime on systems without UTC data
@@ -99,11 +99,11 @@ class TestZoneinfoFallbacks:
 
     def test_logger_creation_with_fallback_timezone(self):
         """Test logger creation when timezone operations might fail."""
-        from pythonLogs import basic_logger, LogLevel
+        from pythonLogs import BasicLog, LogLevel
 
         # Use safe timezone that works on all platforms
         safe_tz = get_safe_timezone()
-        logger = basic_logger(name="fallback_test", timezone=safe_tz, level=LogLevel.INFO)
+        logger = BasicLog(name="fallback_test", timezone=safe_tz, level=LogLevel.INFO)
 
         logger.info("Fallback test message")
         assert logger.name == "fallback_test"
@@ -114,7 +114,7 @@ class TestZoneinfoFallbacks:
     )
     def test_complex_timezone_scenarios(self):
         """Test complex timezone scenarios and edge cases."""
-        from pythonLogs import size_rotating_logger, LogLevel
+        from pythonLogs import LogLevel, SizeRotatingLog
 
         with tempfile.TemporaryDirectory() as temp_dir:
             # Test with various timezone formats
@@ -122,7 +122,7 @@ class TestZoneinfoFallbacks:
 
             for i, tz in enumerate(timezones):
                 try:
-                    logger = size_rotating_logger(
+                    logger = SizeRotatingLog(
                         name=f"complex_tz_test_{i}",
                         directory=temp_dir,
                         timezone=tz,
@@ -137,7 +137,7 @@ class TestZoneinfoFallbacks:
 
     def test_zoneinfo_caching_behavior(self):
         """Test that zoneinfo objects are properly cached."""
-        from pythonLogs.log_utils import get_timezone_function, get_timezone_offset
+        from pythonLogs.core.log_utils import get_timezone_function, get_timezone_offset
 
         # Test function caching
         func1 = get_timezone_function("America/Chicago")
@@ -155,7 +155,7 @@ class TestZoneinfoFallbacks:
         # Test with environment variable
         with patch.dict(os.environ, {'LOG_TIMEZONE': 'Europe/Paris'}):
             # Environment variable should be used for stderr
-            from pythonLogs.log_utils import get_stderr_timezone
+            from pythonLogs.core.log_utils import get_stderr_timezone
 
             # Clear cache to test new environment
             get_stderr_timezone.cache_clear()
@@ -170,8 +170,8 @@ class TestZoneinfoFallbacks:
 
     def test_concurrent_timezone_access(self):
         """Test timezone functionality under concurrent access."""
+        from pythonLogs import BasicLog, LogLevel
         import threading
-        from pythonLogs import basic_logger, LogLevel
 
         # Use safe timezone that works on all platforms
         safe_tz = get_safe_timezone()
@@ -180,7 +180,7 @@ class TestZoneinfoFallbacks:
 
         def create_logger_worker(worker_id):
             try:
-                logger = basic_logger(name=f"concurrent_test_{worker_id}", timezone=safe_tz, level=LogLevel.INFO)
+                logger = BasicLog(name=f"concurrent_test_{worker_id}", timezone=safe_tz, level=LogLevel.INFO)
                 logger.info(f"Concurrent test message {worker_id}")
                 results.append(worker_id)
             except Exception as e:
@@ -204,11 +204,12 @@ class TestZoneinfoFallbacks:
     @requires_zoneinfo_utc
     def test_memory_usage_with_timezone_caching(self):
         """Test that timezone caching doesn't cause memory leaks."""
-        from pythonLogs import basic_logger, clear_logger_registry
+        from pythonLogs import BasicLog
+        from pythonLogs.core.factory import clear_logger_registry
 
         # Create many loggers with same timezone (should use cache)
         for i in range(100):
-            logger = basic_logger(name=f"memory_test_{i}", timezone="UTC")
+            logger = BasicLog(name=f"memory_test_{i}", timezone="UTC")
             logger.info(f"Memory test {i}")
 
         # Clear registry to free memory
@@ -219,7 +220,7 @@ class TestZoneinfoFallbacks:
     @requires_zoneinfo_utc
     def test_timezone_validation_edge_cases(self):
         """Test timezone validation for various edge cases."""
-        from pythonLogs.log_utils import get_timezone_offset
+        from pythonLogs.core.log_utils import get_timezone_offset
 
         # Test case variations (timezone names are case-sensitive except for localtime)
         test_cases = [

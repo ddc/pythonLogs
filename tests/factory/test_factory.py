@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
 """Test the factory pattern implementation."""
+
 import os
+import pytest
 import sys
 import tempfile
 import time
 from unittest.mock import Mock, patch
-import pytest
-
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pythonLogs import (
-    LoggerFactory,
-    LoggerType,
+    BasicLog,
     LogLevel,
     RotateWhen,
-    create_logger,
-    get_or_create_logger,
-    basic_logger,
-    size_rotating_logger,
-    timed_rotating_logger,
+    SizeRotatingLog,
+    TimedRotatingLog,
+)
+from pythonLogs.core.factory import (
+    LoggerFactory,
+    LoggerType,
     clear_logger_registry,
     get_registered_loggers,
 )
@@ -45,7 +45,7 @@ class TestLoggerFactory:
     def test_size_rotating_logger_creation(self):
         """Test size rotating logger creation using convenience function."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            size_logger = size_rotating_logger(name="test_size", directory=temp_dir, maxmbytes=5)
+            size_logger = SizeRotatingLog(name="test_size", directory=temp_dir, maxmbytes=5)
             assert size_logger.name == "test_size"
 
     @pytest.mark.skipif(
@@ -55,7 +55,7 @@ class TestLoggerFactory:
     def test_timed_rotating_logger_creation(self):
         """Test timed rotating logger creation."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            timed_logger = timed_rotating_logger(name="test_timed", directory=temp_dir, when="midnight")
+            timed_logger = TimedRotatingLog(name="test_timed", directory=temp_dir, when="midnight")
             assert timed_logger.name == "test_timed"
 
     def test_logger_registry_caching(self):
@@ -65,8 +65,8 @@ class TestLoggerFactory:
         assert len(get_registered_loggers()) == 0
 
         # Create logger with caching
-        logger1 = get_or_create_logger(LoggerType.BASIC, name="cached_logger")
-        logger2 = get_or_create_logger(LoggerType.BASIC, name="cached_logger")
+        logger1 = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="cached_logger")
+        logger2 = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="cached_logger")
 
         # Should be the same instance
         assert logger1 is logger2
@@ -74,13 +74,13 @@ class TestLoggerFactory:
 
     def test_string_based_logger_type_creation(self):
         """Test string-based logger type creation."""
-        string_logger = create_logger("basic", name="string_test")
+        string_logger = LoggerFactory.create_logger("basic", name="string_test")
         assert string_logger.name == "string_test"
 
     def test_invalid_logger_type_handling(self):
         """Test error handling for invalid logger types."""
         with pytest.raises(ValueError, match="Invalid logger type"):
-            create_logger("invalid_type", name="error_test")
+            LoggerFactory.create_logger("invalid_type", name="error_test")
 
     def test_performance_improvement_with_caching(self):
         """Test performance improvements with registry caching."""
@@ -89,14 +89,14 @@ class TestLoggerFactory:
         clear_logger_registry()
         start_time = time.time()
         for i in range(20):  # Reduced for faster tests
-            create_logger(LoggerType.BASIC, name=f"perf_test_{i}")
+            LoggerFactory.create_logger(LoggerType.BASIC, name=f"perf_test_{i}")
         no_cache_time = time.time() - start_time
 
         # Test with registry (reuses loggers)
         clear_logger_registry()
         start_time = time.time()
         for i in range(20):
-            get_or_create_logger(LoggerType.BASIC, name="cached_perf_test")
+            LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="cached_perf_test")
         cached_time = time.time() - start_time
 
         # Cached should be faster (allow some tolerance for test environment)
@@ -104,14 +104,14 @@ class TestLoggerFactory:
 
     def test_convenience_functions(self):
         """Test all convenience functions work correctly."""
-        basic_conv = basic_logger(name="conv_basic")
+        basic_conv = BasicLog(name="conv_basic")
         assert basic_conv.name == "conv_basic"
 
     def test_registry_management(self):
         """Test registry management functions."""
         # Create some loggers
-        logger1 = get_or_create_logger(LoggerType.BASIC, name="logger1")
-        logger2 = get_or_create_logger(LoggerType.BASIC, name="logger2")
+        logger1 = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="logger1")
+        logger2 = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="logger2")
 
         # Check registry contents
         registered = get_registered_loggers()
@@ -130,7 +130,7 @@ class TestLoggerFactory:
     def test_logger_with_file_output(self):
         """Test logger creation with actual file output."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            logger = size_rotating_logger(name="file_test", directory=temp_dir, filenames=["test.log"], level="INFO")
+            logger = SizeRotatingLog(name="file_test", directory=temp_dir, filenames=["test.log"], level="INFO")
 
             # Test logging
             logger.info("Test message")
@@ -190,7 +190,7 @@ class TestLoggerFactory:
     def test_factory_shutdown_logger(self):
         """Test factory shutdown_logger functionality."""
         # Create and register a logger
-        logger = get_or_create_logger(LoggerType.BASIC, name="shutdown_test")
+        logger = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="shutdown_test")
         assert "shutdown_test" in get_registered_loggers()
 
         # Shutdown the logger
@@ -224,13 +224,13 @@ class TestLoggerFactory:
     )
     def test_convenience_functions_comprehensive(self):
         """Test all convenience functions with various parameters."""
-        # Test basic_logger
-        basic_log = basic_logger(name="conv_basic", level="DEBUG")
+        # Test BasicLog
+        basic_log = BasicLog(name="conv_basic", level="DEBUG")
         assert basic_log.name == "conv_basic"
 
-        # Test size_rotating_logger
+        # Test SizeRotatingLog
         with tempfile.TemporaryDirectory() as temp_dir:
-            size_log = size_rotating_logger(
+            size_log = SizeRotatingLog(
                 name="conv_size",
                 directory=temp_dir,
                 filenames=["test1.log", "test2.log"],
@@ -239,8 +239,8 @@ class TestLoggerFactory:
             )
             assert size_log.name == "conv_size"
 
-            # Test timed_rotating_logger
-            timed_log = timed_rotating_logger(
+            # Test TimedRotatingLog
+            timed_log = TimedRotatingLog(
                 name="conv_timed", directory=temp_dir, when="midnight", sufix="%Y%m%d", daystokeep=7
             )
             assert timed_log.name == "conv_timed"
@@ -267,8 +267,8 @@ class TestLoggerFactory:
     def test_factory_registry_copy_safety(self):
         """Test that get_registered_loggers returns a copy."""
         # Create some loggers
-        logger1 = get_or_create_logger(LoggerType.BASIC, name="copy_test1")
-        logger2 = get_or_create_logger(LoggerType.BASIC, name="copy_test2")
+        logger1 = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="copy_test1")
+        logger2 = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="copy_test2")
 
         # Get registry copy
         registry_copy = get_registered_loggers()
@@ -286,7 +286,7 @@ class TestLoggerFactory:
         """Test error handling during logger cleanup."""
 
         # Create a logger
-        logger = get_or_create_logger(LoggerType.BASIC, name="cleanup_error_test")
+        logger = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="cleanup_error_test")
 
         # Create a mock handler that will raise an error on close
         mock_handler = Mock()
@@ -318,9 +318,9 @@ class TestLoggerFactory:
     def test_factory_atexit_cleanup_error_handling(self):
         """Test atexit cleanup error handling."""
 
-        # Mock the clear_registry method to raise an error
-        with patch.object(LoggerFactory, 'clear_registry', side_effect=Exception("Test error")):
-            # Should not raise an exception
+        # Mock the clear_registry method to raise an expected error type
+        with patch.object(LoggerFactory, 'clear_registry', side_effect=OSError("Test error")):
+            # Should not raise an exception (silently ignored)
             LoggerFactory._atexit_cleanup()
 
     def test_factory_ttl_cleanup_edge_cases(self):
@@ -383,7 +383,7 @@ class TestLoggerFactory:
         mock_settings.logger_ttl_seconds = 1800
 
         # Patch the import inside the function
-        with patch('pythonLogs.factory.get_log_settings', return_value=mock_settings):
+        with patch('pythonLogs.core.factory.get_log_settings', return_value=mock_settings):
             # Reset initialization flag
             LoggerFactory._initialized = False
 

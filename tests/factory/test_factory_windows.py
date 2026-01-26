@@ -1,29 +1,26 @@
 #!/usr/bin/env python3
 """Windows-specific tests for the factory pattern implementation."""
-import os
-import sys
-import pytest
 
+import os
+import pytest
+import sys
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pythonLogs import (
-    LoggerFactory,
-    LoggerType,
+    BasicLog,
     LogLevel,
     RotateWhen,
-    get_or_create_logger,
-    basic_logger,
-    size_rotating_logger,
-    timed_rotating_logger,
-    clear_logger_registry,
+    SizeRotatingLog,
+    TimedRotatingLog,
 )
+from pythonLogs.core.factory import LoggerFactory, LoggerType, clear_logger_registry
 
 # Import Windows-safe utilities for test cleanup
 from tests.core.test_log_utils import (
-    windows_safe_temp_directory,
     cleanup_all_loggers,
+    windows_safe_temp_directory,
 )
 
 
@@ -44,23 +41,21 @@ class TestLoggerFactoryWindows:
     def test_size_rotating_logger_creation_windows(self):
         """Test size rotating logger creation using convenience function on Windows."""
         with windows_safe_temp_directory() as temp_dir:
-            size_logger = size_rotating_logger(name="test_size_win", directory=temp_dir, maxmbytes=5)
+            size_logger = SizeRotatingLog(name="test_size_win", directory=temp_dir, maxmbytes=5)
             assert size_logger.name == "test_size_win"
 
     @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific tests")
     def test_timed_rotating_logger_creation_windows(self):
         """Test timed rotating logger creation on Windows."""
         with windows_safe_temp_directory() as temp_dir:
-            timed_logger = timed_rotating_logger(name="test_timed_win", directory=temp_dir, when="midnight")
+            timed_logger = TimedRotatingLog(name="test_timed_win", directory=temp_dir, when="midnight")
             assert timed_logger.name == "test_timed_win"
 
     @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific tests")
     def test_logger_with_file_output_windows(self):
         """Test logger creation with actual file output on Windows."""
         with windows_safe_temp_directory() as temp_dir:
-            logger = size_rotating_logger(
-                name="file_test_win", directory=temp_dir, filenames=["test.log"], level="INFO"
-            )
+            logger = SizeRotatingLog(name="file_test_win", directory=temp_dir, filenames=["test.log"], level="INFO")
 
             # Test logging
             logger.info("Test message")
@@ -97,13 +92,13 @@ class TestLoggerFactoryWindows:
     @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific tests")
     def test_convenience_functions_comprehensive_windows(self):
         """Test all convenience functions with various parameters on Windows."""
-        # Test basic_logger
-        basic_log = basic_logger(name="conv_basic_win", level="DEBUG")
+        # Test BasicLog
+        basic_log = BasicLog(name="conv_basic_win", level="DEBUG")
         assert basic_log.name == "conv_basic_win"
 
-        # Test size_rotating_logger
+        # Test SizeRotatingLog
         with windows_safe_temp_directory() as temp_dir:
-            size_log = size_rotating_logger(
+            size_log = SizeRotatingLog(
                 name="conv_size_win",
                 directory=temp_dir,
                 filenames=["test1.log", "test2.log"],
@@ -112,8 +107,8 @@ class TestLoggerFactoryWindows:
             )
             assert size_log.name == "conv_size_win"
 
-            # Test timed_rotating_logger
-            timed_log = timed_rotating_logger(
+            # Test TimedRotatingLog
+            timed_log = TimedRotatingLog(
                 name="conv_timed_win",
                 directory=temp_dir,
                 when="midnight",
@@ -142,7 +137,7 @@ class TestLoggerFactoryWindows:
     def test_file_based_size_rotating_logger_windows(self):
         """Test file-based size rotating logger example on Windows."""
         with windows_safe_temp_directory() as temp_dir:
-            logger = size_rotating_logger(
+            logger = SizeRotatingLog(
                 name="app_logger_win",
                 directory=temp_dir,
                 filenames=["app.log", "debug.log"],
@@ -165,7 +160,7 @@ class TestLoggerFactoryWindows:
     def test_time_based_rotating_logger_windows(self):
         """Test time-based rotating logger example on Windows."""
         with windows_safe_temp_directory() as temp_dir:
-            logger = timed_rotating_logger(
+            logger = TimedRotatingLog(
                 name="scheduled_app_win",
                 directory=temp_dir,
                 filenames=["scheduled.log"],
@@ -235,7 +230,7 @@ class TestLoggerFactoryWindows:
         """Test logger registry usage in production scenario on Windows."""
         with windows_safe_temp_directory() as temp_dir:
             # First module gets logger
-            module1_logger = get_or_create_logger(
+            module1_logger = LoggerFactory.get_or_create_logger(
                 LoggerType.SIZE_ROTATING,
                 name="shared_app_logger_win",
                 directory=temp_dir,
@@ -243,7 +238,7 @@ class TestLoggerFactoryWindows:
             )
 
             # The Second module gets the same logger (cached)
-            module2_logger = get_or_create_logger(
+            module2_logger = LoggerFactory.get_or_create_logger(
                 LoggerType.SIZE_ROTATING,
                 name="shared_app_logger_win",
                 directory=temp_dir,  # Must provide same params
@@ -265,7 +260,7 @@ class TestLoggerFactoryWindows:
             config_when = "midnight"
 
             # Create logger with mix of config and enums
-            logger = timed_rotating_logger(
+            logger = TimedRotatingLog(
                 name="config_driven_app_win",
                 directory=temp_dir,
                 level=config_level,  # String from config
@@ -310,12 +305,12 @@ class TestLoggerFactoryWindows:
     def test_convenience_functions_examples_windows(self):
         """Test all convenience functions with realistic scenarios on Windows."""
         # Basic logger for console output
-        console_logger = basic_logger(name="console_win", level=LogLevel.WARNING)
+        console_logger = BasicLog(name="console_win", level=LogLevel.WARNING)
         console_logger.warning("Console warning message")
 
         # Size rotating for application logs
         with windows_safe_temp_directory() as temp_dir:
-            app_logger = size_rotating_logger(
+            app_logger = SizeRotatingLog(
                 name="application_win",
                 directory=temp_dir,
                 maxmbytes=5,
@@ -324,7 +319,7 @@ class TestLoggerFactoryWindows:
             app_logger.info("Application log message")
 
             # Timed rotating for audit logs
-            audit_logger = timed_rotating_logger(
+            audit_logger = TimedRotatingLog(
                 name="audit_win",
                 directory=temp_dir,
                 when=RotateWhen.DAILY,

@@ -1,13 +1,14 @@
 import logging
 import os
-import sys
 import pytest
-
+import sys
 
 # Add the parent directory to sys.path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from pythonLogs import BasicLog, LogLevel, clear_logger_registry
+from pythonLogs import LogLevel
+from pythonLogs.basic_log import BasicLog
+from pythonLogs.core.factory import clear_logger_registry
 
 
 class TestBasicLog:
@@ -110,7 +111,7 @@ class TestBasicLog:
         assert len(logger.handlers) > 0
 
         # Clean up using instance method
-        basic_log._cleanup_logger(logger)
+        basic_log.cleanup_logger(logger)
         assert len(logger.handlers) == 0
 
     def test_basic_log_thread_safety(self):

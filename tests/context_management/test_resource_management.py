@@ -7,21 +7,23 @@ import tempfile
 import time
 import weakref
 
-
 # Add the parent directory to sys.path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 from pythonLogs import (
-    LoggerFactory,
-    basic_logger,
-    size_rotating_logger,
-    clear_logger_registry,
-    shutdown_logger,
-    get_registered_loggers,
+    BasicLog,
     LogLevel,
+    SizeRotatingLog,
 )
-from pythonLogs.basic_log import BasicLog
+from pythonLogs.basic_log import BasicLog as BasicLogImpl
+from pythonLogs.core.factory import (
+    LoggerFactory,
+    LoggerType,
+    clear_logger_registry,
+    get_registered_loggers,
+    shutdown_logger,
+)
 
 
 @pytest.mark.skipif(
@@ -50,7 +52,7 @@ class TestResourceManagement:
         """Test that factory registry cleanup properly closes handlers."""
         logger_name = "test_registry_cleanup"
 
-        # Create logger through factory
+        # Create logger through factory (returns logging.Logger)
         logger = LoggerFactory.create_size_rotating_logger(
             name=logger_name,
             directory=self.temp_dir,
@@ -78,13 +80,9 @@ class TestResourceManagement:
         logger1_name = "test_logger_1"
         logger2_name = "test_logger_2"
 
-        # Create two loggers
-        logger1 = basic_logger(name=logger1_name, level=LogLevel.INFO.value)
-        logger2 = basic_logger(name=logger2_name, level=LogLevel.DEBUG.value)
-
-        # Add to registry manually for testing
-        LoggerFactory._logger_registry[logger1_name] = (logger1, time.time())
-        LoggerFactory._logger_registry[logger2_name] = (logger2, time.time())
+        # Create two loggers using factory (properly adds to registry)
+        logger1 = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name=logger1_name, level=LogLevel.INFO.value)
+        logger2 = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name=logger2_name, level=LogLevel.DEBUG.value)
 
         # Verify both are in registry
         assert len(get_registered_loggers()) == 2
@@ -119,8 +117,8 @@ class TestResourceManagement:
 
         assert len(logger.handlers) == 2
 
-        # Use static cleanup method
-        BasicLog.cleanup_logger(logger)
+        # Use static cleanup method from internal class
+        BasicLogImpl.cleanup_logger(logger)
 
         # Verify all handlers were cleaned up
         assert len(logger.handlers) == 0
@@ -144,7 +142,7 @@ class TestResourceManagement:
         assert len(logger.handlers) == 2
 
         # Cleanup should handle errors and still remove handlers
-        BasicLog.cleanup_logger(logger)
+        BasicLogImpl.cleanup_logger(logger)
 
         # All handlers should be removed despite errors
         assert len(logger.handlers) == 0
@@ -153,7 +151,7 @@ class TestResourceManagement:
         """Test registry cleanup with file handlers."""
         logger_name = "test_file_handlers"
 
-        # Create logger with file handlers
+        # Create logger with file handlers (returns logging.Logger)
         logger = LoggerFactory.create_size_rotating_logger(
             name=logger_name,
             directory=self.temp_dir,
@@ -187,10 +185,10 @@ class TestResourceManagement:
         num_loggers = 10
         logger_names = [f"perf_test_logger_{i}" for i in range(num_loggers)]
 
-        # Create multiple loggers
+        # Create multiple loggers using factory
         start_time = time.time()
         for name in logger_names:
-            logger = size_rotating_logger(
+            logger = LoggerFactory.create_size_rotating_logger(
                 name=name,
                 directory=self.temp_dir,
                 filenames=[f"{name}.log"],
@@ -221,8 +219,8 @@ class TestResourceManagement:
 
         logger_name = "memory_test_logger"
 
-        # Create logger and get weak reference
-        logger = size_rotating_logger(
+        # Create logger using factory (returns logging.Logger)
+        logger = LoggerFactory.create_size_rotating_logger(
             name=logger_name,
             directory=self.temp_dir,
             filenames=[self.log_file],
@@ -261,7 +259,8 @@ class TestResourceManagement:
         def create_and_cleanup_logger(index):
             """Create a logger and immediately clean it up."""
             logger_name = f"concurrent_test_{index}"
-            logger = basic_logger(name=logger_name, level=LogLevel.INFO.value)
+            # Use factory to create logger (returns logging.Logger)
+            logger = LoggerFactory.create_basic_logger(name=logger_name, level=LogLevel.INFO.value)
 
             # Add to registry
             LoggerFactory._logger_registry[logger_name] = (logger, time.time())

@@ -1,28 +1,27 @@
 #!/usr/bin/env python3
 """Windows-specific performance tests for the factory pattern and optimizations."""
+
 import os
+import pytest
 import sys
 import time
-import pytest
-
 
 # Add parent directory to path for imports
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, project_root)  # For pythonLogs
 
 # Import test utilities
-from tests.core.test_log_utils import windows_safe_temp_directory
-
 from pythonLogs import (
+    LogLevel,
+    SizeRotatingLog,
+)
+from pythonLogs.core.factory import (
     LoggerFactory,
     LoggerType,
-    LogLevel,
-    create_logger,
-    get_or_create_logger,
-    size_rotating_logger,
     clear_logger_registry,
     get_registered_loggers,
 )
+from tests.core.test_log_utils import windows_safe_temp_directory
 
 
 @pytest.mark.skipif(os.getenv('CI') == 'true', reason="Performance tests unstable in CI")
@@ -39,13 +38,13 @@ class TestPerformanceWindows:
         with windows_safe_temp_directory() as temp_dir:
             # Use more precise timing for Windows
             start_time = time.perf_counter()
-            logger1 = size_rotating_logger(name="dir_test_1_win", directory=temp_dir)
+            logger1 = SizeRotatingLog(name="dir_test_1_win", directory=temp_dir)
             first_call_time = time.perf_counter() - start_time
 
             # Subsequent calls to the same directory should be faster (cached)
             start_time = time.perf_counter()
             for i in range(10):
-                logger = size_rotating_logger(
+                logger = SizeRotatingLog(
                     name=f"dir_test_{i+2}_win",
                     directory=temp_dir,  # The Same directory should use cache
                 )
@@ -73,11 +72,13 @@ class TestPerformanceWindows:
             loggers = []
             for i in range(30):  # 10 of each type
                 if i % 3 == 0:
-                    logger = create_logger(LoggerType.BASIC, name=f"mixed_basic_{i}_win")
+                    logger = LoggerFactory.create_logger(LoggerType.BASIC, name=f"mixed_basic_{i}_win")
                 elif i % 3 == 1:
-                    logger = size_rotating_logger(name=f"mixed_size_{i}_win", directory=temp_dir)
+                    logger = SizeRotatingLog(name=f"mixed_size_{i}_win", directory=temp_dir)
                 else:
-                    logger = create_logger(LoggerType.TIMED_ROTATING, name=f"mixed_timed_{i}_win", directory=temp_dir)
+                    logger = LoggerFactory.create_logger(
+                        LoggerType.TIMED_ROTATING, name=f"mixed_timed_{i}_win", directory=temp_dir
+                    )
                 loggers.append(logger)
 
             elapsed_time = time.time() - start_time
@@ -96,13 +97,11 @@ class TestPerformanceWindows:
             # Intensive mixed usage
             for i in range(200):
                 if i % 4 == 0:
-                    logger = get_or_create_logger(LoggerType.BASIC, name="stress_cached_win")
+                    logger = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="stress_cached_win")
                 elif i % 4 == 1:
-                    logger = create_logger("basic", name=f"stress_basic_{i}_win")
+                    logger = LoggerFactory.create_logger("basic", name=f"stress_basic_{i}_win")
                 elif i % 4 == 2:
-                    logger = size_rotating_logger(
-                        name=f"stress_size_{i}_win", directory=temp_dir, level=LogLevel.WARNING
-                    )
+                    logger = SizeRotatingLog(name=f"stress_size_{i}_win", directory=temp_dir, level=LogLevel.WARNING)
                 else:
                     logger = LoggerFactory.create_logger(
                         LoggerType.TIMED_ROTATING,
@@ -128,13 +127,13 @@ class TestPerformanceWindows:
         # Test with string values
         start_time = time.perf_counter()
         for i in range(25):
-            create_logger("basic", name=f"string_test_{i}_win", level="INFO")
+            LoggerFactory.create_logger("basic", name=f"string_test_{i}_win", level="INFO")
         string_time = time.perf_counter() - start_time
 
         # Test with enum values
         start_time = time.perf_counter()
         for i in range(25):
-            create_logger(LoggerType.BASIC, name=f"enum_test_{i}_win", level=LogLevel.INFO)
+            LoggerFactory.create_logger(LoggerType.BASIC, name=f"enum_test_{i}_win", level=LogLevel.INFO)
         enum_time = time.perf_counter() - start_time
 
         # Handle Windows timing precision issues
@@ -157,7 +156,7 @@ class TestPerformanceWindows:
             # Create multiple loggers that might compete for file access
             loggers = []
             for i in range(20):
-                logger = size_rotating_logger(
+                logger = SizeRotatingLog(
                     name=f"file_lock_test_{i}_win",
                     directory=temp_dir,
                     filenames=[f"test_{i}.log"],

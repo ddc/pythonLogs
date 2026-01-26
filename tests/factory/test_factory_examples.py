@@ -1,27 +1,23 @@
 #!/usr/bin/env python3
 """Practical examples and integration tests for the Logger Factory Pattern."""
+
 import os
-import sys
-import tempfile
 from pathlib import Path
 import pytest
-
+import sys
+import tempfile
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pythonLogs import (
-    LoggerFactory,
-    LoggerType,
+    BasicLog,
     LogLevel,
     RotateWhen,
-    create_logger,
-    get_or_create_logger,
-    basic_logger,
-    size_rotating_logger,
-    timed_rotating_logger,
-    clear_logger_registry,
+    SizeRotatingLog,
+    TimedRotatingLog,
 )
+from pythonLogs.core.factory import LoggerFactory, LoggerType, clear_logger_registry
 
 
 class TestFactoryExamples:
@@ -50,7 +46,7 @@ class TestFactoryExamples:
     def test_file_based_size_rotating_logger(self):
         """Test file-based size rotating logger example."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            logger = size_rotating_logger(
+            logger = SizeRotatingLog(
                 name="app_logger",
                 directory=temp_dir,
                 filenames=["app.log", "debug.log"],
@@ -77,7 +73,7 @@ class TestFactoryExamples:
     def test_time_based_rotating_logger(self):
         """Test time-based rotating logger example."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            logger = timed_rotating_logger(
+            logger = TimedRotatingLog(
                 name="scheduled_app",
                 directory=temp_dir,
                 filenames=["scheduled.log"],
@@ -158,7 +154,7 @@ class TestFactoryExamples:
         """Test logger registry usage in production scenario."""
         with tempfile.TemporaryDirectory() as temp_dir:
             # First module gets logger
-            module1_logger = get_or_create_logger(
+            module1_logger = LoggerFactory.get_or_create_logger(
                 LoggerType.SIZE_ROTATING,
                 name="shared_app_logger",
                 directory=temp_dir,
@@ -166,7 +162,7 @@ class TestFactoryExamples:
             )
 
             # The Second module gets the same logger (cached)
-            module2_logger = get_or_create_logger(
+            module2_logger = LoggerFactory.get_or_create_logger(
                 LoggerType.SIZE_ROTATING,
                 name="shared_app_logger",
                 directory=temp_dir,  # Must provide same params
@@ -191,7 +187,7 @@ class TestFactoryExamples:
             config_when = "midnight"
 
             # Create logger with mix of config and enums
-            logger = timed_rotating_logger(
+            logger = TimedRotatingLog(
                 name="config_driven_app",
                 directory=temp_dir,
                 level=config_level,  # String from config
@@ -206,7 +202,7 @@ class TestFactoryExamples:
         """Test various error handling scenarios."""
         # Invalid logger type
         with pytest.raises(ValueError, match="Invalid logger type"):
-            create_logger("nonexistent_type", name="error_test")
+            LoggerFactory.create_logger("nonexistent_type", name="error_test")
 
         # Invalid directory (should raise PermissionError when trying to create)
         # This test only works on Unix/Linux/macOS systems with chmod
@@ -218,7 +214,7 @@ class TestFactoryExamples:
                 try:
                     invalid_dir = os.path.join(readonly_parent, "invalid")
                     with pytest.raises(PermissionError):
-                        size_rotating_logger(name="permission_test", directory=invalid_dir)
+                        SizeRotatingLog(name="permission_test", directory=invalid_dir)
                 finally:
                     # Restore permissions for cleanup
                     os.chmod(readonly_parent, 0o755)
@@ -263,12 +259,12 @@ class TestFactoryExamples:
     def test_convenience_functions_examples(self):
         """Test all convenience functions with realistic scenarios."""
         # Basic logger for console output
-        console_logger = basic_logger(name="console", level=LogLevel.WARNING)
+        console_logger = BasicLog(name="console", level=LogLevel.WARNING)
         console_logger.warning("Console warning message")
 
         # Size rotating for application logs
         with tempfile.TemporaryDirectory() as temp_dir:
-            app_logger = size_rotating_logger(
+            app_logger = SizeRotatingLog(
                 name="application",
                 directory=temp_dir,
                 maxmbytes=5,
@@ -277,7 +273,7 @@ class TestFactoryExamples:
             app_logger.info("Application log message")
 
             # Timed rotating for audit logs
-            audit_logger = timed_rotating_logger(
+            audit_logger = TimedRotatingLog(
                 name="audit",
                 directory=temp_dir,
                 when=RotateWhen.DAILY,

@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 """Performance tests for zoneinfo vs pytz migration."""
+
 import os
+import pytest
 import sys
 import tempfile
 import time
-import pytest
-
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pythonLogs import (
-    basic_logger,
-    size_rotating_logger,
+    BasicLog,
     LogLevel,
-    clear_logger_registry,
+    SizeRotatingLog,
 )
+from pythonLogs.core.factory import clear_logger_registry
 
 
 @pytest.mark.skipif(os.getenv('CI') == 'true', reason="Performance tests unstable in CI")
@@ -27,7 +27,7 @@ class TestZoneinfoPerformance:
         clear_logger_registry()
 
         # Clear timezone caches
-        from pythonLogs.log_utils import get_timezone_function, get_timezone_offset, get_stderr_timezone
+        from pythonLogs.core.log_utils import get_stderr_timezone, get_timezone_function, get_timezone_offset
 
         get_timezone_function.cache_clear()
         get_timezone_offset.cache_clear()
@@ -35,7 +35,7 @@ class TestZoneinfoPerformance:
 
     def test_timezone_function_caching_performance(self):
         """Test that timezone function caching improves performance."""
-        from pythonLogs.log_utils import get_timezone_function
+        from pythonLogs.core.log_utils import get_timezone_function
 
         # First call (not cached) - single call to prime the cache
         start_time = time.time()
@@ -55,7 +55,7 @@ class TestZoneinfoPerformance:
 
     def test_timezone_offset_caching_performance(self):
         """Test timezone offset calculation caching performance."""
-        from pythonLogs.log_utils import get_timezone_offset
+        from pythonLogs.core.log_utils import get_timezone_offset
 
         # Test with multiple calls to the same timezone
         start_time = time.time()
@@ -75,7 +75,7 @@ class TestZoneinfoPerformance:
         loggers = []
         for i in range(40):  # 10 loggers per timezone
             tz = timezones[i % len(timezones)]
-            logger = basic_logger(name=f"perf_test_{i}", timezone=tz, level=LogLevel.INFO)
+            logger = BasicLog(name=f"perf_test_{i}", timezone=tz, level=LogLevel.INFO)
             loggers.append(logger)
 
         elapsed_time = time.time() - start_time
@@ -95,7 +95,7 @@ class TestZoneinfoPerformance:
 
             # Create loggers with same timezone (should benefit from caching)
             for i in range(10):
-                logger = basic_logger(name=f"concurrent_{worker_id}_{i}", timezone="UTC")
+                logger = BasicLog(name=f"concurrent_{worker_id}_{i}", timezone="UTC")
                 logger.info(f"Concurrent test {worker_id}-{i}")
 
             elapsed = time.time() - start_time
@@ -119,8 +119,8 @@ class TestZoneinfoPerformance:
     def test_timezone_memory_efficiency(self):
         """Test memory efficiency of timezone caching."""
         try:
-            import psutil
             import os
+            import psutil
 
             # Get initial memory usage
             process = psutil.Process(os.getpid())
@@ -129,7 +129,7 @@ class TestZoneinfoPerformance:
             # Create many loggers with same timezone
             loggers = []
             for i in range(200):
-                logger = basic_logger(name=f"memory_test_{i}", timezone="America/New_York")  # Same timezone for all
+                logger = BasicLog(name=f"memory_test_{i}", timezone="America/New_York")  # Same timezone for all
                 loggers.append(logger)
 
             # Get memory usage after logger creation
@@ -149,7 +149,7 @@ class TestZoneinfoPerformance:
             # psutil not available, just test that we can create many loggers without crashing
             loggers = []
             for i in range(200):
-                logger = basic_logger(name=f"memory_test_{i}", timezone="America/New_York")
+                logger = BasicLog(name=f"memory_test_{i}", timezone="America/New_York")
                 loggers.append(logger)
 
             # If we get here without errors, memory usage is acceptable
@@ -161,7 +161,7 @@ class TestZoneinfoPerformance:
 
     def test_timezone_function_performance_comparison(self):
         """Compare performance of different timezone function types."""
-        from pythonLogs.log_utils import get_timezone_function
+        from pythonLogs.core.log_utils import get_timezone_function
 
         # Test UTC (should return time.gmtime - fastest)
         start_time = time.time()
@@ -199,7 +199,7 @@ class TestZoneinfoPerformance:
 
         for i in range(100):
             tz = timezones[i % len(timezones)]
-            logger = basic_logger(name=f"bulk_test_{i}", timezone=tz)
+            logger = BasicLog(name=f"bulk_test_{i}", timezone=tz)
             # Actually use the logger to ensure it's fully initialized
             logger.info(f"Bulk test message {i}")
 
@@ -219,7 +219,7 @@ class TestZoneinfoPerformance:
 
             # Create file-based loggers with timezones
             for i in range(20):
-                logger = size_rotating_logger(
+                logger = SizeRotatingLog(
                     name=f"file_tz_test_{i}",
                     directory=temp_dir,
                     timezone="America/Chicago",
@@ -239,8 +239,8 @@ class TestZoneinfoPerformance:
     @pytest.mark.slow
     def test_stress_test_timezone_operations(self):
         """Stress test timezone operations for performance and stability."""
-        import threading
         import random
+        import threading
 
         timezones = [
             "UTC",
@@ -264,7 +264,7 @@ class TestZoneinfoPerformance:
                     # Random timezone selection
                     tz = random.choice(timezones)
 
-                    logger = basic_logger(name=f"stress_{worker_id}_{__i}", timezone=tz, level=LogLevel.INFO)
+                    logger = BasicLog(name=f"stress_{worker_id}_{__i}", timezone=tz, level=LogLevel.INFO)
                     logger.info(f"Stress test message {worker_id}-{__i} with {tz}")
 
                     # Small delay to simulate real usage

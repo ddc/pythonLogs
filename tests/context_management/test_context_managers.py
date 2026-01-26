@@ -3,20 +3,18 @@ import os
 import sys
 import tempfile
 
-
 # Add the parent directory to sys.path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 from pythonLogs import (
-    BasicLog,
-    SizeRotatingLog,
-    TimedRotatingLog,
     LogLevel,
     RotateWhen,
-    clear_logger_registry,
-    LoggerFactory,
 )
+from pythonLogs.basic_log import BasicLog
+from pythonLogs.core.factory import LoggerFactory, clear_logger_registry
+from pythonLogs.size_rotating import SizeRotatingLog
+from pythonLogs.timed_rotating import TimedRotatingLog
 
 
 @pytest.mark.skipif(

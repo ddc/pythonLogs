@@ -1,22 +1,21 @@
 #!/usr/bin/env python3
 """Utility functions and tests for log_utils module."""
+
 import contextlib
+from contextlib import contextmanager
 import functools
 import io
 import logging
 import os
+import pytest
 import sys
 import tempfile
 import time
-from contextlib import contextmanager
-import pytest
-
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from pythonLogs import log_utils
-
+from pythonLogs.core import log_utils
 
 # ============================================================================
 # UTILITY FUNCTIONS
@@ -877,8 +876,8 @@ class TestLogUtils:
     def test_remove_old_logs_directory_error(self):
         """Test remove_old_logs error handling when directory scan fails"""
         # Test with a simulated Path.glob() error by mocking pathlib.Path
-        import unittest.mock
         from pathlib import Path
+        import unittest.mock
 
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create a normal directory first
@@ -938,9 +937,9 @@ class TestLogUtils:
                 with pytest.raises(PermissionError) as exc_info:
                     log_utils.get_log_path(readonly_dir, "test.log")
                 # The error could be from check_directory_permissions or get_log_path itself
-                assert "Unable to access directory" in str(
+                assert "Unable to access directory" in str(exc_info.value) or "Unable to write to log directory" in str(
                     exc_info.value
-                ) or "Unable to write to log directory" in str(exc_info.value)
+                )
             finally:
                 # Restore for cleanup
                 os.chmod(readonly_dir, 0o755)
@@ -1455,8 +1454,8 @@ class TestLogUtils:
                 f.write("test content")
 
             # Mock Path.unlink to raise OSError during deletion
-            import unittest.mock
             from pathlib import Path
+            import unittest.mock
 
             original_unlink = Path.unlink
 
@@ -1488,14 +1487,14 @@ class TestLogUtils:
 
         def mock_zoneinfo(key):
             if key == "UTC":
-                raise Exception("Mock UTC timezone error")
+                raise KeyError("Mock UTC timezone error")
             # Return the real ZoneInfo for other timezones
             from zoneinfo import ZoneInfo
 
             return ZoneInfo(key)
 
         try:
-            with unittest.mock.patch('pythonLogs.log_utils.ZoneInfo', side_effect=mock_zoneinfo):
+            with unittest.mock.patch('pythonLogs.core.log_utils.ZoneInfo', side_effect=mock_zoneinfo):
                 result = log_utils.get_timezone_function("UTC")
 
                 # Should fall back to localtime (lines 273-275)
@@ -1513,14 +1512,14 @@ class TestLogUtils:
 
         def mock_zoneinfo(key):
             if key == "Custom/Timezone":
-                raise Exception("Mock custom timezone error")
+                raise KeyError("Mock custom timezone error")
             # Return the real ZoneInfo for other timezones
             from zoneinfo import ZoneInfo
 
             return ZoneInfo(key)
 
         try:
-            with unittest.mock.patch('pythonLogs.log_utils.ZoneInfo', side_effect=mock_zoneinfo):
+            with unittest.mock.patch('pythonLogs.core.log_utils.ZoneInfo', side_effect=mock_zoneinfo):
                 result = log_utils.get_timezone_function("Custom/Timezone")
 
                 # Should fall back to localtime (lines 283-285)

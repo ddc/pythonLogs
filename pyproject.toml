@@ -1,19 +1,15 @@
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.poetry]
+[project]
 name = "pythonLogs"
-version = "5.0.3"
+version = "6.0.0"
 description = "High-performance Python logging library with file rotation and optimized caching for better performance"
-license = "MIT"
+license = {text = "MIT"}
 readme = "README.md"
-authors = ["Daniel Costa <danieldcsta@gmail.com>"]
-maintainers = ["Daniel Costa"]
-repository = "https://github.com/ddc/pythonLogs"
-homepage = "https://pypi.org/project/pythonLogs"
-packages = [{include = "pythonLogs"}]
-package-mode = true
+authors = [{name = "Daniel Costa", email = "danieldcsta@gmail.com"}]
+maintainers = [{name = "Daniel Costa"}]
 keywords = [
     "python3", "python-3", "python",
     "log", "logging", "logger",
@@ -23,41 +19,57 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Development Status :: 5 - Production/Stable",
     "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Operating System :: OS Independent",
     "Environment :: Other Environment",
     "Intended Audience :: Developers",
     "Natural Language :: English",
 ]
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic-settings>=2.12.0",
+]
 
-[tool.poetry.build]
-script = "build.py"
-generate-setup-file = false
+[project.urls]
+Homepage = "https://pypi.org/project/pythonLogs"
+Repository = "https://github.com/ddc/pythonLogs"
 
-[tool.poetry.group.test]
-optional = true
+[project.optional-dependencies]
+test = [
+    "poethepoet>=0.40.0",
+    "psutil>=7.2.1",
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+]
 
-[tool.poetry.dependencies]
-python = "^3.12"
-pydantic-settings = "^2.10.1"
-python-dotenv = "^1.1.1"
+[tool.hatch.build]
+include = ["pythonLogs/**/*"]
 
-[tool.poetry.group.test.dependencies]
-poethepoet = "^0.37.0"
-psutil = "^7.1.0"
-pytest = "^8.4.2"
-pytest-cov = "^7.0.0"
+[tool.hatch.build.targets.wheel]
+packages = ["pythonLogs"]
 
 [tool.poe.tasks]
-_test = "python -m pytest -v --cov --cov-report=term --cov-report=xml --junitxml=junit.xml -o junit_family=legacy"
-tests = ["_test"]
-test = ["tests"]
+build = "uv build --wheel"
+updatedev.shell = "uv lock && uv sync --no-install-project --all-extras"
+linter.shell = "uv run ruff check --fix --select I . && uv run black ."
+test = "uv run pytest"
+
+[tool.pytest.ini_options]
+addopts = "-v --cov --cov-report=term --cov-report=xml --junitxml=junit.xml"
+junit_family = "legacy"
+testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+]
 
 [tool.coverage.run]
 omit = [
-    "build.py",
     "tests/*",
     "*/__init__.py",
+    "*/_version.py",
 ]
 
 [tool.coverage.report]
@@ -73,14 +85,20 @@ exclude_lines = [
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
 ]
-show_missing = false
+show_missing = true
 skip_covered = false
-
-[tool.pytest.ini_options]
-markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')"
-]
 
 [tool.black]
 line-length = 120
 skip-string-normalization = true
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["pythonLogs"]
+force-sort-within-sections = true
+no-sections = true

@@ -10,27 +10,26 @@ import contextlib
 import io
 import logging
 import os
+import pytest
 import sys
 import tempfile
 import time
-import pytest
-
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Add current directory to path for local imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from pythonLogs import log_utils
+from pythonLogs.core import log_utils
 
 # Import utility functions from the same directory
 from test_log_utils import (
+    cleanup_all_loggers,
     create_windows_safe_temp_file,
     safe_close_and_delete_file,
-    windows_safe_temp_directory,
-    safe_delete_file,
     safe_delete_directory,
-    cleanup_all_loggers,
+    safe_delete_file,
+    windows_safe_temp_directory,
 )
 
 

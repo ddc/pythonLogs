@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
 """Test memory optimization features of the pythonLogs library."""
+
 import gc
 import os
+import pytest
 import sys
 import tempfile
 import time
-import pytest
-
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pythonLogs import (
-    LoggerFactory,
-    LoggerType,
+    BasicLog,
     LogLevel,
-    basic_logger,
-    clear_logger_registry,
-    get_memory_stats,
-    clear_formatter_cache,
+)
+from pythonLogs.core.factory import LoggerFactory, LoggerType, clear_logger_registry
+from pythonLogs.core.memory_utils import (
     clear_directory_cache,
+    clear_formatter_cache,
     force_garbage_collection,
+    get_memory_stats,
     optimize_lru_cache_sizes,
     set_directory_cache_limit,
 )
@@ -91,7 +91,7 @@ class TestMemoryOptimization:
 
     def test_directory_cache_size_limit(self):
         """Test that directory cache enforces size limits."""
-        import pythonLogs.log_utils as log_utils
+        import pythonLogs.core.log_utils as log_utils
 
         # Set a small limit for testing
         set_directory_cache_limit(3)
@@ -117,7 +117,7 @@ class TestMemoryOptimization:
 
     def test_formatter_cache_efficiency(self):
         """Test that formatters are cached and reused efficiently."""
-        from pythonLogs.memory_utils import get_cached_formatter
+        from pythonLogs.core.memory_utils import get_cached_formatter
 
         # Clear cache first
         clear_formatter_cache()
@@ -170,7 +170,7 @@ class TestMemoryOptimization:
 
     def test_weak_reference_tracking(self):
         """Test that weak references track active loggers correctly."""
-        from pythonLogs.memory_utils import get_active_logger_count
+        from pythonLogs.core.memory_utils import get_active_logger_count
 
         initial_count = get_active_logger_count()
 
@@ -178,7 +178,7 @@ class TestMemoryOptimization:
         def create_temporary_loggers():
             loggers = []
             for i in range(3):
-                logger = basic_logger(name=f"weak_ref_test_{i}", level=LogLevel.INFO.value)
+                logger = BasicLog(name=f"weak_ref_test_{i}", level=LogLevel.INFO.value)
                 loggers.append(logger)
             return len(loggers)
 
@@ -194,7 +194,7 @@ class TestMemoryOptimization:
 
     def test_lru_cache_optimization(self):
         """Test LRU cache size optimization."""
-        from pythonLogs import log_utils
+        from pythonLogs.core import log_utils
 
         # Get initial cache info
         initial_timezone_cache = log_utils.get_timezone_function.cache_info()
@@ -259,7 +259,7 @@ class TestMemoryOptimization:
                 stats = get_memory_stats()
 
                 # Use formatter cache
-                from pythonLogs.memory_utils import get_cached_formatter
+                from pythonLogs.core.memory_utils import get_cached_formatter
 
                 formatter = get_cached_formatter(f"[%(levelname)s]:{worker_id}:%(message)s")
 
@@ -302,7 +302,7 @@ class TestMemoryOptimization:
             # Create a batch of loggers
             batch_loggers = []
             for i in range(10):
-                logger = basic_logger(name=f"leak_test_batch_{batch}_logger_{i}", level=LogLevel.INFO.value)
+                logger = BasicLog(name=f"leak_test_batch_{batch}_logger_{i}", level=LogLevel.INFO.value)
                 batch_loggers.append(logger)
                 logger.info(f"Test message from batch {batch}, logger {i}")
 
@@ -329,10 +329,10 @@ class TestMemoryOptimization:
     )
     def test_logger_cleanup_on_context_exit(self):
         """Test that logger cleanup works properly with context managers."""
-        from pythonLogs import BasicLog, SizeRotatingLog
-
         # Track initial handler count
         import logging
+        from pythonLogs.basic_log import BasicLog
+        from pythonLogs.size_rotating import SizeRotatingLog
 
         initial_handlers = len(logging.getLogger().handlers)
 
@@ -385,8 +385,8 @@ class TestMemoryOptimization:
 
     def test_cleanup_logger_handlers_standalone(self):
         """Test cleanup_logger_handlers function directly."""
-        from pythonLogs.memory_utils import cleanup_logger_handlers
         import logging
+        from pythonLogs.core.log_utils import cleanup_logger_handlers
 
         # Test with None logger
         cleanup_logger_handlers(None)  # Should not raise error
@@ -416,8 +416,8 @@ class TestMemoryOptimization:
 
     def test_cleanup_logger_handlers_error_handling(self):
         """Test cleanup_logger_handlers with handler errors."""
-        from pythonLogs.memory_utils import cleanup_logger_handlers
         import logging
+        from pythonLogs.core.log_utils import cleanup_logger_handlers
         from unittest.mock import Mock
 
         logger = logging.getLogger("cleanup_error_test")
@@ -433,7 +433,7 @@ class TestMemoryOptimization:
 
     def test_formatter_cache_eviction_detailed(self):
         """Test detailed formatter cache eviction scenarios."""
-        from pythonLogs.memory_utils import get_cached_formatter, clear_formatter_cache
+        from pythonLogs.core.memory_utils import clear_formatter_cache, get_cached_formatter
 
         clear_formatter_cache()
 
@@ -444,7 +444,7 @@ class TestMemoryOptimization:
             formatters.append(formatter)
 
         # Verify cache is at capacity
-        from pythonLogs.memory_utils import _formatter_cache, _formatter_cache_lock
+        from pythonLogs.core.memory_utils import _formatter_cache, _formatter_cache_lock
 
         with _formatter_cache_lock:
             cache_size = len(_formatter_cache)
@@ -460,8 +460,8 @@ class TestMemoryOptimization:
 
     def test_set_directory_cache_limit_edge_cases(self):
         """Test set_directory_cache_limit with edge cases."""
-        from pythonLogs.memory_utils import set_directory_cache_limit, clear_directory_cache
-        import pythonLogs.log_utils as log_utils
+        import pythonLogs.core.log_utils as log_utils
+        from pythonLogs.core.memory_utils import clear_directory_cache, set_directory_cache_limit
 
         # Setup some directories in cache using context managers
         clear_directory_cache()
@@ -499,8 +499,8 @@ class TestMemoryOptimization:
 
     def test_register_logger_weakref_direct(self):
         """Test register_logger_weakref function directly."""
-        from pythonLogs.memory_utils import register_logger_weakref, get_active_logger_count
         import logging
+        from pythonLogs.core.memory_utils import get_active_logger_count, register_logger_weakref
 
         initial_count = get_active_logger_count()
 
@@ -526,10 +526,10 @@ class TestMemoryOptimization:
 
     def test_weakref_callback_behavior(self):
         """Test weak reference callback behavior."""
-        from pythonLogs.memory_utils import _active_loggers, _weak_ref_lock
-        import logging
-        import weakref
         import gc
+        import logging
+        from pythonLogs.core.memory_utils import _active_loggers, _weak_ref_lock
+        import weakref
 
         initial_weak_refs = len(_active_loggers)
 
@@ -554,8 +554,8 @@ class TestMemoryOptimization:
 
     def test_optimize_lru_cache_sizes_normal_operation(self):
         """Test optimize_lru_cache_sizes normal operation."""
-        from pythonLogs.memory_utils import optimize_lru_cache_sizes
-        from pythonLogs import log_utils
+        from pythonLogs.core import log_utils
+        from pythonLogs.core.memory_utils import optimize_lru_cache_sizes
 
         # Get initial cache info
         initial_cache = log_utils.get_timezone_function.cache_info()
@@ -569,8 +569,8 @@ class TestMemoryOptimization:
 
     def test_formatter_cache_thread_safety(self):
         """Test thread safety of formatter cache operations."""
-        from pythonLogs.memory_utils import get_cached_formatter, clear_formatter_cache
         import concurrent.futures
+        from pythonLogs.core.memory_utils import clear_formatter_cache, get_cached_formatter
 
         clear_formatter_cache()
         errors = []
@@ -601,7 +601,7 @@ class TestMemoryOptimization:
 
     def test_weak_reference_cleanup_mechanism(self):
         """Test weak reference cleanup mechanism without relying on GC timing."""
-        from pythonLogs.memory_utils import get_active_logger_count, _active_loggers, _weak_ref_lock
+        from pythonLogs.core.memory_utils import _active_loggers, _weak_ref_lock, get_active_logger_count
 
         # Test the cleanup detection logic in get_active_logger_count
         with _weak_ref_lock:
@@ -628,7 +628,7 @@ class TestMemoryOptimization:
 
     def test_memory_stats_comprehensive(self):
         """Test comprehensive memory statistics reporting."""
-        from pythonLogs.memory_utils import get_memory_stats, get_cached_formatter
+        from pythonLogs.core.memory_utils import get_cached_formatter, get_memory_stats
 
         # Create some items to populate stats
         LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="stats_test_1")
@@ -660,7 +660,7 @@ class TestMemoryOptimization:
 
     def test_force_garbage_collection_comprehensive(self):
         """Test comprehensive garbage collection functionality."""
-        from pythonLogs.memory_utils import force_garbage_collection
+        from pythonLogs.core.memory_utils import force_garbage_collection
 
         # Create objects that could be garbage collected
         test_objects = []
@@ -692,12 +692,12 @@ class TestMemoryOptimization:
 
     def test_memory_optimization_integration(self):
         """Test integration of all memory optimization features."""
-        from pythonLogs.memory_utils import (
-            clear_formatter_cache,
+        from pythonLogs.core.memory_utils import (
             clear_directory_cache,
-            optimize_lru_cache_sizes,
+            clear_formatter_cache,
             force_garbage_collection,
             get_memory_stats,
+            optimize_lru_cache_sizes,
         )
 
         # Start with clean state
@@ -729,7 +729,7 @@ class TestMemoryOptimization:
 
     def test_memory_utils_module_constants(self):
         """Test module-level constants and their behavior."""
-        from pythonLogs import memory_utils
+        from pythonLogs.core import memory_utils
 
         # Verify module constants exist and have reasonable values
         assert hasattr(memory_utils, '_formatter_cache')

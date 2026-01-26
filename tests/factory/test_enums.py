@@ -1,24 +1,21 @@
 #!/usr/bin/env python3
 """Test enum usage with the factory pattern."""
+
 import os
+import pytest
 import sys
 import tempfile
-import pytest
-
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pythonLogs import (
-    LoggerFactory,
-    LoggerType,
+    BasicLog,
     LogLevel,
     RotateWhen,
-    create_logger,
-    basic_logger,
-    timed_rotating_logger,
-    clear_logger_registry,
+    TimedRotatingLog,
 )
+from pythonLogs.core.factory import LoggerFactory, LoggerType, clear_logger_registry
 
 
 class TestEnumUsage:
@@ -40,7 +37,7 @@ class TestEnumUsage:
         """Test RotateWhen enum usage."""
         temp_dir = tempfile.mkdtemp()
         try:
-            logger = timed_rotating_logger(
+            logger = TimedRotatingLog(
                 name="rotate_test",
                 directory=temp_dir,
                 level=LogLevel.INFO,  # LogLevel enum
@@ -63,7 +60,9 @@ class TestEnumUsage:
 
     def test_mixed_enum_and_string_usage(self):
         """Test mixed enum and string usage."""
-        logger = create_logger("basic", name="mixed_test", level=LogLevel.WARNING)  # String logger type  # Enum level
+        logger = LoggerFactory.create_logger(
+            "basic", name="mixed_test", level=LogLevel.WARNING
+        )  # String logger type  # Enum level
         assert logger.name == "mixed_test"
         assert logger.level == 30  # WARNING level
 
@@ -78,7 +77,7 @@ class TestEnumUsage:
         ]
 
         for enum_level, expected_int in levels:
-            logger = basic_logger(name=f"test_{enum_level.value.lower()}", level=enum_level)
+            logger = BasicLog(name=f"test_{enum_level.value.lower()}", level=enum_level)
             assert logger.level == expected_int
 
     def test_all_rotate_when_enum_values(self):
@@ -136,7 +135,7 @@ class TestEnumUsage:
         temp_dir = tempfile.mkdtemp()
         try:
             # Mix of enums and strings
-            logger = timed_rotating_logger(
+            logger = TimedRotatingLog(
                 name="compat_test",
                 directory=temp_dir,
                 level="INFO",  # String level
@@ -171,10 +170,10 @@ class TestEnumUsage:
         test_cases = ["BASIC", "Basic", "basic", "BASIC"]
 
         for case in test_cases:
-            logger = create_logger(case, name=f"case_test_{case}")
+            logger = LoggerFactory.create_logger(case, name=f"case_test_{case}")
             assert logger.name == f"case_test_{case}"
 
     def test_invalid_enum_conversion(self):
         """Test error handling for invalid enum-like strings."""
         with pytest.raises(ValueError, match="Invalid logger type"):
-            create_logger("invalid_enum_type", name="error_test")
+            LoggerFactory.create_logger("invalid_enum_type", name="error_test")

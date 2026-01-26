@@ -2,7 +2,6 @@ import functools
 import threading
 from typing import Any, Callable, Dict, Type, TypeVar
 
-
 F = TypeVar('F', bound=Callable[..., Any])
 
 
@@ -52,8 +51,8 @@ def thread_safe(func: F) -> F:
         if lock is None:
             # Check if class has lock, if not create one
             if not hasattr(self.__class__, '_lock'):
-                self.__class__._lock = threading.RLock()
-            lock = self.__class__._lock
+                setattr(self.__class__, '_lock', threading.RLock())
+            lock = getattr(self.__class__, '_lock')
 
         with lock:
             return func(self, *args, **kwargs)

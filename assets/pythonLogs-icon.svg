@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="#3776ab"/>
+
+  <!-- Document/Log file -->
+  <rect x="32" y="24" width="64" height="80" rx="4" fill="#ffffff"/>
+
+  <!-- Folded corner -->
+  <path d="M82 24 L96 38 L82 38 Z" fill="#ffd43b"/>
+  <path d="M82 24 L96 38 L82 38 Z" fill="#3776ab" opacity="0.2"/>
+
+  <!-- Log lines -->
+  <rect x="40" y="46" width="32" height="4" rx="2" fill="#3776ab"/>
+  <rect x="40" y="56" width="48" height="4" rx="2" fill="#ffd43b"/>
+  <rect x="40" y="66" width="40" height="4" rx="2" fill="#3776ab"/>
+  <rect x="40" y="76" width="44" height="4" rx="2" fill="#ffd43b"/>
+  <rect x="40" y="86" width="36" height="4" rx="2" fill="#3776ab"/>
+</svg>

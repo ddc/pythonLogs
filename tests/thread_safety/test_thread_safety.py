@@ -1,26 +1,24 @@
 #!/usr/bin/env python3
 """Test thread safety of the pythonLogs library."""
+
 import concurrent.futures
 import os
+import pytest
 import sys
 import tempfile
 import threading
 import time
-import pytest
-
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pythonLogs import (
-    LoggerFactory,
-    LoggerType,
     LogLevel,
-    clear_logger_registry,
-    BasicLog,
-    SizeRotatingLog,
-    TimedRotatingLog,
 )
+from pythonLogs.basic_log import BasicLog
+from pythonLogs.core.factory import LoggerFactory, LoggerType, clear_logger_registry
+from pythonLogs.size_rotating import SizeRotatingLog
+from pythonLogs.timed_rotating import TimedRotatingLog
 
 
 class TestThreadSafety:
@@ -109,7 +107,7 @@ class TestThreadSafety:
     )
     def test_concurrent_directory_cache_access(self):
         """Test concurrent access to directory permission cache."""
-        import pythonLogs.log_utils as log_utils
+        import pythonLogs.core.log_utils as log_utils
 
         num_threads = 15
         temp_dirs = []
@@ -242,7 +240,9 @@ class TestThreadSafety:
         # Just verify it has at least some loggers and doesn't exceed the total
         registry = LoggerFactory.get_registered_loggers()
         assert len(registry) > 0, "Registry should have at least one logger"
-        assert len(registry) <= len(logger_names), f"Registry has {len(registry)} loggers, expected at most {len(logger_names)}"
+        assert len(registry) <= len(
+            logger_names
+        ), f"Registry has {len(registry)} loggers, expected at most {len(logger_names)}"
 
         # Verify that loggers in the registry are from our expected set
         for logger_name in registry.keys():
@@ -297,9 +297,7 @@ class TestThreadSafety:
             try:
                 while not should_stop.is_set():
                     logger_name = f"continuous_{worker_id}_{int(time.time() * 1000)}"
-                    logger = LoggerFactory.get_or_create_logger(
-                        LoggerType.BASIC, name=logger_name, level=LogLevel.INFO
-                    )
+                    logger = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name=logger_name, level=LogLevel.INFO)
                     logger.info(f"Continuous message from worker {worker_id}")
                     time.sleep(0.01)
 
@@ -388,9 +386,7 @@ class TestThreadSafety:
         for other_id in range(num_threads):
             if other_id != worker_id:
                 for message in thread_results[other_id]['messages']:
-                    assert (
-                        message not in log_content
-                    ), f"Thread {worker_id} log contains message from thread {other_id}"
+                    assert message not in log_content, f"Thread {worker_id} log contains message from thread {other_id}"
 
     def _verify_no_cross_contamination(self, thread_results, num_threads):
         """Helper to verify no cross-contamination between thread logs."""
