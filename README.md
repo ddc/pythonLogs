@@ -40,8 +40,8 @@
 - [Environment Variables](#env-variables-optional)
 - [Flexible Configuration Options](#flexible-configuration-options)
 - [Development](#development)
-  - [Building DEV Environment and Running Tests](#building-dev-environment-and-running-tests)
-  - [Building Wheel from Source](#building-wheel-from-source)
+  - [Create DEV Environment, Running Tests and Building Wheel](#create-dev-environment-running-tests-and-building-wheel)
+  - [Optionals](#optionals)
 - [License](#license)
 - [Support](#support)
 
@@ -337,12 +337,17 @@ Must have [UV](https://uv.run/docs/getting-started/installation),
 ## Create DEV Environment, Running Tests and Building Wheel
 
 ```shell
-uv venv
 uv sync --all-extras
 poe linter
 poe test
-poe profile (optional - will create a cprofile.prof file)
 poe build
+```
+
+## Optionals
+
+### Create a cprofile.prof file from unit tests
+```shell
+poe profile
 ```
 
 
