@@ -36,7 +36,7 @@
   - [Size Rotating Logger](#size-rotating-logger)
   - [Timed Rotating Logger](#timed-rotating-logger)
 - [Context Manager Support](#context-manager-support)
-- [Setup Example](#setup-example)
+- [Using With Multiple Log Levels and Files](#using-with-multiple-log-levels-and-files)
 - [Environment Variables](#env-variables-optional)
 - [Flexible Configuration Options](#flexible-configuration-options)
 - [Development](#development)
@@ -205,7 +205,7 @@ except ValueError:
 
 
 
-# Setup Example With Multiple Levels and Files
+# Using With Multiple Log Levels and Files
 
 ```python
 from pythonLogs import SizeRotatingLog, TimedRotatingLog, LogLevel, RotateWhen
