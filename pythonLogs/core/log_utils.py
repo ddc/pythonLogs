@@ -3,6 +3,7 @@ from datetime import timezone as dttz
 import errno
 from functools import lru_cache
 import gzip
+import logging
 import logging.handlers
 import os
 from pathlib import Path
@@ -13,6 +14,29 @@ import threading
 import time
 from typing import Callable, Optional, Set
 from zoneinfo import ZoneInfo
+
+
+class RotatingLogMixin:
+    """Mixin providing common rotating logger functionality with context manager support."""
+
+    logger: logging.Logger | None
+
+    def __enter__(self):
+        """Context manager entry."""
+        if not hasattr(self, 'logger') or self.logger is None:
+            self.init()
+        return self.logger
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit with automatic cleanup."""
+        if hasattr(self, 'logger'):
+            cleanup_logger_handlers(self.logger)
+
+    @staticmethod
+    def cleanup_logger(logger: logging.Logger) -> None:
+        """Static method for cleaning up logger resources."""
+        cleanup_logger_handlers(logger)
+
 
 # Global cache for checked directories with thread safety and size limits
 _checked_directories: Set[str] = set()

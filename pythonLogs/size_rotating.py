@@ -3,9 +3,9 @@ import os
 from pathlib import Path
 from pythonLogs.core.constants import MB_TO_BYTES
 from pythonLogs.core.log_utils import (
+    RotatingLogMixin,
     check_directory_permissions,
     check_filename_instance,
-    cleanup_logger_handlers,
     get_level,
     get_log_path,
     get_logger_and_formatter,
@@ -21,7 +21,7 @@ import re
 
 
 @auto_thread_safe(['init'])
-class SizeRotatingLog:
+class SizeRotatingLog(RotatingLogMixin):
     """Size-based rotating logger with context manager support for automatic resource cleanup."""
 
     def __init__(
@@ -85,22 +85,6 @@ class SizeRotatingLog:
         # Register weak reference for memory tracking
         register_logger_weakref(logger)
         return logger
-
-    def __enter__(self):
-        """Context manager entry."""
-        if not hasattr(self, 'logger') or self.logger is None:
-            self.init()
-        return self.logger
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit with automatic cleanup."""
-        if hasattr(self, 'logger'):
-            cleanup_logger_handlers(self.logger)
-
-    @staticmethod
-    def cleanup_logger(logger: logging.Logger) -> None:
-        """Static method for cleaning up logger resources."""
-        cleanup_logger_handlers(logger)
 
 
 class GZipRotatorSize:

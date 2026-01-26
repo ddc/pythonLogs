@@ -398,7 +398,26 @@ class LoggerFactory:
 
 
 # Public API wrapper classes - act like logging.Logger with context manager support
-class BasicLog:
+class _LoggerMixin:
+    """Mixin providing common logger wrapper functionality with context manager support."""
+
+    _logger: logging.Logger
+
+    def __getattr__(self, name: str):
+        """Delegate attribute access to the underlying logger."""
+        return getattr(self._logger, name)
+
+    def __enter__(self):
+        """Context manager entry."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit with automatic cleanup."""
+        cleanup_logger_handlers(self._logger)
+        return False
+
+
+class BasicLog(_LoggerMixin):
     """Basic logger wrapper that acts like logging.Logger with context manager support.
 
     Usage:
@@ -430,21 +449,8 @@ class BasicLog:
         )
         self._name = name or get_log_settings().appname
 
-    def __getattr__(self, name: str):
-        """Delegate attribute access to the underlying logger."""
-        return getattr(self._logger, name)
 
-    def __enter__(self):
-        """Context manager entry."""
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit with automatic cleanup."""
-        cleanup_logger_handlers(self._logger)
-        return False
-
-
-class SizeRotatingLog:
+class SizeRotatingLog(_LoggerMixin):
     """Size-based rotating logger wrapper that acts like logging.Logger with context manager support.
 
     Usage:
@@ -486,21 +492,8 @@ class SizeRotatingLog:
         )
         self._name = name or get_log_settings().appname
 
-    def __getattr__(self, name: str):
-        """Delegate attribute access to the underlying logger."""
-        return getattr(self._logger, name)
 
-    def __enter__(self):
-        """Context manager entry."""
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit with automatic cleanup."""
-        cleanup_logger_handlers(self._logger)
-        return False
-
-
-class TimedRotatingLog:
+class TimedRotatingLog(_LoggerMixin):
     """Time-based rotating logger wrapper that acts like logging.Logger with context manager support.
 
     Usage:
@@ -545,19 +538,6 @@ class TimedRotatingLog:
             rotateatutc=rotateatutc,
         )
         self._name = name or get_log_settings().appname
-
-    def __getattr__(self, name: str):
-        """Delegate attribute access to the underlying logger."""
-        return getattr(self._logger, name)
-
-    def __enter__(self):
-        """Context manager entry."""
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit with automatic cleanup."""
-        cleanup_logger_handlers(self._logger)
-        return False
 
 
 # Convenience functions
