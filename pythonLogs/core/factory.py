@@ -309,7 +309,7 @@ class LoggerFactory:
                     showlocation=final_config.showlocation,
                     rotateatutc=final_config.rotateatutc,
                 ).init()
-            case _ as unreachable:
+            case _ as unreachable:  # pragma: no cover
                 assert_never(unreachable)
 
     @staticmethod

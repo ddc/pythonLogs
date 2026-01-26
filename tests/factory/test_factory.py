@@ -315,11 +315,10 @@ class TestLoggerFactory:
         LoggerFactory._ensure_initialized()
         assert LoggerFactory._initialized is True
 
-    def test_factory_atexit_cleanup_error_handling(self):
-        """Test atexit cleanup error handling."""
-
-        # Mock the clear_registry method to raise an expected error type
-        with patch.object(LoggerFactory, 'clear_registry', side_effect=OSError("Test error")):
+    @pytest.mark.parametrize("error_type", [OSError, ValueError, RuntimeError])
+    def test_factory_atexit_cleanup_error_handling(self, error_type):
+        """Test atexit cleanup handles expected exceptions gracefully."""
+        with patch.object(LoggerFactory, 'clear_registry', side_effect=error_type("Test error")):
             # Should not raise an exception (silently ignored)
             LoggerFactory._atexit_cleanup()
 
@@ -449,3 +448,47 @@ class TestLoggerFactory:
         for logger in created_loggers:
             logger.info("Scale test message")
             assert logger.name is not None
+
+    def test_factory_get_memory_limits(self):
+        """Test get_memory_limits returns current settings."""
+        # Set specific limits
+        LoggerFactory.set_memory_limits(max_loggers=75, ttl_seconds=2400)
+
+        # Get and verify limits
+        limits = LoggerFactory.get_memory_limits()
+        assert limits['max_loggers'] == 75
+        assert limits['ttl_seconds'] == 2400
+
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="Windows file locking issues with TemporaryDirectory - see test_factory_windows.py",
+    )
+    def test_timed_rotating_log_context_manager(self):
+        """Test TimedRotatingLog context manager __enter__ and __exit__."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with TimedRotatingLog(
+                name="context_timed_test",
+                directory=temp_dir,
+                when="midnight",
+                level="INFO",
+            ) as logger:
+                logger.info("Message inside context manager")
+                assert logger.name == "context_timed_test"
+            # Logger should be cleaned up after exiting context
+
+    def test_shutdown_logger_convenience_function(self):
+        """Test shutdown_logger convenience function."""
+        from pythonLogs.core.factory import shutdown_logger
+
+        # Create and register a logger
+        LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="shutdown_conv_test")
+        assert "shutdown_conv_test" in get_registered_loggers()
+
+        # Shutdown via convenience function
+        result = shutdown_logger("shutdown_conv_test")
+        assert result is True
+        assert "shutdown_conv_test" not in get_registered_loggers()
+
+        # Try shutting down non-existent logger
+        result = shutdown_logger("non_existent_conv")
+        assert result is False
