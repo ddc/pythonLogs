@@ -55,6 +55,7 @@ packages = ["pythonLogs"]
 build = "uv build --wheel"
 updatedev.shell = "uv lock && uv sync --no-install-project --all-extras"
 linter.shell = "uv run ruff check --fix --select I . && uv run black ."
+profile = "uv run python -m cProfile -o cprofile.prof -m pytest"
 test = "uv run pytest"
 
 [tool.pytest.ini_options]

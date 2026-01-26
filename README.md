@@ -40,8 +40,8 @@
 - [Environment Variables](#env-variables-optional)
 - [Flexible Configuration Options](#flexible-configuration-options)
 - [Development](#development)
-  - [Building DEV Environment and Running Tests](#building-dev-environment-and-running-tests)
-  - [Building Wheel from Source](#building-wheel-from-source)
+  - [Create DEV Environment, Running Tests and Building Wheel](#create-dev-environment-running-tests-and-building-wheel)
+  - [Optionals](#optionals)
 - [License](#license)
 - [Support](#support)
 
@@ -329,24 +329,25 @@ RotateWhen.MONDAY     # "W0"
 
 # Development
 
-Must have [UV](https://uv.run/docs/getting-started/installation), 
-[Black](https://black.readthedocs.io/en/stable/getting_started.html), and 
-[Ruff](https://docs.astral.sh/ruff/installation/) installed.
+Must have [UV](https://uv.run/docs/getting-started/installation),
+[Black](https://black.readthedocs.io/en/stable/getting_started.html),
+[Ruff](https://docs.astral.sh/ruff/installation/), and
+[Poe the Poet](https://poethepoet.naber.dev/installation) installed.
 
-## Building DEV Environment and Running Tests
+## Create DEV Environment, Running Tests and Building Wheel
 
 ```shell
-uv venv
 uv sync --all-extras
 poe linter
 poe test
-poe test-integration
+poe build
 ```
 
-## Building Wheel from Source
+## Optionals
 
+### Create a cprofile.prof file from unit tests
 ```shell
-poe build
+poe profile
 ```
 
 

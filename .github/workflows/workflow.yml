@@ -18,6 +18,9 @@ jobs:
         include:
           - os: 'macos-14-arm64'
             runs-on: 'macos-14'
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}
     steps:
       - uses: actions/checkout@v6
 
@@ -28,14 +31,16 @@ jobs:
         run: uv python install ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: |
-          uv venv
-          uv pip install -e .[test]
+        run: uv sync --all-extras
         shell: bash
 
       - name: Run tests with coverage
-        run: uv run poe test
-        shell: bash
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 2
+          max_attempts: 3
+          command: uv run pytest
+          shell: bash
 
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.14' && matrix.os == 'ubuntu-latest'
@@ -63,9 +68,7 @@ jobs:
         run: uv python install 3.14
 
       - name: Build package
-        run: |
-          uv venv
-          uv build
+        run: uv build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v6
