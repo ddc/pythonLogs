@@ -329,23 +329,19 @@ RotateWhen.MONDAY     # "W0"
 
 # Development
 
-Must have [UV](https://uv.run/docs/getting-started/installation), 
-[Black](https://black.readthedocs.io/en/stable/getting_started.html), and 
-[Ruff](https://docs.astral.sh/ruff/installation/) installed.
+Must have [UV](https://uv.run/docs/getting-started/installation),
+[Black](https://black.readthedocs.io/en/stable/getting_started.html),
+[Ruff](https://docs.astral.sh/ruff/installation/), and
+[Poe the Poet](https://poethepoet.naber.dev/installation) installed.
 
-## Building DEV Environment and Running Tests
+## Create DEV Environment, Running Tests and Building Wheel
 
 ```shell
 uv venv
 uv sync --all-extras
 poe linter
 poe test
-poe test-integration
-```
-
-## Building Wheel from Source
-
-```shell
+poe profile (optional - will create a cprofile.prof file)
 poe build
 ```
 
