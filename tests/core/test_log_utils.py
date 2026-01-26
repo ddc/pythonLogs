@@ -761,14 +761,15 @@ class TestLogUtils:
     def test_delete_file_edge_cases(self):
         """Test delete_file with different file types"""
         # Test with non-existent file
-        non_existent = "/tmp/non_existent_file_test.log"
+        non_existent = os.path.join(tempfile.gettempdir(), "non_existent_file_test.log")
         with pytest.raises(FileNotFoundError):
             log_utils.delete_file(non_existent)
 
     def test_gzip_file_error_handling(self):
         """Test gzip_file_with_sufix error handling"""
         # Test with non-existent source file
-        result = log_utils.gzip_file_with_sufix("/non/existent/file.log", "test")
+        non_existent = os.path.join(tempfile.gettempdir(), "non_existent_gzip_test.log")
+        result = log_utils.gzip_file_with_sufix(non_existent, "test")
         assert result is None
 
     def test_remove_old_logs_edge_cases(self):
