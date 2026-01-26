@@ -1,16 +1,16 @@
 import atexit
-import logging
-import threading
-import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Optional, Tuple, Union
-from pythonLogs.basic_log import BasicLog
-from pythonLogs.constants import LogLevel, RotateWhen
-from pythonLogs.log_utils import cleanup_logger_handlers
-from pythonLogs.settings import get_log_settings
-from pythonLogs.size_rotating import SizeRotatingLog
-from pythonLogs.timed_rotating import TimedRotatingLog
+import logging
+from pythonLogs.basic_log import BasicLog as _BasicLogImpl
+from pythonLogs.core.constants import LogLevel, RotateWhen
+from pythonLogs.core.log_utils import cleanup_logger_handlers
+from pythonLogs.core.settings import get_log_settings
+from pythonLogs.size_rotating import SizeRotatingLog as _SizeRotatingLogImpl
+from pythonLogs.timed_rotating import TimedRotatingLog as _TimedRotatingLogImpl
+import threading
+import time
+from typing import Dict, Optional, Tuple, Union, assert_never
 
 
 @dataclass
@@ -175,8 +175,8 @@ class LoggerFactory:
         """Cleanup function registered with atexit to ensure proper resource cleanup."""
         try:
             cls.clear_registry()
-        except Exception:
-            # Silently ignore exceptions during shutdown cleanup
+        except (OSError, ValueError, RuntimeError):
+            # Silently ignore expected exceptions during shutdown cleanup
             pass
 
     @staticmethod
@@ -210,15 +210,12 @@ class LoggerFactory:
     @classmethod
     def get_memory_limits(cls) -> dict[str, int]:
         """Get current memory management limits.
-        
+
         Returns:
             Dictionary with current max_loggers and ttl_seconds settings
         """
         with cls._registry_lock:
-            return {
-                'max_loggers': cls._max_loggers,
-                'ttl_seconds': cls._logger_ttl
-            }
+            return {'max_loggers': cls._max_loggers, 'ttl_seconds': cls._logger_ttl}
 
     @staticmethod
     def create_logger(
@@ -274,17 +271,16 @@ class LoggerFactory:
         # Create logger based on type
         match logger_type:
             case LoggerType.BASIC:
-                logger_instance = BasicLog(
+                return _BasicLogImpl(
                     level=level_str,
                     name=final_config.name,
                     encoding=final_config.encoding,
                     datefmt=final_config.datefmt,
                     timezone=final_config.timezone,
                     showlocation=final_config.showlocation,
-                )
-
+                ).init()
             case LoggerType.SIZE_ROTATING:
-                logger_instance = SizeRotatingLog(
+                return _SizeRotatingLogImpl(
                     level=level_str,
                     name=final_config.name,
                     directory=final_config.directory,
@@ -296,10 +292,9 @@ class LoggerFactory:
                     timezone=final_config.timezone,
                     streamhandler=final_config.streamhandler,
                     showlocation=final_config.showlocation,
-                )
-
+                ).init()
             case LoggerType.TIMED_ROTATING:
-                logger_instance = TimedRotatingLog(
+                return _TimedRotatingLogImpl(
                     level=level_str,
                     name=final_config.name,
                     directory=final_config.directory,
@@ -313,12 +308,9 @@ class LoggerFactory:
                     streamhandler=final_config.streamhandler,
                     showlocation=final_config.showlocation,
                     rotateatutc=final_config.rotateatutc,
-                )
-
-            case _:
-                raise ValueError(f"Unsupported logger type: {logger_type}")
-
-        return logger_instance.init()
+                ).init()
+            case _ as unreachable:  # pragma: no cover
+                assert_never(unreachable)
 
     @staticmethod
     def create_basic_logger(
@@ -405,42 +397,160 @@ class LoggerFactory:
         )
 
 
-# Convenience functions for backward compatibility and easier usage
-def create_logger(logger_type: Union[LoggerType, str], **kwargs) -> logging.Logger:
-    """Convenience function to create a logger using the factory"""
-    return LoggerFactory.create_logger(logger_type, **kwargs)
+# Public API wrapper classes - act like logging.Logger with context manager support
+class _LoggerMixin:
+    """Mixin providing common logger wrapper functionality with context manager support."""
+
+    _logger: logging.Logger
+
+    def __getattr__(self, name: str):
+        """Delegate attribute access to the underlying logger."""
+        return getattr(self._logger, name)
+
+    def __enter__(self):
+        """Context manager entry."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit with automatic cleanup."""
+        cleanup_logger_handlers(self._logger)
+        return False
 
 
-def get_or_create_logger(logger_type: Union[LoggerType, str], **kwargs) -> logging.Logger:
-    """Convenience function to get cached or create a logger using the factory"""
-    return LoggerFactory.get_or_create_logger(logger_type, **kwargs)
+class BasicLog(_LoggerMixin):
+    """Basic logger wrapper that acts like logging.Logger with context manager support.
+
+    Usage:
+        # Direct usage
+        logger = BasicLog(name="app", level="INFO")
+        logger.info("Hello world")
+
+        # Context manager (automatic cleanup)
+        with BasicLog(name="app", level="INFO") as logger:
+            logger.info("Hello world")
+    """
+
+    def __init__(
+        self,
+        level: Optional[Union[LogLevel, str]] = None,
+        name: Optional[str] = None,
+        encoding: Optional[str] = None,
+        datefmt: Optional[str] = None,
+        timezone: Optional[str] = None,
+        showlocation: Optional[bool] = None,
+    ):
+        self._logger = LoggerFactory.create_basic_logger(
+            level=level,
+            name=name,
+            encoding=encoding,
+            datefmt=datefmt,
+            timezone=timezone,
+            showlocation=showlocation,
+        )
+        self._name = name or get_log_settings().appname
 
 
-def basic_logger(**kwargs) -> logging.Logger:
-    """Convenience function to create a basic logger"""
-    return LoggerFactory.create_basic_logger(**kwargs)
+class SizeRotatingLog(_LoggerMixin):
+    """Size-based rotating logger wrapper that acts like logging.Logger with context manager support.
+
+    Usage:
+        # Direct usage
+        logger = SizeRotatingLog(name="app", directory="/logs", filenames=["app.log"])
+        logger.info("Hello world")
+
+        # Context manager (automatic cleanup)
+        with SizeRotatingLog(name="app", directory="/logs", filenames=["app.log"]) as logger:
+            logger.info("Hello world")
+    """
+
+    def __init__(
+        self,
+        level: Optional[Union[LogLevel, str]] = None,
+        name: Optional[str] = None,
+        directory: Optional[str] = None,
+        filenames: Optional[list | tuple] = None,
+        maxmbytes: Optional[int] = None,
+        daystokeep: Optional[int] = None,
+        encoding: Optional[str] = None,
+        datefmt: Optional[str] = None,
+        timezone: Optional[str] = None,
+        streamhandler: Optional[bool] = None,
+        showlocation: Optional[bool] = None,
+    ):
+        self._logger = LoggerFactory.create_size_rotating_logger(
+            level=level,
+            name=name,
+            directory=directory,
+            filenames=filenames,
+            maxmbytes=maxmbytes,
+            daystokeep=daystokeep,
+            encoding=encoding,
+            datefmt=datefmt,
+            timezone=timezone,
+            streamhandler=streamhandler,
+            showlocation=showlocation,
+        )
+        self._name = name or get_log_settings().appname
 
 
-def size_rotating_logger(**kwargs) -> logging.Logger:
-    """Convenience function to create a size rotating logger"""
-    return LoggerFactory.create_size_rotating_logger(**kwargs)
+class TimedRotatingLog(_LoggerMixin):
+    """Time-based rotating logger wrapper that acts like logging.Logger with context manager support.
+
+    Usage:
+        # Direct usage
+        logger = TimedRotatingLog(name="app", directory="/logs", when="midnight")
+        logger.info("Hello world")
+
+        # Context manager (automatic cleanup)
+        with TimedRotatingLog(name="app", directory="/logs", when="midnight") as logger:
+            logger.info("Hello world")
+    """
+
+    def __init__(
+        self,
+        level: Optional[Union[LogLevel, str]] = None,
+        name: Optional[str] = None,
+        directory: Optional[str] = None,
+        filenames: Optional[list | tuple] = None,
+        when: Optional[Union[RotateWhen, str]] = None,
+        sufix: Optional[str] = None,
+        daystokeep: Optional[int] = None,
+        encoding: Optional[str] = None,
+        datefmt: Optional[str] = None,
+        timezone: Optional[str] = None,
+        streamhandler: Optional[bool] = None,
+        showlocation: Optional[bool] = None,
+        rotateatutc: Optional[bool] = None,
+    ):
+        self._logger = LoggerFactory.create_timed_rotating_logger(
+            level=level,
+            name=name,
+            directory=directory,
+            filenames=filenames,
+            when=when,
+            sufix=sufix,
+            daystokeep=daystokeep,
+            encoding=encoding,
+            datefmt=datefmt,
+            timezone=timezone,
+            streamhandler=streamhandler,
+            showlocation=showlocation,
+            rotateatutc=rotateatutc,
+        )
+        self._name = name or get_log_settings().appname
 
 
-def timed_rotating_logger(**kwargs) -> logging.Logger:
-    """Convenience function to create a timed rotating logger"""
-    return LoggerFactory.create_timed_rotating_logger(**kwargs)
-
-
+# Convenience functions
 def clear_logger_registry() -> None:
-    """Convenience function to clear the logger registry with proper cleanup"""
+    """Clear the logger registry with proper cleanup."""
     LoggerFactory.clear_registry()
 
 
 def shutdown_logger(name: str) -> bool:
-    """Convenience function to shut down a specific logger"""
+    """Shut down a specific logger."""
     return LoggerFactory.shutdown_logger(name)
 
 
 def get_registered_loggers() -> dict[str, logging.Logger]:
-    """Convenience function to get all registered loggers"""
+    """Get all registered loggers."""
     return LoggerFactory.get_registered_loggers()

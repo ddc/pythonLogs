@@ -1,17 +1,41 @@
+from datetime import datetime, timedelta
+from datetime import timezone as dttz
 import errno
+from functools import lru_cache
 import gzip
+import logging
 import logging.handlers
 import os
+from pathlib import Path
+from pythonLogs.core.constants import DEFAULT_FILE_MODE, LEVEL_MAP
 import shutil
 import sys
 import threading
 import time
-from datetime import datetime, timedelta, timezone as dttz
-from functools import lru_cache
-from pathlib import Path
 from typing import Callable, Optional, Set
 from zoneinfo import ZoneInfo
-from pythonLogs.constants import DEFAULT_FILE_MODE, LEVEL_MAP
+
+
+class RotatingLogMixin:
+    """Mixin providing common rotating logger functionality with context manager support."""
+
+    logger: logging.Logger | None
+
+    def __enter__(self):
+        """Context manager entry."""
+        if not hasattr(self, 'logger') or self.logger is None:
+            self.init()
+        return self.logger
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit with automatic cleanup."""
+        if hasattr(self, 'logger'):
+            cleanup_logger_handlers(self.logger)
+
+    @staticmethod
+    def cleanup_logger(logger: logging.Logger) -> None:
+        """Static method for cleaning up logger resources."""
+        cleanup_logger_handlers(logger)
 
 
 # Global cache for checked directories with thread safety and size limits
@@ -26,7 +50,8 @@ def get_stream_handler(
 ) -> logging.StreamHandler:
     stream_hdlr = logging.StreamHandler()
     stream_hdlr.setFormatter(formatter)
-    stream_hdlr.setLevel(level)
+    if stream_hdlr.level != level:
+        stream_hdlr.setLevel(level)
     return stream_hdlr
 
 
@@ -83,7 +108,7 @@ def check_directory_permissions(directory_path: str) -> None:
                 path_obj.mkdir(mode=DEFAULT_FILE_MODE, parents=True, exist_ok=True)
             except PermissionError as e:
                 err_msg = f"Unable to create directory | {directory_path}"
-                write_stderr(f"{err_msg} | {repr(e)}")
+                write_stderr(f"{err_msg} | {type(e).__name__}: {e}")
                 raise PermissionError(err_msg)
 
         # Add to cache with size limit enforcement
@@ -105,9 +130,9 @@ def remove_old_logs(logs_dir: str, days_to_keep: int) -> None:
                 if file_path.stat().st_mtime < cutoff_time.timestamp():
                     file_path.unlink()
             except (OSError, IOError) as e:
-                write_stderr(f"Unable to delete old log | {file_path} | {repr(e)}")
+                write_stderr(f"Unable to delete old log | {file_path} | {type(e).__name__}: {e}")
     except OSError as e:
-        write_stderr(f"Unable to scan directory for old logs | {logs_dir} | {repr(e)}")
+        write_stderr(f"Unable to scan directory for old logs | {logs_dir} | {type(e).__name__}: {e}")
 
 
 def delete_file(path: str) -> bool:
@@ -125,7 +150,7 @@ def delete_file(path: str) -> bool:
         else:
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), path)
     except OSError as e:
-        write_stderr(repr(e))
+        write_stderr(f"{type(e).__name__}: {e}")
         raise e
     return True
 
@@ -143,7 +168,7 @@ def is_older_than_x_days(path: str, days: int) -> bool:
         else:
             cutoff_time = datetime.now() - timedelta(days=int(days))
     except ValueError as e:
-        write_stderr(repr(e))
+        write_stderr(f"{type(e).__name__}: {e}")
         raise e
 
     file_time = datetime.fromtimestamp(path_obj.stat().st_mtime)
@@ -158,7 +183,7 @@ def get_stderr_timezone():
         return None  # Use system local timezone
     try:
         return ZoneInfo(timezone_name)
-    except Exception:
+    except (KeyError, ValueError):
         # Fallback to local timezone if requested timezone is not available
         return None
 
@@ -212,7 +237,7 @@ def get_timezone_offset(timezone_: str) -> str:
     else:
         try:
             return datetime.now(ZoneInfo(timezone_)).strftime("%z")
-        except Exception:
+        except (KeyError, ValueError):
             # Fallback to localtime if the requested timezone is not available,
             # This is common on Windows systems without full timezone data
             return time.strftime("%z")
@@ -259,16 +284,16 @@ def gzip_file_with_sufix(file_path: str, sufix: str) -> str | None:
                 time.sleep(retry_delay)
                 continue
             # Final attempt failed or not Windows - treat as regular error
-            write_stderr(f"Unable to gzip log file | {file_path} | {repr(e)}")
+            write_stderr(f"Unable to gzip log file | {file_path} | {type(e).__name__}: {e}")
             raise e
         except (OSError, IOError) as e:
-            write_stderr(f"Unable to gzip log file | {file_path} | {repr(e)}")
+            write_stderr(f"Unable to gzip log file | {file_path} | {type(e).__name__}: {e}")
             raise e
 
     try:
         path_obj.unlink()  # Use pathlib for deletion
     except OSError as e:
-        write_stderr(f"Unable to delete source log file | {file_path} | {repr(e)}")
+        write_stderr(f"Unable to delete source log file | {file_path} | {type(e).__name__}: {e}")
         raise e
 
     return str(renamed_dst)
@@ -283,7 +308,7 @@ def get_timezone_function(time_zone: str) -> Callable:
                 # Try to create UTC timezone to verify it's available
                 ZoneInfo("UTC")
                 return time.gmtime
-            except Exception:
+            except (KeyError, ValueError):
                 # Fallback to localtime if UTC timezone data is missing
                 return time.localtime
         case "localtime":
@@ -293,7 +318,7 @@ def get_timezone_function(time_zone: str) -> Callable:
                 # Cache the timezone object
                 tz = ZoneInfo(time_zone)
                 return lambda *args: datetime.now(tz=tz).timetuple()
-            except Exception:
+            except (KeyError, ValueError):
                 # Fallback to localtime if the requested timezone is not available
                 return time.localtime
 
@@ -331,7 +356,7 @@ def set_directory_cache_limit(max_directories: int) -> None:
         max_directories: Maximum number of directories to keep in cache
     """
     global _max_cached_directories
-    
+
     with _directory_lock:
         _max_cached_directories = max_directories
         # Trim cache if it exceeds new limit
@@ -347,7 +372,7 @@ def clear_directory_cache() -> None:
 
 def get_directory_cache_stats() -> dict:
     """Get statistics about the directory cache.
-    
+
     Returns:
         Dict with cache statistics including size and limit
     """
@@ -355,5 +380,5 @@ def get_directory_cache_stats() -> dict:
         return {
             "cached_directories": len(_checked_directories),
             "max_directories": _max_cached_directories,
-            "directories": list(_checked_directories)
+            "directories": list(_checked_directories),
         }

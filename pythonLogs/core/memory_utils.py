@@ -1,13 +1,9 @@
+from . import log_utils
+from functools import lru_cache
 import logging
 import threading
-import weakref
-from functools import lru_cache
 from typing import Any, Dict, Optional, Set
-
-from . import log_utils
-from .log_utils import cleanup_logger_handlers
-
-
+import weakref
 
 # Formatter cache to reduce memory usage for identical formatters
 _formatter_cache: Dict[str, logging.Formatter] = {}
@@ -114,11 +110,11 @@ def get_memory_stats() -> Dict[str, Any]:
         Dictionary containing memory usage statistics
     """
     from . import factory
-    
+
     # Get registry stats using public API
     registered_loggers = factory.LoggerFactory.get_registered_loggers()
     registry_size = len(registered_loggers)
-    
+
     # Get memory limits using public API
     factory_limits = factory.LoggerFactory.get_memory_limits()
 
@@ -143,7 +139,7 @@ def get_memory_stats() -> Dict[str, Any]:
 def optimize_lru_cache_sizes() -> None:
     """Optimize LRU cache sizes based on typical usage patterns."""
     # Clear existing caches and reduce their sizes
-    
+
     # Clear and recreate timezone function cache with smaller size
     log_utils.get_timezone_function.cache_clear()
     log_utils.get_timezone_function = lru_cache(maxsize=8)(log_utils.get_timezone_function.__wrapped__)

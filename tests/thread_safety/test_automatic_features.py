@@ -1,16 +1,16 @@
 """Test that all automatic features work together in logger classes."""
 
 import gc
+import pytest
+from pythonLogs.basic_log import BasicLog
+from pythonLogs.core.constants import RotateWhen
+from pythonLogs.core.memory_utils import get_active_logger_count
+from pythonLogs.size_rotating import SizeRotatingLog
+from pythonLogs.timed_rotating import TimedRotatingLog
 import sys
 import tempfile
 import threading
 import time
-import pytest
-from pythonLogs.basic_log import BasicLog
-from pythonLogs.constants import RotateWhen
-from pythonLogs.memory_utils import get_active_logger_count
-from pythonLogs.size_rotating import SizeRotatingLog
-from pythonLogs.timed_rotating import TimedRotatingLog
 
 
 class TestAutomaticFeatures:
@@ -123,7 +123,7 @@ class TestAutomaticFeatures:
         logger = basic_log.init()
 
         # Manual cleanup should still work
-        basic_log._cleanup_logger(logger)
+        basic_log.cleanup_logger(logger)
         BasicLog.cleanup_logger(logger)  # Static method should work too
 
         # No errors should occur
@@ -140,14 +140,14 @@ class TestAutomaticFeatures:
         # 2. Automatic Resource Cleanup: Context manager support
         assert hasattr(basic_log, '__enter__')
         assert hasattr(basic_log, '__exit__')
-        assert hasattr(basic_log, '_cleanup_logger')
+        assert hasattr(basic_log, 'cleanup_logger')
 
         # 3. Automatic Thread Safety: Decorator applied
         assert hasattr(basic_log.__class__, '_lock')
         assert hasattr(basic_log.init, '_thread_safe_wrapped')
-        assert hasattr(basic_log._cleanup_logger, '_thread_safe_wrapped')
+        # cleanup_logger is a static method, so it's not wrapped
 
-        basic_log._cleanup_logger(logger)
+        BasicLog.cleanup_logger(logger)
 
     @pytest.mark.skipif(
         sys.platform == "win32",

@@ -1,30 +1,29 @@
 #!/usr/bin/env python3
 """Performance tests for the factory pattern and optimizations."""
+
 import os
+import pytest
 import sys
 import tempfile
 import time
-import pytest
-
 
 # Add parent directory to path for imports
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, project_root)  # For pythonLogs
 
 # Import test utilities
-from tests.core.test_log_utils import get_safe_timezone
-
 from pythonLogs import (
+    BasicLog,
+    LogLevel,
+    SizeRotatingLog,
+)
+from pythonLogs.core.factory import (
     LoggerFactory,
     LoggerType,
-    LogLevel,
-    create_logger,
-    get_or_create_logger,
-    basic_logger,
-    size_rotating_logger,
     clear_logger_registry,
     get_registered_loggers,
 )
+from tests.core.test_log_utils import get_safe_timezone
 
 
 @pytest.mark.skipif(os.getenv('CI') == 'true', reason="Performance tests unstable in CI")
@@ -60,14 +59,14 @@ class TestPerformance:
         # Baseline: Create new loggers each time
         start_time = time.time()
         for i in range(30):
-            create_logger(LoggerType.BASIC, name=f"no_cache_{i}")
+            LoggerFactory.create_logger(LoggerType.BASIC, name=f"no_cache_{i}")
         no_cache_time = time.time() - start_time
 
         # With caching: Reuse same logger
         clear_logger_registry()
         start_time = time.time()
         for i in range(30):
-            get_or_create_logger(LoggerType.BASIC, name="cached_logger")
+            LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="cached_logger")
         cache_time = time.time() - start_time
 
         # Cached should be significantly faster
@@ -91,13 +90,13 @@ class TestPerformance:
         with tempfile.TemporaryDirectory() as temp_dir:
             # First call should check and cache directory permissions
             start_time = time.time()
-            logger1 = size_rotating_logger(name="dir_test_1", directory=temp_dir)
+            logger1 = SizeRotatingLog(name="dir_test_1", directory=temp_dir)
             first_call_time = time.time() - start_time
 
             # Subsequent calls to the same directory should be faster (cached)
             start_time = time.time()
             for i in range(10):
-                logger = size_rotating_logger(
+                logger = SizeRotatingLog(
                     name=f"dir_test_{i+2}", directory=temp_dir  # The Same directory should use cache
                 )
             subsequent_calls_time = time.time() - start_time
@@ -114,7 +113,7 @@ class TestPerformance:
         safe_tz = get_safe_timezone()
         loggers = []
         for i in range(20):
-            logger = basic_logger(name=f"tz_test_{i}", timezone=safe_tz)  # Same timezone should use cached function
+            logger = BasicLog(name=f"tz_test_{i}", timezone=safe_tz)  # Same timezone should use cached function
             loggers.append(logger)
 
         elapsed_time = time.time() - start_time
@@ -132,13 +131,13 @@ class TestPerformance:
         # Test with string values
         start_time = time.time()
         for i in range(25):
-            create_logger("basic", name=f"string_test_{i}", level="INFO")
+            LoggerFactory.create_logger("basic", name=f"string_test_{i}", level="INFO")
         string_time = time.time() - start_time
 
         # Test with enum values
         start_time = time.time()
         for i in range(25):
-            create_logger(LoggerType.BASIC, name=f"enum_test_{i}", level=LogLevel.INFO)
+            LoggerFactory.create_logger(LoggerType.BASIC, name=f"enum_test_{i}", level=LogLevel.INFO)
         enum_time = time.time() - start_time
 
         # Enum performance should be comparable to strings
@@ -177,11 +176,13 @@ class TestPerformance:
             loggers = []
             for i in range(30):  # 10 of each type
                 if i % 3 == 0:
-                    logger = create_logger(LoggerType.BASIC, name=f"mixed_basic_{i}")
+                    logger = LoggerFactory.create_logger(LoggerType.BASIC, name=f"mixed_basic_{i}")
                 elif i % 3 == 1:
-                    logger = size_rotating_logger(name=f"mixed_size_{i}", directory=temp_dir)
+                    logger = SizeRotatingLog(name=f"mixed_size_{i}", directory=temp_dir)
                 else:
-                    logger = create_logger(LoggerType.TIMED_ROTATING, name=f"mixed_timed_{i}", directory=temp_dir)
+                    logger = LoggerFactory.create_logger(
+                        LoggerType.TIMED_ROTATING, name=f"mixed_timed_{i}", directory=temp_dir
+                    )
                 loggers.append(logger)
 
             elapsed_time = time.time() - start_time
@@ -194,7 +195,7 @@ class TestPerformance:
         """Test that registry doesn't cause excessive memory usage."""
         # Create many loggers in registry
         for i in range(50):
-            get_or_create_logger(LoggerType.BASIC, name=f"memory_test_{i}")
+            LoggerFactory.get_or_create_logger(LoggerType.BASIC, name=f"memory_test_{i}")
 
         # Verify registry contains expected number
         registered = get_registered_loggers()
@@ -219,11 +220,11 @@ class TestPerformance:
             # Intensive mixed usage
             for i in range(200):
                 if i % 4 == 0:
-                    logger = get_or_create_logger(LoggerType.BASIC, name="stress_cached")
+                    logger = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="stress_cached")
                 elif i % 4 == 1:
-                    logger = create_logger("basic", name=f"stress_basic_{i}")
+                    logger = LoggerFactory.create_logger("basic", name=f"stress_basic_{i}")
                 elif i % 4 == 2:
-                    logger = size_rotating_logger(name=f"stress_size_{i}", directory=temp_dir, level=LogLevel.WARNING)
+                    logger = SizeRotatingLog(name=f"stress_size_{i}", directory=temp_dir, level=LogLevel.WARNING)
                 else:
                     logger = LoggerFactory.create_logger(
                         LoggerType.TIMED_ROTATING,

@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """Test the size rotating logger implementation."""
+
 import logging
 import os
+from pathlib import Path
+import pytest
 import sys
 import tempfile
-from pathlib import Path
 from unittest.mock import Mock, patch
-import pytest
-
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from pythonLogs.size_rotating import SizeRotatingLog, GZipRotatorSize
+from pythonLogs.size_rotating import GZipRotatorSize, SizeRotatingLog
 
 
 class TestSizeRotatingLog:

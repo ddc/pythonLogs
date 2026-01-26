@@ -1,34 +1,31 @@
 #!/usr/bin/env python3
 """Test timezone functionality after pytz to zoneinfo migration."""
+
 import os
+import pytest
 import sys
 import tempfile
-import pytest
-
 
 # Add parent directory to path for imports
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, project_root)  # For pythonLogs
 
 # Import test utilities
-from tests.core.test_log_utils import requires_zoneinfo_utc
-
 from pythonLogs import (
-    basic_logger,
-    size_rotating_logger,
-    timed_rotating_logger,
+    BasicLog,
     LogLevel,
     RotateWhen,
-    LoggerFactory,
-    LoggerType,
-    clear_logger_registry,
+    SizeRotatingLog,
+    TimedRotatingLog,
 )
-from pythonLogs.log_utils import (
+from pythonLogs.core.factory import LoggerFactory, LoggerType, clear_logger_registry
+from pythonLogs.core.log_utils import (
+    get_stderr_timezone,
     get_timezone_function,
     get_timezone_offset,
     write_stderr,
-    get_stderr_timezone,
 )
+from tests.core.test_log_utils import requires_zoneinfo_utc
 
 
 class TestTimezoneZoneinfo:
@@ -41,7 +38,7 @@ class TestTimezoneZoneinfo:
     @requires_zoneinfo_utc
     def test_zoneinfo_import_success(self):
         """Test that ZoneInfo is properly imported."""
-        from pythonLogs.log_utils import ZoneInfo
+        from pythonLogs.core.log_utils import ZoneInfo
 
         # Should be able to create timezone objects
         utc_tz = ZoneInfo("UTC")
@@ -50,7 +47,7 @@ class TestTimezoneZoneinfo:
     @requires_zoneinfo_utc
     def test_utc_timezone_basic_logger(self):
         """Test UTC timezone with basic logger."""
-        logger = basic_logger(name="utc_test", level=LogLevel.INFO, timezone="UTC")
+        logger = BasicLog(name="utc_test", level=LogLevel.INFO, timezone="UTC")
 
         # Should not raise exceptions
         logger.info("UTC timezone test message")
@@ -58,14 +55,14 @@ class TestTimezoneZoneinfo:
 
     def test_localtime_timezone_basic_logger(self):
         """Test localtime timezone with basic logger."""
-        logger = basic_logger(name="local_test", level=LogLevel.INFO, timezone="localtime")
+        logger = BasicLog(name="local_test", level=LogLevel.INFO, timezone="localtime")
 
         logger.info("Local timezone test message")
         assert logger.name == "local_test"
 
     def test_named_timezone_basic_logger(self):
         """Test named timezone (America/New_York) with basic logger."""
-        logger = basic_logger(name="ny_test", level=LogLevel.INFO, timezone="America/New_York")
+        logger = BasicLog(name="ny_test", level=LogLevel.INFO, timezone="America/New_York")
 
         logger.info("New York timezone test message")
         assert logger.name == "ny_test"
@@ -77,7 +74,7 @@ class TestTimezoneZoneinfo:
     def test_timezone_with_size_rotating_logger(self):
         """Test timezone functionality with size rotating logger."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            logger = size_rotating_logger(
+            logger = SizeRotatingLog(
                 name="size_tz_test",
                 directory=temp_dir,
                 level=LogLevel.INFO,
@@ -95,7 +92,7 @@ class TestTimezoneZoneinfo:
     def test_timezone_with_timed_rotating_logger(self):
         """Test timezone functionality with timed rotating logger."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            logger = timed_rotating_logger(
+            logger = TimedRotatingLog(
                 name="timed_tz_test",
                 directory=temp_dir,
                 level=LogLevel.INFO,
@@ -123,9 +120,7 @@ class TestTimezoneZoneinfo:
         """Test handling of invalid timezone names."""
         # With the new fallback system, invalid timezones should fall back to localtime
         # instead of raising exceptions, making the system more robust
-        logger = basic_logger(
-            name="invalid_tz_test", timezone="Invalid/Timezone"  # This should now fall back to localtime
-        )
+        logger = BasicLog(name="invalid_tz_test", timezone="Invalid/Timezone")  # This should now fall back to localtime
         # Logger should be created successfully with fallback
         assert logger.name == "invalid_tz_test"
         logger.info("Test message with invalid timezone")
@@ -180,8 +175,8 @@ class TestTimezoneZoneinfo:
 
     def test_stderr_timezone_functionality(self):
         """Test stderr timezone handling."""
-        import io
         from contextlib import redirect_stderr
+        import io
 
         # Capture stderr output
         stderr_capture = io.StringIO()
@@ -213,7 +208,7 @@ class TestTimezoneZoneinfo:
         loggers = []
 
         for i, tz in enumerate(timezones):
-            logger = basic_logger(name=f"tz_test_{i}", timezone=tz, level=LogLevel.INFO)
+            logger = BasicLog(name=f"tz_test_{i}", timezone=tz, level=LogLevel.INFO)
             loggers.append(logger)
             logger.info(f"Message from {tz}")
 
@@ -226,13 +221,15 @@ class TestTimezoneZoneinfo:
 
     def test_timezone_with_factory_registry(self):
         """Test timezone functionality with factory registry."""
-        from pythonLogs import get_or_create_logger
-
         # Create logger with timezone
-        logger1 = get_or_create_logger(LoggerType.BASIC, name="registry_tz_test", timezone="Australia/Sydney")
+        logger1 = LoggerFactory.get_or_create_logger(
+            LoggerType.BASIC, name="registry_tz_test", timezone="Australia/Sydney"
+        )
 
         # Get the same logger from registry
-        logger2 = get_or_create_logger(LoggerType.BASIC, name="registry_tz_test", timezone="Australia/Sydney")
+        logger2 = LoggerFactory.get_or_create_logger(
+            LoggerType.BASIC, name="registry_tz_test", timezone="Australia/Sydney"
+        )
 
         # Should be the same instance
         assert logger1 is logger2
@@ -242,9 +239,9 @@ class TestTimezoneZoneinfo:
     def test_case_insensitive_timezone_handling(self):
         """Test case insensitive timezone handling."""
         # Test localtime in different cases
-        logger1 = basic_logger(name="test1", timezone="localtime")
-        logger2 = basic_logger(name="test2", timezone="LOCALTIME")
-        logger3 = basic_logger(name="test3", timezone="LocalTime")
+        logger1 = BasicLog(name="test1", timezone="localtime")
+        logger2 = BasicLog(name="test2", timezone="LOCALTIME")
+        logger3 = BasicLog(name="test3", timezone="LocalTime")
 
         # All should work without errors
         logger1.info("Test message 1")
@@ -260,7 +257,7 @@ class TestTimezoneZoneinfo:
 
         loggers = []
         for i in range(20):
-            logger = basic_logger(
+            logger = BasicLog(
                 name=f"perf_test_{i}",
                 timezone="America/Chicago",  # Same timezone - should use cache
             )
@@ -278,6 +275,6 @@ class TestTimezoneZoneinfo:
         test_cases = ["UTC", "localtime", "America/New_York", "Europe/London"]
 
         for tz in test_cases:
-            logger = basic_logger(name=f"compat_test_{tz.replace('/', '_')}", timezone=tz)
+            logger = BasicLog(name=f"compat_test_{tz.replace('/', '_')}", timezone=tz)
             logger.info(f"Compatibility test for {tz}")
             assert logger.name.startswith("compat_test_")

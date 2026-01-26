@@ -10,27 +10,26 @@ import contextlib
 import io
 import logging
 import os
+import pytest
 import sys
 import tempfile
 import time
-import pytest
-
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Add current directory to path for local imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from pythonLogs import log_utils
+from pythonLogs.core import log_utils
 
 # Import utility functions from the same directory
 from test_log_utils import (
+    cleanup_all_loggers,
     create_windows_safe_temp_file,
     safe_close_and_delete_file,
-    windows_safe_temp_directory,
-    safe_delete_file,
     safe_delete_directory,
-    cleanup_all_loggers,
+    safe_delete_file,
+    windows_safe_temp_directory,
 )
 
 
@@ -171,7 +170,7 @@ class TestLogUtilsWindows:
             file_handle.close()
 
             # Mock time.sleep to verify retry mechanism
-            with patch('pythonLogs.log_utils.time.sleep') as mock_sleep:
+            with patch('pythonLogs.core.log_utils.time.sleep') as mock_sleep:
                 # Mock open to raise PermissionError on first call, succeed on second
                 call_count = 0
                 original_open = open
@@ -187,8 +186,8 @@ class TestLogUtilsWindows:
                         return real_open(*args, **kwargs)
 
                 # Always mock platform as win32 and open with retry behavior
-                with patch('pythonLogs.log_utils.sys.platform', 'win32'):
-                    with patch('pythonLogs.log_utils.open', side_effect=mock_open_side_effect):
+                with patch('pythonLogs.core.log_utils.sys.platform', 'win32'):
+                    with patch('pythonLogs.core.log_utils.open', side_effect=mock_open_side_effect):
                         result = log_utils.gzip_file_with_sufix(file_path, "retry_test")
 
                         # Verify retry was attempted (sleep was called)
@@ -506,9 +505,9 @@ class TestLogUtilsWindows:
                     return original_open(*args, **kwargs)
 
             # Mock sys.platform to be Windows and time.sleep to verify retry
-            with unittest.mock.patch('pythonLogs.log_utils.sys.platform', 'win32'):
-                with unittest.mock.patch('pythonLogs.log_utils.time.sleep') as mock_sleep:
-                    with unittest.mock.patch('pythonLogs.log_utils.open', side_effect=mock_open_side_effect):
+            with unittest.mock.patch('pythonLogs.core.log_utils.sys.platform', 'win32'):
+                with unittest.mock.patch('pythonLogs.core.log_utils.time.sleep') as mock_sleep:
+                    with unittest.mock.patch('pythonLogs.core.log_utils.open', side_effect=mock_open_side_effect):
                         result = log_utils.gzip_file_with_sufix(file_path, "comprehensive_retry")
 
                         # Verify retries were attempted (sleep should be called twice)

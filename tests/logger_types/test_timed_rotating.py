@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """Test the timed rotating logger implementation."""
+
 import logging
 import os
+from pathlib import Path
+import pytest
 import sys
 import tempfile
-from pathlib import Path
 from unittest.mock import Mock, patch
-import pytest
-
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from pythonLogs.timed_rotating import TimedRotatingLog, GZipRotatorTimed
 from pythonLogs import RotateWhen
+from pythonLogs.timed_rotating import GZipRotatorTimed, TimedRotatingLog
 
 
 class TestTimedRotatingLog:
