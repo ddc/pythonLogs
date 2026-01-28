@@ -38,6 +38,7 @@
 - [Context Manager Support](#context-manager-support)
 - [Using With Multiple Log Levels and Files](#using-with-multiple-log-levels-and-files)
 - [Environment Variables](#env-variables-optional)
+  - [Settings Cache Management](#settings-cache-management)
 - [Flexible Configuration Options](#flexible-configuration-options)
 - [Development](#development)
   - [Create DEV Environment, Running Tests and Building Wheel](#create-dev-environment-running-tests-and-building-wheel)
@@ -283,6 +284,25 @@ LOG_MAX_FILE_SIZE_MB=10
 LOG_ROTATE_WHEN=midnight
 LOG_ROTATE_AT_UTC=True
 LOG_ROTATE_FILE_SUFIX="%Y%m%d"
+```
+
+## Settings Cache Management
+
+Use `get_log_settings()` to inspect current configuration and `clear_settings_cache()` to reload configuration from environment variables:
+
+```python
+from pythonLogs import get_log_settings, clear_settings_cache
+
+# Inspect current settings
+settings = get_log_settings()
+print(settings.level)      # Current log level
+print(settings.timezone)   # Current timezone
+
+# Clear cache and reload .env on next access (default)
+clear_settings_cache()
+
+# Clear cache but keep current .env values
+clear_settings_cache(reload_env=False)
 ```
 
 

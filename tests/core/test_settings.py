@@ -188,17 +188,30 @@ class TestClearSettingsCache:
 
 
 class TestPublicExports:
-    """Test that clear_settings_cache is exported from main module."""
+    """Test that clear_settings_cache and get_log_settings are exported from main module."""
 
-    def test_import_from_main_module(self):
+    def test_clear_settings_cache_import_from_main_module(self):
         """Test that clear_settings_cache can be imported from pythonLogs."""
         from pythonLogs import clear_settings_cache as exported_func
         from pythonLogs.core.settings import clear_settings_cache as original_func
 
         assert exported_func is original_func
 
-    def test_in_all(self):
+    def test_clear_settings_cache_in_all(self):
         """Test that clear_settings_cache is in __all__."""
         import pythonLogs
 
         assert "clear_settings_cache" in pythonLogs.__all__
+
+    def test_get_log_settings_import_from_main_module(self):
+        """Test that get_log_settings can be imported from pythonLogs."""
+        from pythonLogs import get_log_settings as exported_func
+        from pythonLogs.core.settings import get_log_settings as original_func
+
+        assert exported_func is original_func
+
+    def test_get_log_settings_in_all(self):
+        """Test that get_log_settings is in __all__."""
+        import pythonLogs
+
+        assert "get_log_settings" in pythonLogs.__all__
