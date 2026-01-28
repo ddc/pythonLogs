@@ -2,15 +2,15 @@
 
 import gc
 import pytest
+import sys
+import tempfile
+import threading
+import time
 from pythonLogs.basic_log import BasicLog
 from pythonLogs.core.constants import RotateWhen
 from pythonLogs.core.memory_utils import get_active_logger_count
 from pythonLogs.size_rotating import SizeRotatingLog
 from pythonLogs.timed_rotating import TimedRotatingLog
-import sys
-import tempfile
-import threading
-import time
 
 
 class TestAutomaticFeatures:

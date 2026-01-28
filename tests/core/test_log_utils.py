@@ -2,7 +2,6 @@
 """Utility functions and tests for log_utils module."""
 
 import contextlib
-from contextlib import contextmanager
 import functools
 import io
 import logging
@@ -11,6 +10,7 @@ import pytest
 import sys
 import tempfile
 import time
+from contextlib import contextmanager
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -27,24 +27,24 @@ from pythonLogs.core import log_utils
 
 
 def skip_if_no_zoneinfo_utc():
-    """Skip test if zoneinfo or UTC timezone data is not available (common on Windows)."""
-    try:
-        from zoneinfo import ZoneInfo
+    """Skip test if UTC timezone data is not available (common on Windows without tzdata)."""
+    from zoneinfo import ZoneInfo
 
-        ZoneInfo("UTC")  # Test if UTC is available
-    except Exception:
-        pytest.skip("zoneinfo not available or UTC timezone data missing on this system")
+    try:
+        ZoneInfo("UTC")  # Test if UTC timezone data is available
+    except KeyError:
+        pytest.skip("UTC timezone data missing on this system (install tzdata package)")
 
 
 def get_safe_timezone():
     """Get a timezone that works on all platforms."""
-    try:
-        from zoneinfo import ZoneInfo
+    from zoneinfo import ZoneInfo
 
-        ZoneInfo("UTC")  # Test if UTC is available
+    try:
+        ZoneInfo("UTC")  # Test if UTC timezone data is available
         return "UTC"
-    except Exception:
-        return "localtime"  # Fallback to localtime which should always work
+    except KeyError:
+        return "localtime"  # Fallback to localtime if UTC timezone data is missing
 
 
 def requires_zoneinfo_utc(func):
@@ -60,16 +60,15 @@ def requires_zoneinfo_utc(func):
 
 def requires_zoneinfo(timezone):
     """Decorator to skip tests that require a specific timezone."""
+    from zoneinfo import ZoneInfo
 
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             try:
-                from zoneinfo import ZoneInfo
-
-                ZoneInfo(timezone)  # Test if timezone is available
-            except Exception:
-                pytest.skip(f"Timezone '{timezone}' not available on this system")
+                ZoneInfo(timezone)  # Test if timezone data is available
+            except KeyError:
+                pytest.skip(f"Timezone '{timezone}' data not available on this system")
             return func(*args, **kwargs)
 
         return wrapper
@@ -79,13 +78,13 @@ def requires_zoneinfo(timezone):
 
 def patch_logger_kwargs_with_safe_timezone(kwargs):
     """Patch logger kwargs to use safe timezone if UTC is specified but not available."""
+    from zoneinfo import ZoneInfo
+
     if kwargs.get('timezone') == 'UTC':
         try:
-            from zoneinfo import ZoneInfo
-
-            ZoneInfo("UTC")  # Test if UTC is available
-        except Exception:
-            kwargs['timezone'] = 'localtime'  # Fall back to localtime
+            ZoneInfo("UTC")  # Test if UTC timezone data is available
+        except KeyError:
+            kwargs['timezone'] = 'localtime'  # Fall back to localtime if UTC data is missing
     return kwargs
 
 
@@ -877,8 +876,8 @@ class TestLogUtils:
     def test_remove_old_logs_directory_error(self):
         """Test remove_old_logs error handling when directory scan fails"""
         # Test with a simulated Path.glob() error by mocking pathlib.Path
-        from pathlib import Path
         import unittest.mock
+        from pathlib import Path
 
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create a normal directory first
@@ -1455,8 +1454,8 @@ class TestLogUtils:
                 f.write("test content")
 
             # Mock Path.unlink to raise OSError during deletion
-            from pathlib import Path
             import unittest.mock
+            from pathlib import Path
 
             original_unlink = Path.unlink
 

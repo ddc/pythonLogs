@@ -1,5 +1,5 @@
-from enum import Enum
 import logging
+from enum import Enum
 
 # File and Directory Constants
 MB_TO_BYTES = 1024 * 1024

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pythonLogs"
-version = "6.0.0"
+version = "6.0.1"
 description = "High-performance Python logging library with file rotation and optimized caching for better performance"
 license = {text = "MIT"}
 readme = "README.md"
@@ -30,7 +30,7 @@ classifiers = [
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "pydantic-settings>=2.12.0",
+    "pydantic-settings>=2.11.0",
 ]
 
 [project.urls]
@@ -40,7 +40,7 @@ Repository = "https://github.com/ddc/pythonLogs"
 [project.optional-dependencies]
 test = [
     "poethepoet>=0.40.0",
-    "psutil>=7.2.1",
+    "psutil>=7.2.2",
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
 ]
@@ -54,7 +54,7 @@ packages = ["pythonLogs"]
 [tool.poe.tasks]
 build = "uv build --wheel"
 updatedev.shell = "uv lock && uv sync --no-install-project --all-extras"
-linter.shell = "uv run ruff check --fix --select I . && uv run black ."
+linter.shell = "uv run ruff check --fix . && uv run black ."
 profile = "uv run python -m cProfile -o cprofile.prof -m pytest"
 test = "uv run pytest"
 
@@ -97,9 +97,20 @@ skip-string-normalization = true
 line-length = 120
 
 [tool.ruff.lint]
-select = ["I"]
+# I - Import sorting and organization
+# F401 - Detect and remove unused imports
+select = ["I", "F401"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["pythonLogs"]
-force-sort-within-sections = true
+force-sort-within-sections = false
+from-first = false
 no-sections = true
+
+[tool.ruff.lint.per-file-ignores]
+# S101 Use of `assert` detected
+# S105 Possible hardcoded password assigned to variable
+# S106 Possible hardcoded password assigned to argument
+# S311 Standard pseudo-random generators are not suitable for cryptographic purposes
+# SLF001 Private member accessed
+"tests/**/*.py" = ["S101", "S105", "S106", "S311", "SLF001"]

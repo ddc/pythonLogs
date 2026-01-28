@@ -12,9 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 from pythonLogs import (
-    BasicLog,
     LogLevel,
-    SizeRotatingLog,
 )
 from pythonLogs.basic_log import BasicLog as BasicLogImpl
 from pythonLogs.core.factory import (

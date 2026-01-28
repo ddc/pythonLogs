@@ -1,6 +1,8 @@
 """Comprehensive tests for thread_safety.py module."""
 
 import pytest
+import threading
+import time
 from pythonLogs.core.thread_safety import (
     AutoThreadSafe,
     ThreadSafeContext,
@@ -9,8 +11,6 @@ from pythonLogs.core.thread_safety import (
     synchronized_method,
     thread_safe,
 )
-import threading
-import time
 
 
 class TestThreadSafeDecorator:

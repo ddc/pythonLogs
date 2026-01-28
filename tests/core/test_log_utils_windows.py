@@ -478,7 +478,6 @@ class TestLogUtilsWindows:
     @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific tests")
     def test_windows_gzip_file_retry_mechanism_comprehensive(self):
         """Comprehensive test of Windows retry mechanisms during gzip operations."""
-        from unittest.mock import patch
 
         # Create a Windows-safe temporary file
         file_handle, file_path = create_windows_safe_temp_file(suffix=".log", text=True)

@@ -1,9 +1,9 @@
-from . import log_utils
-from functools import lru_cache
 import logging
 import threading
-from typing import Any, Dict, Optional, Set
 import weakref
+from . import log_utils
+from functools import lru_cache
+from typing import Any, Dict, Optional, Set
 
 # Formatter cache to reduce memory usage for identical formatters
 _formatter_cache: Dict[str, logging.Formatter] = {}

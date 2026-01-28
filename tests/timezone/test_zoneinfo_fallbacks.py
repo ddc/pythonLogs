@@ -19,14 +19,12 @@ class TestZoneinfoFallbacks:
     """Test fallback mechanisms for zoneinfo import and edge cases."""
 
     def test_zoneinfo_import_available(self):
-        """Test that zoneinfo is available in Python 3.9+."""
-        try:
-            from zoneinfo import ZoneInfo
+        """Test that zoneinfo is available (standard library since Python 3.9, required in 3.12+)."""
+        from zoneinfo import ZoneInfo
 
-            # If import succeeds, ZoneInfo is guaranteed to be a valid class
-            print("✓ Native zoneinfo available")
-        except ImportError:
-            pytest.skip("zoneinfo not available in this Python version")
+        # ZoneInfo is guaranteed to be available in Python 3.12+
+        assert ZoneInfo is not None
+        print("Native zoneinfo available")
 
     def test_timezone_error_handling(self):
         """Test proper error handling for timezone operations."""
@@ -64,8 +62,8 @@ class TestZoneinfoFallbacks:
 
     def test_stderr_timezone_fallback(self):
         """Test stderr timezone fallback behavior."""
-        from contextlib import redirect_stderr
         import io
+        from contextlib import redirect_stderr
         from pythonLogs.core.log_utils import write_stderr
 
         # Mock environment variable
@@ -80,8 +78,8 @@ class TestZoneinfoFallbacks:
 
     def test_timezone_function_fallback(self):
         """Test timezone function fallback for edge cases."""
-        from pythonLogs.core.log_utils import get_timezone_function
         import time
+        from pythonLogs.core.log_utils import get_timezone_function
 
         # Test standard cases - UTC may fall back to localtime on systems without UTC data
         utc_func = get_timezone_function("UTC")
@@ -170,8 +168,8 @@ class TestZoneinfoFallbacks:
 
     def test_concurrent_timezone_access(self):
         """Test timezone functionality under concurrent access."""
-        from pythonLogs import BasicLog, LogLevel
         import threading
+        from pythonLogs import BasicLog, LogLevel
 
         # Use safe timezone that works on all platforms
         safe_tz = get_safe_timezone()
