@@ -16,6 +16,14 @@ from pythonLogs.core.constants import (
 _dotenv_loaded = False
 
 
+def _ensure_dotenv_loaded() -> None:
+    """Ensure dotenv is loaded only once."""
+    global _dotenv_loaded
+    if not _dotenv_loaded:
+        load_dotenv()
+        _dotenv_loaded = True
+
+
 class LogSettings(BaseSettings):
     """If any ENV variable is omitted, it falls back to default values here"""
 
@@ -95,9 +103,18 @@ class LogSettings(BaseSettings):
 
 @lru_cache(maxsize=1)
 def get_log_settings() -> LogSettings:
-    """Get cached log settings instance to avoid repeated instantiation"""
-    global _dotenv_loaded
-    if not _dotenv_loaded:
-        load_dotenv()
-        _dotenv_loaded = True
+    """Get cached log settings instance to avoid repeated instantiation."""
+    _ensure_dotenv_loaded()
     return LogSettings()
+
+
+def clear_settings_cache(reload_env: bool = True) -> None:
+    """Clear log settings cache. Next call to get_log_settings() will create fresh instance.
+
+    Args:
+        reload_env: If True, also reset dotenv loaded flag to reload .env on next access
+    """
+    global _dotenv_loaded
+    get_log_settings.cache_clear()
+    if reload_env:
+        _dotenv_loaded = False

@@ -1,5 +1,6 @@
 import logging.handlers
 import os
+import re
 from pathlib import Path
 from pythonLogs.core.constants import MB_TO_BYTES
 from pythonLogs.core.log_utils import (
@@ -17,7 +18,6 @@ from pythonLogs.core.log_utils import (
 from pythonLogs.core.memory_utils import register_logger_weakref
 from pythonLogs.core.settings import get_log_settings
 from pythonLogs.core.thread_safety import auto_thread_safe
-import re
 
 
 @auto_thread_safe(['init'])

@@ -528,8 +528,8 @@ class TestMemoryOptimization:
         """Test weak reference callback behavior."""
         import gc
         import logging
-        from pythonLogs.core.memory_utils import _active_loggers, _weak_ref_lock
         import weakref
+        from pythonLogs.core.memory_utils import _active_loggers, _weak_ref_lock
 
         initial_weak_refs = len(_active_loggers)
 

@@ -1,10 +1,10 @@
 """Test different thread safety usage patterns and advanced scenarios."""
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import gc
 import threading
 import time
 import weakref
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 class TestAdvancedThreadSafetyPatterns:

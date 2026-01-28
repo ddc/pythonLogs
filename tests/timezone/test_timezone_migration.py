@@ -175,8 +175,8 @@ class TestTimezoneZoneinfo:
 
     def test_stderr_timezone_functionality(self):
         """Test stderr timezone handling."""
-        from contextlib import redirect_stderr
         import io
+        from contextlib import redirect_stderr
 
         # Capture stderr output
         stderr_capture = io.StringIO()

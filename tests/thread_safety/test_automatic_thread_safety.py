@@ -1,12 +1,12 @@
 """Test automatic thread safety implementation."""
 
 import pytest
+import sys
+import threading
 from pythonLogs.basic_log import BasicLog
 from pythonLogs.core.constants import RotateWhen
 from pythonLogs.size_rotating import SizeRotatingLog
 from pythonLogs.timed_rotating import TimedRotatingLog
-import sys
-import threading
 
 
 class TestAutomaticThreadSafety:

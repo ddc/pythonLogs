@@ -2,10 +2,10 @@
 """Practical examples and integration tests for the Logger Factory Pattern."""
 
 import os
-from pathlib import Path
 import pytest
 import sys
 import tempfile
+from pathlib import Path
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

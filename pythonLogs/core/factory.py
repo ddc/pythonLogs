@@ -1,15 +1,15 @@
 import atexit
+import logging
+import threading
+import time
 from dataclasses import dataclass
 from enum import Enum
-import logging
 from pythonLogs.basic_log import BasicLog as _BasicLogImpl
 from pythonLogs.core.constants import LogLevel, RotateWhen
 from pythonLogs.core.log_utils import cleanup_logger_handlers
 from pythonLogs.core.settings import get_log_settings
 from pythonLogs.size_rotating import SizeRotatingLog as _SizeRotatingLogImpl
 from pythonLogs.timed_rotating import TimedRotatingLog as _TimedRotatingLogImpl
-import threading
-import time
 from typing import Dict, Optional, Tuple, Union, assert_never
 
 
