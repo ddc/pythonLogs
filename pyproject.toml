@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pythonLogs"
-version = "6.0.1"
+version = "6.0.2"
 description = "High-performance Python logging library with file rotation and optimized caching for better performance"
 license = {text = "MIT"}
 readme = "README.md"
@@ -39,10 +39,15 @@ Repository = "https://github.com/ddc/pythonLogs"
 
 [project.optional-dependencies]
 test = [
-    "poethepoet>=0.40.0",
     "psutil>=7.2.2",
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
+]
+dev = [
+    "pythonLogs[test]",
+    "black>=26.1.0",
+    "poethepoet>=0.40.0",
+    "ruff>=0.14.14",
 ]
 
 [tool.hatch.build]
