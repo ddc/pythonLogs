@@ -398,33 +398,34 @@ dependencies = [
     { name = "pydantic-settings" },
 ]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
 dev = [
     { name = "black" },
     { name = "poethepoet" },
     { name = "psutil" },
-    { name = "pytest" },
     { name = "pytest-cov" },
     { name = "ruff" },
 ]
 test = [
     { name = "psutil" },
-    { name = "pytest" },
     { name = "pytest-cov" },
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "black", marker = "extra == 'dev'", specifier = ">=26.1.0" },
-    { name = "poethepoet", marker = "extra == 'dev'", specifier = ">=0.40.0" },
-    { name = "psutil", marker = "extra == 'test'", specifier = ">=7.2.2" },
-    { name = "pydantic-settings", specifier = ">=2.11.0" },
-    { name = "pytest", marker = "extra == 'test'", specifier = ">=9.0.2" },
-    { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=7.0.0" },
-    { name = "pythonlogs", extras = ["test"], marker = "extra == 'dev'" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.14.14" },
+requires-dist = [{ name = "pydantic-settings", specifier = ">=2.11.0" }]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "black", specifier = ">=26.1.0" },
+    { name = "poethepoet", specifier = ">=0.40.0" },
+    { name = "psutil", specifier = ">=7.2.2" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
+    { name = "ruff", specifier = ">=0.14.14" },
 ]
-provides-extras = ["test", "dev"]
+test = [
+    { name = "psutil", specifier = ">=7.2.2" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
+]
 
 [[package]]
 name = "pytokens"
