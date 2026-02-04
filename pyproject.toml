@@ -10,6 +10,8 @@ license = {text = "MIT"}
 readme = "README.md"
 authors = [{name = "Daniel Costa", email = "danieldcsta@gmail.com"}]
 maintainers = [{name = "Daniel Costa"}]
+urls.Repository = "https://github.com/ddc/pythonLogs"
+urls.Homepage = "https://pypi.org/project/pythonLogs"
 keywords = [
     "python3", "python-3", "python",
     "log", "logging", "logger",
@@ -33,14 +35,11 @@ dependencies = [
     "pydantic-settings>=2.11.0",
 ]
 
-[project.urls]
-Homepage = "https://pypi.org/project/pythonLogs"
-Repository = "https://github.com/ddc/pythonLogs"
-
 [dependency-groups]
 test = [
     "psutil>=7.2.2",
-    "pytest-cov>=7.0.0",
+    "pytest>=9.0.2",
+    "coverage>=7.13.3",
     "pytest-cov>=7.0.0",
 ]
 dev = [
