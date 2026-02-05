@@ -80,11 +80,11 @@ def patch_logger_kwargs_with_safe_timezone(kwargs):
     """Patch logger kwargs to use safe timezone if UTC is specified but not available."""
     from zoneinfo import ZoneInfo
 
-    if kwargs.get('timezone') == 'UTC':
+    if kwargs.get("timezone") == "UTC":
         try:
             ZoneInfo("UTC")  # Test if UTC timezone data is available
         except KeyError:
-            kwargs['timezone'] = 'localtime'  # Fall back to localtime if UTC data is missing
+            kwargs["timezone"] = "localtime"  # Fall back to localtime if UTC data is missing
     return kwargs
 
 
@@ -333,7 +333,7 @@ def create_windows_safe_temp_file(suffix="", prefix="tmp", dir=None, text=False)
     fd, filepath = tempfile.mkstemp(suffix=suffix, prefix=prefix, dir=dir, text=text)
 
     # Convert file descriptor to file handle
-    mode = 'w' if text else 'wb'
+    mode = "w" if text else "wb"
     file_handle = os.fdopen(fd, mode)
 
     return file_handle, filepath
@@ -550,12 +550,12 @@ class TestLogUtils:
         import re
 
         # The % characters need to be literal in the regex
-        offset_pattern = r'\[%\(asctime\)s\.%\(msecs\)03d([+-]\d{4})\]'
+        offset_pattern = r"\[%\(asctime\)s\.%\(msecs\)03d([+-]\d{4})\]"
         match = re.search(offset_pattern, result)
         assert match is not None, f"No timezone offset found in format: {result}"
         # The offset could be +1000 (if timezone is available) or system localtime fallback
         offset = match.group(1)
-        assert re.match(r'[+-]\d{4}', offset), f"Invalid timezone offset format: {offset}"
+        assert re.match(r"[+-]\d{4}", offset), f"Invalid timezone offset format: {offset}"
 
     def test_gzip_file_with_sufix(self):
         """Test gzip_file_with_sufix with standard Unix/Linux file handling."""
@@ -893,7 +893,7 @@ class TestLogUtils:
                 return original_path_glob(self, pattern)
 
             try:
-                with unittest.mock.patch.object(Path, 'glob', mock_glob):
+                with unittest.mock.patch.object(Path, "glob", mock_glob):
                     stderr_capture = io.StringIO()
                     with contextlib.redirect_stderr(stderr_capture):
                         log_utils.remove_old_logs(test_dir, 1)
@@ -1250,7 +1250,7 @@ class TestLogUtils:
                 offset = log_utils.get_timezone_offset(tz)
                 assert isinstance(offset, str)
                 assert len(offset) == 5  # Format: +/-HHMM
-                assert offset[0] in ['+', '-']
+                assert offset[0] in ["+", "-"]
 
                 if expected_offset:
                     assert offset == expected_offset
@@ -1443,7 +1443,7 @@ class TestLogUtils:
         # Should fall back to localtime (lines 216-219)
         assert isinstance(result, str)
         assert len(result) == 5  # Format: +/-HHMM
-        assert result[0] in ['+', '-']
+        assert result[0] in ["+", "-"]
 
     def test_gzip_file_source_deletion_error_coverage(self):
         """Test gzip_file_with_sufix when source file deletion fails."""
@@ -1467,7 +1467,7 @@ class TestLogUtils:
             try:
                 stderr_capture = io.StringIO()
                 with contextlib.redirect_stderr(stderr_capture):
-                    with unittest.mock.patch.object(Path, 'unlink', mock_unlink):
+                    with unittest.mock.patch.object(Path, "unlink", mock_unlink):
                         with pytest.raises(OSError):
                             log_utils.gzip_file_with_sufix(test_file, "test")
 
@@ -1494,7 +1494,7 @@ class TestLogUtils:
             return ZoneInfo(key)
 
         try:
-            with unittest.mock.patch('pythonLogs.core.log_utils.ZoneInfo', side_effect=mock_zoneinfo):
+            with unittest.mock.patch("pythonLogs.core.log_utils.ZoneInfo", side_effect=mock_zoneinfo):
                 result = log_utils.get_timezone_function("UTC")
 
                 # Should fall back to localtime (lines 273-275)
@@ -1519,7 +1519,7 @@ class TestLogUtils:
             return ZoneInfo(key)
 
         try:
-            with unittest.mock.patch('pythonLogs.core.log_utils.ZoneInfo', side_effect=mock_zoneinfo):
+            with unittest.mock.patch("pythonLogs.core.log_utils.ZoneInfo", side_effect=mock_zoneinfo):
                 result = log_utils.get_timezone_function("Custom/Timezone")
 
                 # Should fall back to localtime (lines 283-285)
@@ -1544,7 +1544,7 @@ class TestLogUtils:
                 raise OSError("Mock OSError during gzip compression")
 
             try:
-                with unittest.mock.patch('gzip.open', side_effect=mock_gzip_open):
+                with unittest.mock.patch("gzip.open", side_effect=mock_gzip_open):
                     stderr_capture = io.StringIO()
                     with contextlib.redirect_stderr(stderr_capture):
                         with pytest.raises(OSError) as exc_info:
@@ -1580,7 +1580,7 @@ class TestLogUtils:
                 raise OSError("Mock IOError during file copy")
 
             try:
-                with unittest.mock.patch('shutil.copyfileobj', side_effect=mock_copyfileobj):
+                with unittest.mock.patch("shutil.copyfileobj", side_effect=mock_copyfileobj):
                     stderr_capture = io.StringIO()
                     with contextlib.redirect_stderr(stderr_capture):
                         with pytest.raises(IOError) as exc_info:

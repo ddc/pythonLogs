@@ -97,7 +97,7 @@ class TestAdvancedThreadSafetyPatterns:
 
             def get_stats(self):
                 with self._lock:
-                    return {'reads': self.read_count, 'writes': self.write_count, 'data_size': len(self.data)}
+                    return {"reads": self.read_count, "writes": self.write_count, "data_size": len(self.data)}
 
         store = ThreadSafeDataStore()
 
@@ -132,9 +132,9 @@ class TestAdvancedThreadSafetyPatterns:
                 future.result()
 
         stats = store.get_stats()
-        assert stats['writes'] == 50
-        assert stats['data_size'] == 50
-        assert stats['reads'] > 0  # Some reads should have occurred
+        assert stats["writes"] == 50
+        assert stats["data_size"] == 50
+        assert stats["reads"] > 0  # Some reads should have occurred
 
     def test_singleton_pattern_thread_safety(self):
         """Test thread-safe singleton pattern."""
@@ -217,9 +217,9 @@ class TestAdvancedThreadSafetyPatterns:
             def stats(self):
                 with self._lock:
                     return {
-                        'available': len(self.available),
-                        'in_use': len(self.in_use),
-                        'total': len(self.available) + len(self.in_use),
+                        "available": len(self.available),
+                        "in_use": len(self.in_use),
+                        "total": len(self.available) + len(self.in_use),
                     }
 
         # Create a simple resource (just a counter)
@@ -248,9 +248,9 @@ class TestAdvancedThreadSafetyPatterns:
                 future.result()
 
         stats = pool.stats()
-        assert stats['total'] == 3  # Pool size maintained
-        assert stats['available'] == 3  # All resources returned
-        assert stats['in_use'] == 0  # No resources stuck
+        assert stats["total"] == 3  # Pool size maintained
+        assert stats["available"] == 3  # All resources returned
+        assert stats["in_use"] == 0  # No resources stuck
         assert len(completed_tasks) == 8  # All workers completed
 
     def test_cache_with_expiry_thread_safety(self):
@@ -363,9 +363,9 @@ class TestAdvancedThreadSafetyPatterns:
             def get_stats(self):
                 with self._lock:
                     return {
-                        'subscriber_count': sum(len(subs) for subs in self.subscribers.values()),
-                        'event_types': len(self.subscribers),
-                        'events_published': dict(self.event_count),
+                        "subscriber_count": sum(len(subs) for subs in self.subscribers.values()),
+                        "event_types": len(self.subscribers),
+                        "events_published": dict(self.event_count),
                     }
 
         event_bus = ThreadSafeEventBus()
@@ -418,9 +418,9 @@ class TestAdvancedThreadSafetyPatterns:
 
         assert len(type_a_events) > 0  # type_A had 2 subscribers
         assert len(type_b_events) > 0  # type_B had 1 subscriber
-        assert stats['events_published']['type_A'] == 10
-        assert stats['events_published']['type_B'] == 5
-        assert stats['events_published']['type_C'] == 3
+        assert stats["events_published"]["type_A"] == 10
+        assert stats["events_published"]["type_B"] == 5
+        assert stats["events_published"]["type_C"] == 3
 
     def test_weak_reference_cleanup_thread_safety(self):
         """Test thread safety with weak references and cleanup."""

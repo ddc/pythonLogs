@@ -67,7 +67,7 @@ class TestThreadSafeDecorator:
         assert obj.counter == 1
 
         # The lock should be accessible via the method's fallback mechanism
-        lock = getattr(obj, '_lock', None) or getattr(obj.__class__, '_lock', None)
+        lock = getattr(obj, "_lock", None) or getattr(obj.__class__, "_lock", None)
         assert lock is not None
 
     def test_thread_safe_decorator_preserves_metadata(self):
@@ -86,8 +86,8 @@ class TestThreadSafeDecorator:
         method = obj.test_method
 
         # Check that wrapper preserves original function name and docstring
-        assert method.__name__ == 'test_method'
-        assert 'Test method docstring' in method.__doc__
+        assert method.__name__ == "test_method"
+        assert "Test method docstring" in method.__doc__
         assert method(1, arg2=2) == "1-2"
 
 
@@ -97,7 +97,7 @@ class TestAutoThreadSafeDecorator:
     def test_auto_thread_safe_specific_methods(self):
         """Test @auto_thread_safe with specific method list."""
 
-        @auto_thread_safe(['increment'])
+        @auto_thread_safe(["increment"])
         class TestClass:
             def __init__(self):
                 self.counter = 0
@@ -113,9 +113,9 @@ class TestAutoThreadSafeDecorator:
         obj = TestClass()
 
         # Check that the specified method is wrapped
-        assert hasattr(obj.increment, '_thread_safe_wrapped')
+        assert hasattr(obj.increment, "_thread_safe_wrapped")
         # Check that non-specified method is not wrapped
-        assert not hasattr(obj.unsafe_increment, '_thread_safe_wrapped')
+        assert not hasattr(obj.unsafe_increment, "_thread_safe_wrapped")
 
         # Test thread safety of wrapped method
         threads = []
@@ -152,15 +152,15 @@ class TestAutoThreadSafeDecorator:
         obj = TestClass()
 
         # Public methods should be wrapped
-        assert hasattr(obj.increment, '_thread_safe_wrapped')
-        assert hasattr(obj.decrement, '_thread_safe_wrapped')
+        assert hasattr(obj.increment, "_thread_safe_wrapped")
+        assert hasattr(obj.decrement, "_thread_safe_wrapped")
         # Private method should not be wrapped
-        assert not hasattr(obj._private_method, '_thread_safe_wrapped')
+        assert not hasattr(obj._private_method, "_thread_safe_wrapped")
 
     def test_auto_thread_safe_no_double_wrapping(self):
         """Test that methods are not wrapped multiple times."""
 
-        @auto_thread_safe(['test_method'])
+        @auto_thread_safe(["test_method"])
         class TestClass:
             def test_method(self):
                 return "test"
@@ -168,7 +168,7 @@ class TestAutoThreadSafeDecorator:
         obj = TestClass()
 
         # Apply decorator again (should not double-wrap)
-        wrapped_test_class = auto_thread_safe(['test_method'])(TestClass)
+        wrapped_test_class = auto_thread_safe(["test_method"])(TestClass)
         obj2 = wrapped_test_class()
 
         # Should still work and not be double-wrapped
@@ -182,7 +182,7 @@ class TestThreadSafeMeta:
         """Test basic ThreadSafeMeta functionality."""
 
         class TestClass(metaclass=ThreadSafeMeta):
-            _thread_safe_methods = ['increment']
+            _thread_safe_methods = ["increment"]
 
             def __init__(self):
                 self.counter = 0
@@ -198,7 +198,7 @@ class TestThreadSafeMeta:
         obj = TestClass()
 
         # Should have class-level lock
-        assert hasattr(obj.__class__, '_lock')
+        assert hasattr(obj.__class__, "_lock")
         # Test that increment method works
         obj.increment()
         assert obj.counter == 1
@@ -219,7 +219,7 @@ class TestThreadSafeMeta:
         obj = TestClass()
 
         # Should have class-level lock
-        assert hasattr(obj.__class__, '_lock')
+        assert hasattr(obj.__class__, "_lock")
         # Test that methods work
         assert obj.public_method() == "public"
         assert obj._private_method() == "private"
@@ -244,9 +244,9 @@ class TestAutoThreadSafeBaseClass:
         obj = TestClass()
 
         # Should have instance lock
-        assert hasattr(obj, '_lock')
+        assert hasattr(obj, "_lock")
         # Public method should be wrapped
-        assert hasattr(obj.increment, '_thread_safe_wrapped')
+        assert hasattr(obj.increment, "_thread_safe_wrapped")
 
         # Test thread safety
         threads = []
@@ -282,8 +282,8 @@ class TestAutoThreadSafeBaseClass:
         obj = DerivedClass()
 
         # Both base and derived methods should be thread-safe
-        assert hasattr(obj.base_method, '_thread_safe_wrapped')
-        assert hasattr(obj.derived_method, '_thread_safe_wrapped')
+        assert hasattr(obj.base_method, "_thread_safe_wrapped")
+        assert hasattr(obj.derived_method, "_thread_safe_wrapped")
 
 
 class TestSynchronizedMethodDecorator:
@@ -364,7 +364,7 @@ class TestEdgeCases:
     def test_thread_safe_with_static_methods(self):
         """Test thread safety with static methods."""
 
-        @auto_thread_safe(['regular_method'])
+        @auto_thread_safe(["regular_method"])
         class TestClass:
             counter = 0
 
@@ -378,14 +378,14 @@ class TestEdgeCases:
         obj = TestClass()
 
         # Regular method should be wrapped
-        assert hasattr(obj.regular_method, '_thread_safe_wrapped')
+        assert hasattr(obj.regular_method, "_thread_safe_wrapped")
         # Static method should not be affected
         assert TestClass.static_method() == "static"
 
     def test_thread_safe_with_class_methods(self):
         """Test thread safety with class methods."""
 
-        @auto_thread_safe(['regular_method'])
+        @auto_thread_safe(["regular_method"])
         class TestClass:
             counter = 0
 
@@ -399,14 +399,14 @@ class TestEdgeCases:
         obj = TestClass()
 
         # Regular method should be wrapped
-        assert hasattr(obj.regular_method, '_thread_safe_wrapped')
+        assert hasattr(obj.regular_method, "_thread_safe_wrapped")
         # Class method should work normally
         assert TestClass.class_method() == "class"
 
     def test_thread_safe_with_properties(self):
         """Test thread safety with properties."""
 
-        @auto_thread_safe(['set_value'])
+        @auto_thread_safe(["set_value"])
         class TestClass:
             def __init__(self):
                 self._value = 0
@@ -437,8 +437,8 @@ class TestEdgeCases:
                 self.counter += 1
 
         # Apply auto_thread_safe multiple times
-        wrapped_test_class = auto_thread_safe(['increment'])(TestClass)
-        wrapped_test_class = auto_thread_safe(['increment'])(wrapped_test_class)
+        wrapped_test_class = auto_thread_safe(["increment"])(TestClass)
+        wrapped_test_class = auto_thread_safe(["increment"])(wrapped_test_class)
 
         obj = wrapped_test_class()
         obj.increment()

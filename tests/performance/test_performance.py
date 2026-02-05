@@ -26,7 +26,7 @@ from pythonLogs.core.factory import (
 from tests.core.test_log_utils import get_safe_timezone
 
 
-@pytest.mark.skipif(os.getenv('CI') == 'true', reason="Performance tests unstable in CI")
+@pytest.mark.skipif(os.getenv("CI") == "true", reason="Performance tests unstable in CI")
 class TestPerformance:
     """Performance tests for factory pattern and optimizations."""
 
@@ -97,7 +97,8 @@ class TestPerformance:
             start_time = time.time()
             for i in range(10):
                 logger = SizeRotatingLog(
-                    name=f"dir_test_{i+2}", directory=temp_dir  # The Same directory should use cache
+                    name=f"dir_test_{i + 2}",
+                    directory=temp_dir,  # The Same directory should use cache
                 )
             subsequent_calls_time = time.time() - start_time
 

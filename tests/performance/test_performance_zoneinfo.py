@@ -18,7 +18,7 @@ from pythonLogs import (
 from pythonLogs.core.factory import clear_logger_registry
 
 
-@pytest.mark.skipif(os.getenv('CI') == 'true', reason="Performance tests unstable in CI")
+@pytest.mark.skipif(os.getenv("CI") == "true", reason="Performance tests unstable in CI")
 class TestZoneinfoPerformance:
     """Performance tests for zoneinfo timezone operations."""
 

@@ -33,7 +33,9 @@ class TestZoneinfoFallbacks:
         # With the new fallback system, invalid timezones should gracefully fall back
         # to localtime instead of raising exceptions for better robustness
         logger = BasicLog(
-            name="error_test", timezone="NonExistent/Timezone", level=LogLevel.INFO  # Should fall back to localtime
+            name="error_test",
+            timezone="NonExistent/Timezone",
+            level=LogLevel.INFO,  # Should fall back to localtime
         )
         # Logger should be created successfully with fallback
         assert logger.name == "error_test"
@@ -48,13 +50,13 @@ class TestZoneinfoFallbacks:
         # UTC should return +0000, but may fall back to localtime on Windows
         assert isinstance(utc_offset, str)
         assert len(utc_offset) == 5
-        assert utc_offset[0] in ['+', '-']
+        assert utc_offset[0] in ["+", "-"]
 
         # Test localtime (should work on any system)
         local_offset = get_timezone_offset("localtime")
         assert isinstance(local_offset, str)
         assert len(local_offset) == 5
-        assert local_offset[0] in ['+', '-']
+        assert local_offset[0] in ["+", "-"]
 
         # Test case insensitivity for localtime
         local_offset_upper = get_timezone_offset("LOCALTIME")
@@ -67,7 +69,7 @@ class TestZoneinfoFallbacks:
         from pythonLogs.core.log_utils import write_stderr
 
         # Mock environment variable
-        with patch.dict(os.environ, {'LOG_TIMEZONE': 'UTC'}):
+        with patch.dict(os.environ, {"LOG_TIMEZONE": "UTC"}):
             stderr_capture = io.StringIO()
             with redirect_stderr(stderr_capture):
                 write_stderr("Test message")
@@ -151,7 +153,7 @@ class TestZoneinfoFallbacks:
         """Test timezone handling through environment variables."""
 
         # Test with environment variable
-        with patch.dict(os.environ, {'LOG_TIMEZONE': 'Europe/Paris'}):
+        with patch.dict(os.environ, {"LOG_TIMEZONE": "Europe/Paris"}):
             # Environment variable should be used for stderr
             from pythonLogs.core.log_utils import get_stderr_timezone
 
@@ -235,11 +237,11 @@ class TestZoneinfoFallbacks:
                 # For localtime, just check format
                 assert isinstance(result, str)
                 assert len(result) == 5
-                assert result[0] in ['+', '-']
+                assert result[0] in ["+", "-"]
 
         # Test that invalid timezone names now fall back gracefully to localtime
         result = get_timezone_offset("invalid_timezone")
         # Should fall back to localtime format
         assert isinstance(result, str)
         assert len(result) == 5
-        assert result[0] in ['+', '-']
+        assert result[0] in ["+", "-"]

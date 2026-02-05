@@ -5,7 +5,7 @@ from pythonLogs.core.settings import get_log_settings
 from pythonLogs.core.thread_safety import auto_thread_safe
 
 
-@auto_thread_safe(['init'])
+@auto_thread_safe(["init"])
 class BasicLog:
     """Basic logger with context manager support for automatic resource cleanup."""
 
@@ -48,13 +48,13 @@ class BasicLog:
 
     def __enter__(self):
         """Context manager entry."""
-        if not hasattr(self, 'logger') or self.logger is None:
+        if not hasattr(self, "logger") or self.logger is None:
             self.init()
         return self.logger
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit with automatic cleanup."""
-        if hasattr(self, 'logger'):
+        if hasattr(self, "logger"):
             cleanup_logger_handlers(self.logger)
 
     @staticmethod

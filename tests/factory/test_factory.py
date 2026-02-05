@@ -318,7 +318,7 @@ class TestLoggerFactory:
     @pytest.mark.parametrize("error_type", [OSError, ValueError, RuntimeError])
     def test_factory_atexit_cleanup_error_handling(self, error_type):
         """Test atexit cleanup handles expected exceptions gracefully."""
-        with patch.object(LoggerFactory, 'clear_registry', side_effect=error_type("Test error")):
+        with patch.object(LoggerFactory, "clear_registry", side_effect=error_type("Test error")):
             # Should not raise an exception (silently ignored)
             LoggerFactory._atexit_cleanup()
 
@@ -382,7 +382,7 @@ class TestLoggerFactory:
         mock_settings.logger_ttl_seconds = 1800
 
         # Patch the import inside the function
-        with patch('pythonLogs.core.factory.get_log_settings', return_value=mock_settings):
+        with patch("pythonLogs.core.factory.get_log_settings", return_value=mock_settings):
             # Reset initialization flag
             LoggerFactory._initialized = False
 
@@ -456,8 +456,8 @@ class TestLoggerFactory:
 
         # Get and verify limits
         limits = LoggerFactory.get_memory_limits()
-        assert limits['max_loggers'] == 75
-        assert limits['ttl_seconds'] == 2400
+        assert limits["max_loggers"] == 75
+        assert limits["ttl_seconds"] == 2400
 
     @pytest.mark.skipif(
         sys.platform == "win32",

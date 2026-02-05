@@ -24,7 +24,7 @@ from pythonLogs.core.factory import (
 from tests.core.test_log_utils import windows_safe_temp_directory
 
 
-@pytest.mark.skipif(os.getenv('CI') == 'true', reason="Performance tests unstable in CI")
+@pytest.mark.skipif(os.getenv("CI") == "true", reason="Performance tests unstable in CI")
 class TestPerformanceWindows:
     """Windows-specific performance tests for factory pattern and optimizations."""
 
@@ -45,7 +45,7 @@ class TestPerformanceWindows:
             start_time = time.perf_counter()
             for i in range(10):
                 logger = SizeRotatingLog(
-                    name=f"dir_test_{i+2}_win",
+                    name=f"dir_test_{i + 2}_win",
                     directory=temp_dir,  # The Same directory should use cache
                 )
             subsequent_calls_time = time.perf_counter() - start_time

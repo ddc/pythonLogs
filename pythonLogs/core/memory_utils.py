@@ -126,13 +126,13 @@ def get_memory_stats() -> dict[str, Any]:
     directory_stats = log_utils.get_directory_cache_stats()
 
     return {
-        'registry_size': registry_size,
-        'formatter_cache_size': formatter_cache_size,
-        'directory_cache_size': directory_stats['cached_directories'],
-        'active_logger_count': get_active_logger_count(),
-        'max_registry_size': factory_limits['max_loggers'],
-        'max_formatter_cache': _max_formatters,
-        'max_directory_cache': directory_stats['max_directories'],
+        "registry_size": registry_size,
+        "formatter_cache_size": formatter_cache_size,
+        "directory_cache_size": directory_stats["cached_directories"],
+        "active_logger_count": get_active_logger_count(),
+        "max_registry_size": factory_limits["max_loggers"],
+        "max_formatter_cache": _max_formatters,
+        "max_directory_cache": directory_stats["max_directories"],
     }
 
 
@@ -173,7 +173,7 @@ def force_garbage_collection() -> dict[str, int]:
     collected = gc.collect()
 
     return {
-        'objects_collected': collected,
-        'garbage_count': len(gc.garbage),
-        'reference_cycles': gc.get_count(),
+        "objects_collected": collected,
+        "garbage_count": len(gc.garbage),
+        "reference_cycles": gc.get_count(),
     }

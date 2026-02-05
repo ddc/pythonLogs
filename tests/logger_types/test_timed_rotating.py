@@ -323,7 +323,7 @@ class TestGZipRotatorTimed:
                 # Reset source file
                 source_file.write_text("Test content")
 
-                with patch('pythonLogs.timed_rotating.gzip_file_with_sufix') as mock_gzip:
+                with patch("pythonLogs.timed_rotating.gzip_file_with_sufix") as mock_gzip:
                     rotator(str(source_file), dest_filename)
                     mock_gzip.assert_called_once_with(str(source_file), expected_suffix)
 
@@ -343,7 +343,7 @@ class TestGZipRotatorTimed:
             gz_files = list(Path(temp_dir).glob("*.gz"))
             assert len(gz_files) == 0
 
-    @patch('pythonLogs.timed_rotating.remove_old_logs')
+    @patch("pythonLogs.timed_rotating.remove_old_logs")
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file",
@@ -362,7 +362,7 @@ class TestGZipRotatorTimed:
             # Should have called remove_old_logs
             mock_remove_old_logs.assert_called_once_with(temp_dir, 7)
 
-    @patch('pythonLogs.timed_rotating.gzip_file_with_sufix')
+    @patch("pythonLogs.timed_rotating.gzip_file_with_sufix")
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file",
@@ -405,7 +405,7 @@ class TestGZipRotatorTimed:
 
             # Force handlers to flush
             for handler in logger.handlers:
-                if hasattr(handler, 'flush'):
+                if hasattr(handler, "flush"):
                     handler.flush()
 
             # Verify log file exists
@@ -431,7 +431,7 @@ class TestGZipRotatorTimed:
             for dest_filename, expected_suffix in edge_cases:
                 source_file.write_text("Test content")  # Reset file
 
-                with patch('pythonLogs.timed_rotating.gzip_file_with_sufix') as mock_gzip:
+                with patch("pythonLogs.timed_rotating.gzip_file_with_sufix") as mock_gzip:
                     rotator(str(source_file), dest_filename)
                     if dest_filename:  # Only call if dest_filename is not empty
                         mock_gzip.assert_called_once_with(str(source_file), expected_suffix)

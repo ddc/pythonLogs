@@ -63,7 +63,7 @@ class TestThreadSafety:
     def test_concurrent_registry_operations(self):
         """Test concurrent registry operations (create, shutdown, clear)."""
         num_threads = 20
-        results = {'created': [], 'shutdown': [], 'errors': []}
+        results = {"created": [], "shutdown": [], "errors": []}
 
         def mixed_operations_worker(worker_id):
             """Worker that performs mixed registry operations."""
@@ -72,17 +72,17 @@ class TestThreadSafety:
 
                 # Create logger
                 logger = LoggerFactory.get_or_create_logger(LoggerType.BASIC, name=logger_name, level=LogLevel.DEBUG)
-                results['created'].append(logger_name)
+                results["created"].append(logger_name)
 
                 # Small delay to increase chance of race conditions
                 time.sleep(0.01)
 
                 # Try to shut down logger
                 if LoggerFactory.shutdown_logger(logger_name):
-                    results['shutdown'].append(logger_name)
+                    results["shutdown"].append(logger_name)
 
             except Exception as e:
-                results['errors'].append(str(e))
+                results["errors"].append(str(e))
 
         # Run concurrent operations
         with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
@@ -91,10 +91,10 @@ class TestThreadSafety:
                 future.result()
 
         # No errors should occur
-        assert len(results['errors']) == 0, f"Errors occurred: {results['errors']}"
+        assert len(results["errors"]) == 0, f"Errors occurred: {results['errors']}"
 
         # All created loggers should be accounted for
-        assert len(results['created']) == num_threads
+        assert len(results["created"]) == num_threads
 
         # Registry should be consistent
         registry = LoggerFactory.get_registered_loggers()
@@ -193,7 +193,7 @@ class TestThreadSafety:
         num_threads = 50
         operations_per_thread = 10
         logger_names = [f"stress_logger_{i}" for i in range(5)]  # Shared logger names
-        results = {'success': 0, 'errors': []}
+        results = {"success": 0, "errors": []}
         results_lock = threading.Lock()
 
         def stress_worker():
@@ -219,11 +219,11 @@ class TestThreadSafety:
                     time.sleep(0.001)
 
                 with results_lock:
-                    results['success'] += operations_per_thread
+                    results["success"] += operations_per_thread
 
             except Exception as e:
                 with results_lock:
-                    results['errors'].append(str(e))
+                    results["errors"].append(str(e))
 
         # Run stress test
         with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
@@ -233,8 +233,8 @@ class TestThreadSafety:
 
         # Verify results
         expected_operations = num_threads * operations_per_thread
-        assert results['success'] == expected_operations, f"Expected {expected_operations}, got {results['success']}"
-        assert len(results['errors']) == 0, f"Stress test errors: {results['errors']}"
+        assert results["success"] == expected_operations, f"Expected {expected_operations}, got {results['success']}"
+        assert len(results["errors"]) == 0, f"Stress test errors: {results['errors']}"
 
         # Registry may have evicted some loggers due to memory limits or TTL
         # Just verify it has at least some loggers and doesn't exceed the total
@@ -369,29 +369,29 @@ class TestThreadSafety:
                 assert _message in _log_content
 
             with results_lock:
-                thread_results[worker_id] = {'messages': messages, 'log_content': _log_content}
+                thread_results[worker_id] = {"messages": messages, "log_content": _log_content}
 
     def _verify_thread_results(self, thread_results, num_threads):
         """Helper to verify all thread results are successful."""
         for worker_id in range(num_threads):
             assert worker_id in thread_results
             assert (
-                'error' not in thread_results[worker_id]
+                "error" not in thread_results[worker_id]
             ), f"Thread {worker_id} failed: {thread_results[worker_id].get('error')}"
-            assert 'messages' in thread_results[worker_id]
-            assert len(thread_results[worker_id]['messages']) == 10
+            assert "messages" in thread_results[worker_id]
+            assert len(thread_results[worker_id]["messages"]) == 10
 
     def _check_worker_log_isolation(self, worker_id, log_content, thread_results, num_threads):
         """Check that a worker's log doesn't contain messages from other workers."""
         for other_id in range(num_threads):
             if other_id != worker_id:
-                for message in thread_results[other_id]['messages']:
+                for message in thread_results[other_id]["messages"]:
                     assert message not in log_content, f"Thread {worker_id} log contains message from thread {other_id}"
 
     def _verify_no_cross_contamination(self, thread_results, num_threads):
         """Helper to verify no cross-contamination between thread logs."""
         for worker_id in range(num_threads):
-            log_content = thread_results[worker_id]['log_content']
+            log_content = thread_results[worker_id]["log_content"]
             self._check_worker_log_isolation(worker_id, log_content, thread_results, num_threads)
 
     @pytest.mark.skipif(
@@ -412,7 +412,7 @@ class TestThreadSafety:
 
             except Exception as e:
                 with results_lock:
-                    thread_results[worker_id] = {'error': str(e)}
+                    thread_results[worker_id] = {"error": str(e)}
 
         # Run independent workers
         with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:

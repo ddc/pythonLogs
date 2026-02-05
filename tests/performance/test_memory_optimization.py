@@ -26,7 +26,7 @@ from pythonLogs.core.memory_utils import (
 )
 
 
-@pytest.mark.skipif(os.getenv('CI') == 'true', reason="Performance tests unstable in CI")
+@pytest.mark.skipif(os.getenv("CI") == "true", reason="Performance tests unstable in CI")
 class TestMemoryOptimization:
     """Test cases for memory optimization features."""
 
@@ -151,22 +151,22 @@ class TestMemoryOptimization:
 
         # Verify stats structure
         expected_keys = {
-            'registry_size',
-            'formatter_cache_size',
-            'directory_cache_size',
-            'active_logger_count',
-            'max_registry_size',
-            'max_formatter_cache',
-            'max_directory_cache',
+            "registry_size",
+            "formatter_cache_size",
+            "directory_cache_size",
+            "active_logger_count",
+            "max_registry_size",
+            "max_formatter_cache",
+            "max_directory_cache",
         }
         assert set(stats.keys()) == expected_keys
 
         # Verify some basic constraints
-        assert stats['registry_size'] >= 3
-        assert stats['max_registry_size'] > 0
-        assert stats['max_formatter_cache'] > 0
-        assert stats['max_directory_cache'] > 0
-        assert isinstance(stats['active_logger_count'], int)
+        assert stats["registry_size"] >= 3
+        assert stats["max_registry_size"] > 0
+        assert stats["max_formatter_cache"] > 0
+        assert stats["max_directory_cache"] > 0
+        assert isinstance(stats["active_logger_count"], int)
 
     def test_weak_reference_tracking(self):
         """Test that weak references track active loggers correctly."""
@@ -228,7 +228,7 @@ class TestMemoryOptimization:
         gc_stats = force_garbage_collection()
 
         # Verify stats structure
-        expected_keys = {'objects_collected', 'garbage_count', 'reference_cycles'}
+        expected_keys = {"objects_collected", "garbage_count", "reference_cycles"}
         assert set(gc_stats.keys()) == expected_keys
 
         # Verify all values are integers
@@ -268,10 +268,10 @@ class TestMemoryOptimization:
 
                 results.append(
                     {
-                        'worker_id': worker_id,
-                        'logger_name': logger.name,
-                        'stats': stats,
-                        'formatter': formatter is not None,
+                        "worker_id": worker_id,
+                        "logger_name": logger.name,
+                        "stats": stats,
+                        "formatter": formatter is not None,
                     }
                 )
 
@@ -291,7 +291,7 @@ class TestMemoryOptimization:
 
         # Verify memory constraints were maintained
         final_stats = get_memory_stats()
-        assert final_stats['registry_size'] <= 20  # Respect size limit
+        assert final_stats["registry_size"] <= 20  # Respect size limit
 
     def test_memory_leak_prevention(self):
         """Test that the library prevents common memory leaks."""
@@ -316,12 +316,12 @@ class TestMemoryOptimization:
         final_stats = get_memory_stats()
 
         # The Registry should not have grown excessively
-        registry_growth = final_stats['registry_size'] - initial_stats['registry_size']
+        registry_growth = final_stats["registry_size"] - initial_stats["registry_size"]
         assert registry_growth <= 20, f"Registry grew by {registry_growth}, possible memory leak"
 
         # Cache sizes should be reasonable
-        assert final_stats['formatter_cache_size'] <= 50
-        assert final_stats['directory_cache_size'] <= 500
+        assert final_stats["formatter_cache_size"] <= 50
+        assert final_stats["directory_cache_size"] <= 500
 
     @pytest.mark.skipif(
         sys.platform == "win32",
@@ -639,13 +639,13 @@ class TestMemoryOptimization:
 
         # Verify all required fields exist
         required_fields = [
-            'registry_size',
-            'formatter_cache_size',
-            'directory_cache_size',
-            'active_logger_count',
-            'max_registry_size',
-            'max_formatter_cache',
-            'max_directory_cache',
+            "registry_size",
+            "formatter_cache_size",
+            "directory_cache_size",
+            "active_logger_count",
+            "max_registry_size",
+            "max_formatter_cache",
+            "max_directory_cache",
         ]
 
         for field in required_fields:
@@ -654,9 +654,9 @@ class TestMemoryOptimization:
             assert stats[field] >= 0, f"Field {field} should be non-negative"
 
         # Verify relationships
-        assert stats['registry_size'] <= stats['max_registry_size']
-        assert stats['formatter_cache_size'] <= stats['max_formatter_cache']
-        assert stats['directory_cache_size'] <= stats['max_directory_cache']
+        assert stats["registry_size"] <= stats["max_registry_size"]
+        assert stats["formatter_cache_size"] <= stats["max_formatter_cache"]
+        assert stats["directory_cache_size"] <= stats["max_directory_cache"]
 
     def test_force_garbage_collection_comprehensive(self):
         """Test comprehensive garbage collection functionality."""
@@ -665,13 +665,13 @@ class TestMemoryOptimization:
         # Create objects that could be garbage collected
         test_objects = []
         for i in range(100):
-            test_objects.append({'data': f"test_data_{i}" * 100, 'nested': {'value': i, 'list': list(range(10))}})
+            test_objects.append({"data": f"test_data_{i}" * 100, "nested": {"value": i, "list": list(range(10))}})
 
         # Create circular references
-        obj1 = {'name': 'obj1'}
-        obj2 = {'name': 'obj2'}
-        obj1['ref'] = obj2
-        obj2['ref'] = obj1
+        obj1 = {"name": "obj1"}
+        obj2 = {"name": "obj2"}
+        obj1["ref"] = obj2
+        obj2["ref"] = obj1
         test_objects.extend([obj1, obj2])
 
         # Clear references
@@ -681,14 +681,14 @@ class TestMemoryOptimization:
         gc_stats = force_garbage_collection()
 
         # Verify stats
-        assert 'objects_collected' in gc_stats
-        assert 'garbage_count' in gc_stats
-        assert 'reference_cycles' in gc_stats
+        assert "objects_collected" in gc_stats
+        assert "garbage_count" in gc_stats
+        assert "reference_cycles" in gc_stats
 
-        assert isinstance(gc_stats['objects_collected'], int)
-        assert isinstance(gc_stats['garbage_count'], int)
-        assert gc_stats['objects_collected'] >= 0
-        assert gc_stats['garbage_count'] >= 0
+        assert isinstance(gc_stats["objects_collected"], int)
+        assert isinstance(gc_stats["garbage_count"], int)
+        assert gc_stats["objects_collected"] >= 0
+        assert gc_stats["garbage_count"] >= 0
 
     def test_memory_optimization_integration(self):
         """Test integration of all memory optimization features."""
@@ -723,20 +723,20 @@ class TestMemoryOptimization:
         final_stats = get_memory_stats()
 
         # Verify optimization worked
-        assert final_stats['formatter_cache_size'] == 0  # Should be cleared
-        assert final_stats['directory_cache_size'] == 0  # Should be cleared
-        assert gc_result['objects_collected'] >= 0
+        assert final_stats["formatter_cache_size"] == 0  # Should be cleared
+        assert final_stats["directory_cache_size"] == 0  # Should be cleared
+        assert gc_result["objects_collected"] >= 0
 
     def test_memory_utils_module_constants(self):
         """Test module-level constants and their behavior."""
         from pythonLogs.core import memory_utils
 
         # Verify module constants exist and have reasonable values
-        assert hasattr(memory_utils, '_formatter_cache')
-        assert hasattr(memory_utils, '_formatter_cache_lock')
-        assert hasattr(memory_utils, '_max_formatters')
-        assert hasattr(memory_utils, '_active_loggers')
-        assert hasattr(memory_utils, '_weak_ref_lock')
+        assert hasattr(memory_utils, "_formatter_cache")
+        assert hasattr(memory_utils, "_formatter_cache_lock")
+        assert hasattr(memory_utils, "_max_formatters")
+        assert hasattr(memory_utils, "_active_loggers")
+        assert hasattr(memory_utils, "_weak_ref_lock")
 
         # Verify default values
         assert memory_utils._max_formatters > 0

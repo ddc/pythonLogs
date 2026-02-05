@@ -215,7 +215,7 @@ class LoggerFactory:
             Dictionary with current max_loggers and ttl_seconds settings
         """
         with cls._registry_lock:
-            return {'max_loggers': cls._max_loggers, 'ttl_seconds': cls._logger_ttl}
+            return {"max_loggers": cls._max_loggers, "ttl_seconds": cls._logger_ttl}
 
     @staticmethod
     def create_logger(logger_type: LoggerType | str, config: LoggerConfig | None = None, **kwargs) -> logging.Logger:
@@ -248,20 +248,20 @@ class LoggerFactory:
 
         # Create a new config with kwargs overriding config values
         final_config = LoggerConfig(
-            level=kwargs.get('level', config.level),
-            name=kwargs.get('name', config.name),
-            directory=kwargs.get('directory', config.directory),
-            filenames=kwargs.get('filenames', config.filenames),
-            encoding=kwargs.get('encoding', config.encoding),
-            datefmt=kwargs.get('datefmt', config.datefmt),
-            timezone=kwargs.get('timezone', config.timezone),
-            streamhandler=kwargs.get('streamhandler', config.streamhandler),
-            showlocation=kwargs.get('showlocation', config.showlocation),
-            maxmbytes=kwargs.get('maxmbytes', config.maxmbytes),
-            when=kwargs.get('when', config.when),
-            sufix=kwargs.get('sufix', config.sufix),
-            rotateatutc=kwargs.get('rotateatutc', config.rotateatutc),
-            daystokeep=kwargs.get('daystokeep', config.daystokeep),
+            level=kwargs.get("level", config.level),
+            name=kwargs.get("name", config.name),
+            directory=kwargs.get("directory", config.directory),
+            filenames=kwargs.get("filenames", config.filenames),
+            encoding=kwargs.get("encoding", config.encoding),
+            datefmt=kwargs.get("datefmt", config.datefmt),
+            timezone=kwargs.get("timezone", config.timezone),
+            streamhandler=kwargs.get("streamhandler", config.streamhandler),
+            showlocation=kwargs.get("showlocation", config.showlocation),
+            maxmbytes=kwargs.get("maxmbytes", config.maxmbytes),
+            when=kwargs.get("when", config.when),
+            sufix=kwargs.get("sufix", config.sufix),
+            rotateatutc=kwargs.get("rotateatutc", config.rotateatutc),
+            daystokeep=kwargs.get("daystokeep", config.daystokeep),
         )
 
         # Convert enum values to strings for logger classes
