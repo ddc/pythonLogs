@@ -40,7 +40,7 @@ jobs:
         run: uv python install ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv sync --group dev
+        run: uv sync --all-extras --group dev
         shell: bash
 
       - name: Run tests with coverage
@@ -48,7 +48,7 @@ jobs:
         with:
           timeout_minutes: 2
           max_attempts: 3
-          command: uv run pytest
+          command: uv run --no-sync pytest
           shell: bash
 
       - name: Upload coverage to Codecov
