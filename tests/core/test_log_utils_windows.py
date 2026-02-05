@@ -92,9 +92,9 @@ class TestLogUtilsWindows:
             file_handle.write("test content")
             file_handle.close()
 
-            assert os.path.isfile(file_path) == True
+            assert os.path.isfile(file_path)
             log_utils.delete_file(file_path)
-            assert os.path.isfile(file_path) == False
+            assert not os.path.isfile(file_path)
         finally:
             # Ensure cleanup if the test fails
             if os.path.exists(file_path):
@@ -113,18 +113,18 @@ class TestLogUtilsWindows:
             file_handle.write("test content")
             file_handle.close()
 
-            assert os.path.isfile(file_path) == True
+            assert os.path.isfile(file_path)
 
             # When days=1, it compares against 1 day ago, so newly created file should NOT be older
             result = log_utils.is_older_than_x_days(file_path, 1)
-            assert result == False
+            assert not result
 
             # When days=5, it compares against 5 days ago, so newly created file should NOT be older
             result = log_utils.is_older_than_x_days(file_path, 5)
-            assert result == False
+            assert not result
 
             log_utils.delete_file(file_path)
-            assert os.path.isfile(file_path) == False
+            assert not os.path.isfile(file_path)
         finally:
             # Ensure cleanup if the test fails
             if os.path.exists(file_path):
@@ -141,7 +141,7 @@ class TestLogUtilsWindows:
             file_handle.write("test content for gzip")
             file_handle.close()
 
-            assert os.path.isfile(file_path) == True
+            assert os.path.isfile(file_path)
             sufix = "test1"
             result = log_utils.gzip_file_with_sufix(file_path, sufix)
             file_path_no_suffix = file_path.split(".")[0]
@@ -149,7 +149,7 @@ class TestLogUtilsWindows:
 
             # Clean up the gzipped file with Windows-safe deletion
             safe_close_and_delete_file(None, result)
-            assert os.path.isfile(result) == False
+            assert not os.path.isfile(result)
 
         finally:
             # Ensure cleanup of the original file if it still exists
@@ -399,7 +399,7 @@ class TestLogUtilsWindows:
 
         # Verify all workers completed successfully
         for result in results:
-            assert result['is_old'] == False  # Files should NOT be considered "old" (created recently)
+            assert not result['is_old']  # Files should NOT be considered "old" (created recently)
             assert result['gzip_result'] is not None
             assert f"worker_{result['worker_id']}" in result['gzip_result']
 
@@ -556,7 +556,7 @@ class TestLogUtilsWindows:
 
             assert os.path.isfile(file_path)
             result = log_utils.delete_file(file_path)
-            assert result == True
+            assert result
             assert not os.path.exists(file_path)
         finally:
             if os.path.exists(file_path):
@@ -597,7 +597,7 @@ class TestLogUtilsWindows:
                 for log_file in temp_files:
                     if os.path.exists(log_file):
                         result = safe_delete_file(log_file)
-                        assert result == True
+                        assert result
         finally:
             # Ensure cleanup
             cleanup_all_loggers()
@@ -630,7 +630,7 @@ class TestLogUtilsWindows:
 
                     # Windows-safe cleanup should handle this
                     result = safe_delete_directory(nested_dir)
-                    assert result == True or not os.path.exists(nested_dir)
+                    assert result or not os.path.exists(nested_dir)
         finally:
             # Final cleanup
             cleanup_all_loggers()

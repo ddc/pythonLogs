@@ -65,7 +65,7 @@ class TestPerformance:
         # With caching: Reuse same logger
         clear_logger_registry()
         start_time = time.time()
-        for i in range(30):
+        for _i in range(30):
             LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="cached_logger")
         cache_time = time.time() - start_time
 

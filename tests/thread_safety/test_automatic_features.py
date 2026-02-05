@@ -30,7 +30,7 @@ class TestAutomaticFeatures:
 
         # Run in multiple threads to test thread safety
         threads = []
-        for i in range(5):
+        for _i in range(5):
             thread = threading.Thread(target=test_logger_operations)
             threads.append(thread)
             thread.start()
@@ -70,7 +70,7 @@ class TestAutomaticFeatures:
 
             # Run in multiple threads to test thread safety
             threads = []
-            for i in range(3):
+            for _i in range(3):
                 thread = threading.Thread(target=test_logger_operations)
                 threads.append(thread)
                 thread.start()
@@ -106,7 +106,7 @@ class TestAutomaticFeatures:
 
             # Run in multiple threads to test thread safety
             threads = []
-            for i in range(3):
+            for _i in range(3):
                 thread = threading.Thread(target=test_logger_operations)
                 threads.append(thread)
                 thread.start()

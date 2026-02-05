@@ -2,16 +2,17 @@ import logging
 import threading
 import weakref
 from . import log_utils
+from .settings import get_log_settings
 from functools import lru_cache
-from typing import Any, Dict, Optional, Set
+from typing import Any
 
 # Formatter cache to reduce memory usage for identical formatters
-_formatter_cache: Dict[str, logging.Formatter] = {}
+_formatter_cache: dict[str, logging.Formatter] = {}
 _formatter_cache_lock = threading.Lock()
-_max_formatters = 50  # Limit formatter cache size
+_max_formatters = get_log_settings().max_formatters
 
 
-def get_cached_formatter(format_string: str, datefmt: Optional[str] = None) -> logging.Formatter:
+def get_cached_formatter(format_string: str, datefmt: str | None = None) -> logging.Formatter:
     """Get a cached formatter or create and cache a new one.
 
     This reduces memory usage by reusing formatter instances with
@@ -66,7 +67,7 @@ def clear_directory_cache() -> None:
 
 
 # Weak reference registry for tracking active loggers without preventing GC
-_active_loggers: Set[weakref.ReferenceType] = set()
+_active_loggers: set[weakref.ReferenceType] = set()
 _weak_ref_lock = threading.Lock()
 
 
@@ -103,7 +104,7 @@ def get_active_logger_count() -> int:
         return len(_active_loggers)
 
 
-def get_memory_stats() -> Dict[str, Any]:
+def get_memory_stats() -> dict[str, Any]:
     """Get memory usage statistics for the logging system.
 
     Returns:
@@ -153,7 +154,7 @@ def optimize_lru_cache_sizes() -> None:
     log_utils.get_stderr_timezone = lru_cache(maxsize=4)(log_utils.get_stderr_timezone.__wrapped__)
 
 
-def force_garbage_collection() -> Dict[str, int]:
+def force_garbage_collection() -> dict[str, int]:
     """Force garbage collection and return collection statistics.
 
     This can be useful for testing memory leaks or forcing cleanup

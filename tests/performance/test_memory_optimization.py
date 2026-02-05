@@ -112,7 +112,7 @@ class TestMemoryOptimization:
 
         finally:
             # Cleanup temp directories using context managers
-            for temp_dir, temp_dir_context in temp_dirs:
+            for _temp_dir, temp_dir_context in temp_dirs:
                 temp_dir_context.__exit__(None, None, None)
 
     def test_formatter_cache_efficiency(self):
@@ -494,7 +494,7 @@ class TestMemoryOptimization:
 
         finally:
             # Cleanup using context managers
-            for temp_dir, temp_dir_context in temp_dirs:
+            for _temp_dir, temp_dir_context in temp_dirs:
                 temp_dir_context.__exit__(None, None, None)
 
     def test_register_logger_weakref_direct(self):

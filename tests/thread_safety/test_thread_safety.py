@@ -361,7 +361,7 @@ class TestThreadSafety:
             log_file = os.path.join(temp_dir, f"independent_{worker_id}.log")
             assert os.path.exists(log_file), f"Log file missing for thread {worker_id}"
 
-            with open(log_file, 'r') as f:
+            with open(log_file) as f:
                 _log_content = f.read()
 
             # Verify all messages are in the file

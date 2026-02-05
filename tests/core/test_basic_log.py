@@ -178,7 +178,7 @@ class TestBasicLog:
             assert logger.level == logging.INFO
 
         # Clean up all loggers
-        for basic_log, logger in loggers:
+        for _basic_log, logger in loggers:
             BasicLog.cleanup_logger(logger)
             assert len(logger.handlers) == 0
 

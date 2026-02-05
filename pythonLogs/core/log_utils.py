@@ -7,12 +7,11 @@ import shutil
 import sys
 import threading
 import time
-from datetime import datetime, timedelta
-from datetime import timezone as dttz
+from collections.abc import Callable
+from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
 from pythonLogs.core.constants import DEFAULT_FILE_MODE, LEVEL_MAP
-from typing import Callable, Optional, Set
 from zoneinfo import ZoneInfo
 
 
@@ -20,6 +19,8 @@ class RotatingLogMixin:
     """Mixin providing common rotating logger functionality with context manager support."""
 
     logger: logging.Logger | None
+
+    def init(self) -> None: ...
 
     def __enter__(self):
         """Context manager entry."""
@@ -39,7 +40,7 @@ class RotatingLogMixin:
 
 
 # Global cache for checked directories with thread safety and size limits
-_checked_directories: Set[str] = set()
+_checked_directories: set[str] = set()
 _directory_lock = threading.Lock()
 _max_cached_directories = 500  # Limit cache size to prevent unbounded growth
 
@@ -109,7 +110,7 @@ def check_directory_permissions(directory_path: str) -> None:
             except PermissionError as e:
                 err_msg = f"Unable to create directory | {directory_path}"
                 write_stderr(f"{err_msg} | {type(e).__name__}: {e}")
-                raise PermissionError(err_msg)
+                raise PermissionError(err_msg) from e
 
         # Add to cache with size limit enforcement
         if len(_checked_directories) >= _max_cached_directories:
@@ -129,7 +130,7 @@ def remove_old_logs(logs_dir: str, days_to_keep: int) -> None:
             try:
                 if file_path.stat().st_mtime < cutoff_time.timestamp():
                     file_path.unlink()
-            except (OSError, IOError) as e:
+            except OSError as e:
                 write_stderr(f"Unable to delete old log | {file_path} | {type(e).__name__}: {e}")
     except OSError as e:
         write_stderr(f"Unable to scan directory for old logs | {logs_dir} | {type(e).__name__}: {e}")
@@ -196,7 +197,7 @@ def write_stderr(msg: str) -> None:
             # Use local timezone
             dt = datetime.now()
         else:
-            dt = datetime.now(dttz.utc).astimezone(tz)
+            dt = datetime.now(UTC).astimezone(tz)
         dt_timezone = dt.strftime("%Y-%m-%dT%H:%M:%S.%f%z")
         sys.stderr.write(f"[{dt_timezone}]:[ERROR]:{msg}\n")
     except (OSError, ValueError, KeyError):
@@ -286,7 +287,7 @@ def gzip_file_with_sufix(file_path: str, sufix: str) -> str | None:
             # Final attempt failed or not Windows - treat as regular error
             write_stderr(f"Unable to gzip log file | {file_path} | {type(e).__name__}: {e}")
             raise e
-        except (OSError, IOError) as e:
+        except OSError as e:
             write_stderr(f"Unable to gzip log file | {file_path} | {type(e).__name__}: {e}")
             raise e
 
@@ -324,7 +325,7 @@ def get_timezone_function(time_zone: str) -> Callable:
 
 
 # Shared handler cleanup utility
-def cleanup_logger_handlers(logger: Optional[logging.Logger]) -> None:
+def cleanup_logger_handlers(logger: logging.Logger | None) -> None:
     """Clean up logger resources by closing all handlers.
 
     This is a centralized utility to ensure consistent cleanup behavior

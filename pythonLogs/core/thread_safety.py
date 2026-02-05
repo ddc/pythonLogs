@@ -1,6 +1,7 @@
 import functools
 import threading
-from typing import Any, Callable, Dict, Type, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 F = TypeVar('F', bound=Callable[..., Any])
 
@@ -8,7 +9,7 @@ F = TypeVar('F', bound=Callable[..., Any])
 class ThreadSafeMeta(type):
     """Metaclass that automatically adds thread safety to class methods."""
 
-    def __new__(mcs, name: str, bases: tuple, namespace: Dict[str, Any], **kwargs):
+    def __new__(mcs, name: str, bases: tuple, namespace: dict[str, Any], **kwargs):
         # Create the class first
         cls = super().__new__(mcs, name, bases, namespace)
 
@@ -51,8 +52,8 @@ def thread_safe(func: F) -> F:
         if lock is None:
             # Check if class has lock, if not create one
             if not hasattr(self.__class__, '_lock'):
-                setattr(self.__class__, '_lock', threading.RLock())
-            lock = getattr(self.__class__, '_lock')
+                self.__class__._lock = threading.RLock()
+            lock = self.__class__._lock
 
         with lock:
             return func(self, *args, **kwargs)
@@ -60,7 +61,7 @@ def thread_safe(func: F) -> F:
     return wrapper
 
 
-def _get_wrappable_methods(cls: Type) -> list:
+def _get_wrappable_methods(cls: type) -> list:
     """Helper function to get methods that should be made thread-safe."""
     return [
         method_name
@@ -73,13 +74,13 @@ def _get_wrappable_methods(cls: Type) -> list:
     ]
 
 
-def _ensure_class_has_lock(cls: Type) -> None:
+def _ensure_class_has_lock(cls: type) -> None:
     """Ensure the class has a lock attribute."""
     if not hasattr(cls, '_lock'):
         cls._lock = threading.RLock()
 
 
-def _should_wrap_method(cls: Type, method_name: str, original_method: Any) -> bool:
+def _should_wrap_method(cls: type, method_name: str, original_method: Any) -> bool:
     """Check if a method should be wrapped with thread safety."""
     return (
         hasattr(cls, method_name) and callable(original_method) and not hasattr(original_method, '_thread_safe_wrapped')
@@ -89,7 +90,7 @@ def _should_wrap_method(cls: Type, method_name: str, original_method: Any) -> bo
 def auto_thread_safe(thread_safe_methods: list = None):
     """Class decorator that adds automatic thread safety to specified methods."""
 
-    def decorator(cls: Type) -> Type:
+    def decorator(cls: type) -> type:
         _ensure_class_has_lock(cls)
 
         # Store thread-safe methods list

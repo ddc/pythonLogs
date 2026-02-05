@@ -3,37 +3,37 @@ import logging
 import threading
 import time
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from pythonLogs.basic_log import BasicLog as _BasicLogImpl
 from pythonLogs.core.constants import LogLevel, RotateWhen
 from pythonLogs.core.log_utils import cleanup_logger_handlers
 from pythonLogs.core.settings import get_log_settings
 from pythonLogs.size_rotating import SizeRotatingLog as _SizeRotatingLogImpl
 from pythonLogs.timed_rotating import TimedRotatingLog as _TimedRotatingLogImpl
-from typing import Dict, Optional, Tuple, Union, assert_never
+from typing import assert_never
 
 
 @dataclass
 class LoggerConfig:
     """Configuration class to group logger parameters"""
 
-    level: Optional[Union[LogLevel, str]] = None
-    name: Optional[str] = None
-    directory: Optional[str] = None
-    filenames: Optional[list | tuple] = None
-    encoding: Optional[str] = None
-    datefmt: Optional[str] = None
-    timezone: Optional[str] = None
-    streamhandler: Optional[bool] = None
-    showlocation: Optional[bool] = None
-    maxmbytes: Optional[int] = None
-    when: Optional[Union[RotateWhen, str]] = None
-    sufix: Optional[str] = None
-    rotateatutc: Optional[bool] = None
-    daystokeep: Optional[int] = None
+    level: LogLevel | str | None = None
+    name: str | None = None
+    directory: str | None = None
+    filenames: list | tuple | None = None
+    encoding: str | None = None
+    datefmt: str | None = None
+    timezone: str | None = None
+    streamhandler: bool | None = None
+    showlocation: bool | None = None
+    maxmbytes: int | None = None
+    when: RotateWhen | str | None = None
+    sufix: str | None = None
+    rotateatutc: bool | None = None
+    daystokeep: int | None = None
 
 
-class LoggerType(str, Enum):
+class LoggerType(StrEnum):
     """Available logger types"""
 
     BASIC = "basic"
@@ -45,7 +45,7 @@ class LoggerFactory:
     """Factory for creating different types of loggers with optimized instantiation and memory management"""
 
     # Logger registry for reusing loggers by name with timestamp tracking
-    _logger_registry: Dict[str, Tuple[logging.Logger, float]] = {}
+    _logger_registry: dict[str, tuple[logging.Logger, float]] = {}
     # Thread lock for registry access
     _registry_lock = threading.RLock()
     # Memory optimization settings
@@ -71,8 +71,8 @@ class LoggerFactory:
     @classmethod
     def get_or_create_logger(
         cls,
-        logger_type: Union[LoggerType, str],
-        name: Optional[str] = None,
+        logger_type: LoggerType | str,
+        name: str | None = None,
         **kwargs,
     ) -> logging.Logger:
         """
@@ -218,9 +218,7 @@ class LoggerFactory:
             return {'max_loggers': cls._max_loggers, 'ttl_seconds': cls._logger_ttl}
 
     @staticmethod
-    def create_logger(
-        logger_type: Union[LoggerType, str], config: Optional[LoggerConfig] = None, **kwargs
-    ) -> logging.Logger:
+    def create_logger(logger_type: LoggerType | str, config: LoggerConfig | None = None, **kwargs) -> logging.Logger:
         """
         Factory method to create loggers based on type.
 
@@ -239,8 +237,10 @@ class LoggerFactory:
         if isinstance(logger_type, str):
             try:
                 logger_type = LoggerType(logger_type.lower())
-            except ValueError:
-                raise ValueError(f"Invalid logger type: {logger_type}. Valid types: {[t.value for t in LoggerType]}")
+            except ValueError as err:
+                raise ValueError(
+                    f"Invalid logger type: {logger_type}. Valid types: {[t.value for t in LoggerType]}"
+                ) from err
 
         # Merge config and kwargs (kwargs take precedence for backward compatibility)
         if config is None:
@@ -314,12 +314,12 @@ class LoggerFactory:
 
     @staticmethod
     def create_basic_logger(
-        level: Optional[Union[LogLevel, str]] = None,
-        name: Optional[str] = None,
-        encoding: Optional[str] = None,
-        datefmt: Optional[str] = None,
-        timezone: Optional[str] = None,
-        showlocation: Optional[bool] = None,
+        level: LogLevel | str | None = None,
+        name: str | None = None,
+        encoding: str | None = None,
+        datefmt: str | None = None,
+        timezone: str | None = None,
+        showlocation: bool | None = None,
     ) -> logging.Logger:
         """Convenience method for creating a basic logger"""
         return LoggerFactory.create_logger(
@@ -334,17 +334,17 @@ class LoggerFactory:
 
     @staticmethod
     def create_size_rotating_logger(
-        level: Optional[Union[LogLevel, str]] = None,
-        name: Optional[str] = None,
-        directory: Optional[str] = None,
-        filenames: Optional[list | tuple] = None,
-        maxmbytes: Optional[int] = None,
-        daystokeep: Optional[int] = None,
-        encoding: Optional[str] = None,
-        datefmt: Optional[str] = None,
-        timezone: Optional[str] = None,
-        streamhandler: Optional[bool] = None,
-        showlocation: Optional[bool] = None,
+        level: LogLevel | str | None = None,
+        name: str | None = None,
+        directory: str | None = None,
+        filenames: list | tuple | None = None,
+        maxmbytes: int | None = None,
+        daystokeep: int | None = None,
+        encoding: str | None = None,
+        datefmt: str | None = None,
+        timezone: str | None = None,
+        streamhandler: bool | None = None,
+        showlocation: bool | None = None,
     ) -> logging.Logger:
         """Convenience method for creating a size rotating logger"""
         return LoggerFactory.create_logger(
@@ -364,19 +364,19 @@ class LoggerFactory:
 
     @staticmethod
     def create_timed_rotating_logger(
-        level: Optional[Union[LogLevel, str]] = None,
-        name: Optional[str] = None,
-        directory: Optional[str] = None,
-        filenames: Optional[list | tuple] = None,
-        when: Optional[Union[RotateWhen, str]] = None,
-        sufix: Optional[str] = None,
-        daystokeep: Optional[int] = None,
-        encoding: Optional[str] = None,
-        datefmt: Optional[str] = None,
-        timezone: Optional[str] = None,
-        streamhandler: Optional[bool] = None,
-        showlocation: Optional[bool] = None,
-        rotateatutc: Optional[bool] = None,
+        level: LogLevel | str | None = None,
+        name: str | None = None,
+        directory: str | None = None,
+        filenames: list | tuple | None = None,
+        when: RotateWhen | str | None = None,
+        sufix: str | None = None,
+        daystokeep: int | None = None,
+        encoding: str | None = None,
+        datefmt: str | None = None,
+        timezone: str | None = None,
+        streamhandler: bool | None = None,
+        showlocation: bool | None = None,
+        rotateatutc: bool | None = None,
     ) -> logging.Logger:
         """Convenience method for creating a timed rotating logger"""
         return LoggerFactory.create_logger(
@@ -432,12 +432,12 @@ class BasicLog(_LoggerMixin):
 
     def __init__(
         self,
-        level: Optional[Union[LogLevel, str]] = None,
-        name: Optional[str] = None,
-        encoding: Optional[str] = None,
-        datefmt: Optional[str] = None,
-        timezone: Optional[str] = None,
-        showlocation: Optional[bool] = None,
+        level: LogLevel | str | None = None,
+        name: str | None = None,
+        encoding: str | None = None,
+        datefmt: str | None = None,
+        timezone: str | None = None,
+        showlocation: bool | None = None,
     ):
         self._logger = LoggerFactory.create_basic_logger(
             level=level,
@@ -465,17 +465,17 @@ class SizeRotatingLog(_LoggerMixin):
 
     def __init__(
         self,
-        level: Optional[Union[LogLevel, str]] = None,
-        name: Optional[str] = None,
-        directory: Optional[str] = None,
-        filenames: Optional[list | tuple] = None,
-        maxmbytes: Optional[int] = None,
-        daystokeep: Optional[int] = None,
-        encoding: Optional[str] = None,
-        datefmt: Optional[str] = None,
-        timezone: Optional[str] = None,
-        streamhandler: Optional[bool] = None,
-        showlocation: Optional[bool] = None,
+        level: LogLevel | str | None = None,
+        name: str | None = None,
+        directory: str | None = None,
+        filenames: list | tuple | None = None,
+        maxmbytes: int | None = None,
+        daystokeep: int | None = None,
+        encoding: str | None = None,
+        datefmt: str | None = None,
+        timezone: str | None = None,
+        streamhandler: bool | None = None,
+        showlocation: bool | None = None,
     ):
         self._logger = LoggerFactory.create_size_rotating_logger(
             level=level,
@@ -508,19 +508,19 @@ class TimedRotatingLog(_LoggerMixin):
 
     def __init__(
         self,
-        level: Optional[Union[LogLevel, str]] = None,
-        name: Optional[str] = None,
-        directory: Optional[str] = None,
-        filenames: Optional[list | tuple] = None,
-        when: Optional[Union[RotateWhen, str]] = None,
-        sufix: Optional[str] = None,
-        daystokeep: Optional[int] = None,
-        encoding: Optional[str] = None,
-        datefmt: Optional[str] = None,
-        timezone: Optional[str] = None,
-        streamhandler: Optional[bool] = None,
-        showlocation: Optional[bool] = None,
-        rotateatutc: Optional[bool] = None,
+        level: LogLevel | str | None = None,
+        name: str | None = None,
+        directory: str | None = None,
+        filenames: list | tuple | None = None,
+        when: RotateWhen | str | None = None,
+        sufix: str | None = None,
+        daystokeep: int | None = None,
+        encoding: str | None = None,
+        datefmt: str | None = None,
+        timezone: str | None = None,
+        streamhandler: bool | None = None,
+        showlocation: bool | None = None,
+        rotateatutc: bool | None = None,
     ):
         self._logger = LoggerFactory.create_timed_rotating_logger(
             level=level,

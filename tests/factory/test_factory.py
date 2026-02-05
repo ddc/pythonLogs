@@ -95,7 +95,7 @@ class TestLoggerFactory:
         # Test with registry (reuses loggers)
         clear_logger_registry()
         start_time = time.time()
-        for i in range(20):
+        for _i in range(20):
             LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="cached_perf_test")
         cached_time = time.time() - start_time
 

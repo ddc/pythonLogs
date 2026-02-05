@@ -1,5 +1,5 @@
 import logging
-from enum import Enum
+from enum import StrEnum
 
 # File and Directory Constants
 MB_TO_BYTES = 1024 * 1024
@@ -17,7 +17,7 @@ DEFAULT_ENCODING = "UTF-8"
 DEFAULT_TIMEZONE = "UTC"
 
 
-class LogLevel(str, Enum):
+class LogLevel(StrEnum):
     """Log levels"""
 
     CRITICAL = "CRITICAL"
@@ -29,7 +29,7 @@ class LogLevel(str, Enum):
     DEBUG = "DEBUG"
 
 
-class RotateWhen(str, Enum):
+class RotateWhen(StrEnum):
     """Rotation timing options for TimedRotatingLog"""
 
     MIDNIGHT = "midnight"

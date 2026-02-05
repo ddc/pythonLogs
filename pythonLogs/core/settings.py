@@ -75,6 +75,10 @@ class LogSettings(BaseSettings):
         default=100,
         description="Maximum number of loggers to track in memory",
     )
+    max_formatters: int = Field(
+        default=50,
+        description="Maximum number of formatters to cache in memory",
+    )
     logger_ttl_seconds: int = Field(
         default=3600,
         description="Time-to-live in seconds for logger references",

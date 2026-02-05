@@ -37,6 +37,7 @@ class TestLogSettings:
             assert settings.stream_handler is True
             assert settings.show_location is False
             assert settings.max_loggers == 100
+            assert settings.max_formatters == 50
             assert settings.logger_ttl_seconds == 3600
             assert settings.max_file_size_mb == 10
             assert settings.rotate_when.value == "midnight"
@@ -67,12 +68,20 @@ class TestLogSettings:
             timezone="UTC",
             appname="custom_app",
             max_loggers=50,
+            max_formatters=25,
         )
 
         assert settings.level == LogLevel.DEBUG
         assert settings.timezone == "UTC"
         assert settings.appname == "custom_app"
         assert settings.max_loggers == 50
+        assert settings.max_formatters == 25
+
+    def test_max_formatters_env_var(self):
+        """Test that LOG_MAX_FORMATTERS env var overrides default."""
+        with patch.dict(os.environ, {"LOG_MAX_FORMATTERS": "75"}):
+            settings = LogSettings()
+            assert settings.max_formatters == 75
 
 
 class TestGetLogSettings:
