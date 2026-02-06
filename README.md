@@ -41,7 +41,9 @@
   - [Settings Cache Management](#settings-cache-management)
 - [Flexible Configuration Options](#flexible-configuration-options)
 - [Development](#development)
-  - [Create DEV Environment, Running Tests and Building Wheel](#create-dev-environment-running-tests-and-building-wheel)
+  - [Create DEV Environment and Running Tests](#create-dev-environment-and-running-tests)
+  - [Update DEV Environment Packages](#update-dev-environment-packages)
+  - [Building Wheel](#building-wheel)
   - [Optionals](#optionals)
 - [License](#license)
 - [Support](#support)
@@ -349,19 +351,33 @@ RotateWhen.MONDAY     # "W0"
 
 # Development
 
-Must have [UV](https://uv.run/docs/getting-started/installation),
-[Black](https://black.readthedocs.io/en/stable/getting_started.html),
-[Ruff](https://docs.astral.sh/ruff/installation/), and
-[Poe the Poet](https://poethepoet.naber.dev/installation) installed.
+Must have [UV](https://uv.run/docs/getting-started/installation) installed.
 
-## Create DEV Environment, Running Tests and Building Wheel
+## Create DEV Environment and Running Tests
+
+> **Note:** All poe tasks automatically run ruff linter along with Black formatting
 
 ```shell
-uv sync --all-extras
-poe linter
+uv sync --all-extras --all-groups
 poe test
+```
+
+
+## Update DEV Environment Packages
+This will update all packages dependencies
+
+```shell
+poe updatedev
+```
+
+
+## Building Wheel
+This will update all packages, run linter, both unit and integration tests and finally build the wheel
+
+```shell
 poe build
 ```
+
 
 ## Optionals
 

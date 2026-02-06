@@ -1,8 +1,8 @@
 name: CI/CD Pipeline
 
 'on':
+  pull_request:
   push:
-    branches: ['**']
     tags: ['v*']
 
 env:
@@ -35,6 +35,8 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
 
       - name: Set up Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
@@ -71,12 +73,20 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
 
       - name: Set up Python ${{ env.LATEST_PYTHON_VERSION }}
         run: uv python install ${{ env.LATEST_PYTHON_VERSION }}
 
       - name: Build package
         run: uv build
+
+      - name: Smoke test (wheel)
+        run: uv run --isolated --no-project --with dist/*.whl tests/smoke_test.py
+
+      - name: Smoke test (sdist)
+        run: uv run --isolated --no-project --with dist/*.tar.gz tests/smoke_test.py
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v6
