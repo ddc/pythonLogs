@@ -30,7 +30,7 @@ class TestAutomaticFeatures:
 
         # Run in multiple threads to test thread safety
         threads = []
-        for i in range(5):
+        for _i in range(5):
             thread = threading.Thread(target=test_logger_operations)
             threads.append(thread)
             thread.start()
@@ -70,7 +70,7 @@ class TestAutomaticFeatures:
 
             # Run in multiple threads to test thread safety
             threads = []
-            for i in range(3):
+            for _i in range(3):
                 thread = threading.Thread(target=test_logger_operations)
                 threads.append(thread)
                 thread.start()
@@ -106,7 +106,7 @@ class TestAutomaticFeatures:
 
             # Run in multiple threads to test thread safety
             threads = []
-            for i in range(3):
+            for _i in range(3):
                 thread = threading.Thread(target=test_logger_operations)
                 threads.append(thread)
                 thread.start()
@@ -138,13 +138,13 @@ class TestAutomaticFeatures:
         assert logger is not None
 
         # 2. Automatic Resource Cleanup: Context manager support
-        assert hasattr(basic_log, '__enter__')
-        assert hasattr(basic_log, '__exit__')
-        assert hasattr(basic_log, 'cleanup_logger')
+        assert hasattr(basic_log, "__enter__")
+        assert hasattr(basic_log, "__exit__")
+        assert hasattr(basic_log, "cleanup_logger")
 
         # 3. Automatic Thread Safety: Decorator applied
-        assert hasattr(basic_log.__class__, '_lock')
-        assert hasattr(basic_log.init, '_thread_safe_wrapped')
+        assert hasattr(basic_log.__class__, "_lock")
+        assert hasattr(basic_log.init, "_thread_safe_wrapped")
         # cleanup_logger is a static method, so it's not wrapped
 
         BasicLog.cleanup_logger(logger)

@@ -165,7 +165,7 @@ class TestResourceManagement:
         logger.info("Test message before cleanup")
 
         # Verify we have multiple handlers
-        file_handlers = [h for h in logger.handlers if hasattr(h, 'baseFilename')]
+        file_handlers = [h for h in logger.handlers if hasattr(h, "baseFilename")]
         stream_handlers = [h for h in logger.handlers if isinstance(h, logging.StreamHandler)]
 
         assert len(file_handlers) == 2  # Two file handlers

@@ -27,12 +27,12 @@ class TestBasicLog:
     def test_basic_log_initialization(self):
         """Test BasicLog initialization with default parameters."""
         basic_log = BasicLog()
-        assert hasattr(basic_log, 'level')
-        assert hasattr(basic_log, 'appname')
-        assert hasattr(basic_log, 'encoding')
-        assert hasattr(basic_log, 'datefmt')
-        assert hasattr(basic_log, 'timezone')
-        assert hasattr(basic_log, 'showlocation')
+        assert hasattr(basic_log, "level")
+        assert hasattr(basic_log, "appname")
+        assert hasattr(basic_log, "encoding")
+        assert hasattr(basic_log, "datefmt")
+        assert hasattr(basic_log, "timezone")
+        assert hasattr(basic_log, "showlocation")
         assert basic_log.logger is None
 
     def test_basic_log_initialization_with_params(self):
@@ -60,7 +60,7 @@ class TestBasicLog:
         assert isinstance(logger, logging.Logger)
         assert logger.name == "test_init"
         assert logger.level == logging.INFO
-        assert hasattr(basic_log, 'logger')
+        assert hasattr(basic_log, "logger")
         assert basic_log.logger is logger
 
     def test_basic_log_logger_functionality(self):
@@ -178,7 +178,7 @@ class TestBasicLog:
             assert logger.level == logging.INFO
 
         # Clean up all loggers
-        for basic_log, logger in loggers:
+        for _basic_log, logger in loggers:
             BasicLog.cleanup_logger(logger)
             assert len(logger.handlers) == 0
 

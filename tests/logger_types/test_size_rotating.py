@@ -322,7 +322,7 @@ class TestGZipRotatorSize:
             gz_files = list(Path(temp_dir).glob("*.gz"))
             assert len(gz_files) == 0
 
-    @patch('pythonLogs.size_rotating.remove_old_logs')
+    @patch("pythonLogs.size_rotating.remove_old_logs")
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file",
@@ -365,7 +365,7 @@ class TestGZipRotatorSize:
 
             # Force handlers to flush
             for handler in logger.handlers:
-                if hasattr(handler, 'flush'):
+                if hasattr(handler, "flush"):
                     handler.flush()
 
             # Verify log file exists

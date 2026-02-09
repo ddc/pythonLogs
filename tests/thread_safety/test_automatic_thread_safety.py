@@ -124,8 +124,8 @@ class TestAutomaticThreadSafety:
         basic_log = BasicLog(name="test_lock_verification")
 
         # Verify the class has the automatic thread safety decorator applied
-        assert hasattr(basic_log.__class__, '_lock'), "Class should have automatic lock"
-        assert hasattr(basic_log.init, '_thread_safe_wrapped'), "Method should be wrapped for thread safety"
+        assert hasattr(basic_log.__class__, "_lock"), "Class should have automatic lock"
+        assert hasattr(basic_log.init, "_thread_safe_wrapped"), "Method should be wrapped for thread safety"
         # cleanup_logger is a static method, so it's not wrapped with thread safety
 
         # Test that methods can still be called normally

@@ -20,7 +20,7 @@ from pythonLogs.core.settings import get_log_settings
 from pythonLogs.core.thread_safety import auto_thread_safe
 
 
-@auto_thread_safe(['init'])
+@auto_thread_safe(["init"])
 class SizeRotatingLog(RotatingLogMixin):
     """Size-based rotating logger with context manager support for automatic resource cleanup."""
 

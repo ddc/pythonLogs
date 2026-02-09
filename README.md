@@ -8,9 +8,9 @@
     <a href="https://www.paypal.com/ncp/payment/6G9Z78QHUD4RJ"><img src="https://img.shields.io/badge/Donate-PayPal-brightgreen.svg?style=plastic" alt="Donate"/></a>
     <a href="https://github.com/sponsors/ddc"><img src="https://img.shields.io/static/v1?style=plastic&label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=ff69b4" alt="Sponsor"/></a>
     <br>
+    <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg?style=plastic" alt="Code style: black"/></a>
     <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json?style=plastic" alt="uv"/></a>
     <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json?style=plastic" alt="Ruff"/></a>
-    <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg?style=plastic" alt="Code style: black"/></a>
     <br>
     <a href="https://www.python.org/downloads"><img src="https://img.shields.io/pypi/pyversions/pythonLogs.svg?style=plastic&logo=python&cacheSeconds=3600" alt="Python"/></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=plastic" alt="License: MIT"/></a>
@@ -41,7 +41,9 @@
   - [Settings Cache Management](#settings-cache-management)
 - [Flexible Configuration Options](#flexible-configuration-options)
 - [Development](#development)
-  - [Create DEV Environment, Running Tests and Building Wheel](#create-dev-environment-running-tests-and-building-wheel)
+  - [Create DEV Environment and Running Tests](#create-dev-environment-and-running-tests)
+  - [Update DEV Environment Packages](#update-dev-environment-packages)
+  - [Building Wheel](#building-wheel)
   - [Optionals](#optionals)
 - [License](#license)
 - [Support](#support)
@@ -349,19 +351,33 @@ RotateWhen.MONDAY     # "W0"
 
 # Development
 
-Must have [UV](https://uv.run/docs/getting-started/installation),
-[Black](https://black.readthedocs.io/en/stable/getting_started.html),
-[Ruff](https://docs.astral.sh/ruff/installation/), and
-[Poe the Poet](https://poethepoet.naber.dev/installation) installed.
+Must have [UV](https://uv.run/docs/getting-started/installation) installed.
 
-## Create DEV Environment, Running Tests and Building Wheel
+## Create DEV Environment and Running Tests
+
+> **Note:** All poe tasks automatically run ruff linter along with Black formatting
 
 ```shell
-uv sync --all-extras
-poe linter
+uv sync --all-extras --all-groups
 poe test
+```
+
+
+## Update DEV Environment Packages
+This will update all packages dependencies
+
+```shell
+poe updatedev
+```
+
+
+## Building Wheel
+This will update all packages, run linter, both unit and integration tests and finally build the wheel
+
+```shell
 poe build
 ```
+
 
 ## Optionals
 

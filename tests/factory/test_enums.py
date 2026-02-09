@@ -28,7 +28,9 @@ class TestEnumUsage:
     def test_log_level_enum_usage(self):
         """Test LogLevel enum usage."""
         logger = LoggerFactory.create_logger(
-            LoggerType.BASIC, name="enum_test", level=LogLevel.DEBUG  # Using enum instead of string
+            LoggerType.BASIC,
+            name="enum_test",
+            level=LogLevel.DEBUG,  # Using enum instead of string
         )
         assert logger.name == "enum_test"
         assert logger.level == 10  # DEBUG level
@@ -96,7 +98,7 @@ class TestEnumUsage:
         ]
 
         # Just verify they're accessible and have expected values
-        expected_values = ['midnight', 'H', 'D', 'W0', 'W1', 'W2', 'W3', 'W4', 'W5', 'W6']
+        expected_values = ["midnight", "H", "D", "W0", "W1", "W2", "W3", "W4", "W5", "W6"]
         actual_values = [when.value for when in when_options]
         assert actual_values == expected_values
 

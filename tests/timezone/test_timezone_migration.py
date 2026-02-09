@@ -132,12 +132,12 @@ class TestTimezoneZoneinfo:
         # UTC should return +0000, but may fall back to localtime on Windows
         assert isinstance(utc_offset, str)
         assert len(utc_offset) == 5
-        assert utc_offset[0] in ['+', '-']
+        assert utc_offset[0] in ["+", "-"]
 
         # Test localtime
         local_offset = get_timezone_offset("localtime")
         assert len(local_offset) == 5  # Format: ±HHMM
-        assert local_offset[0] in ['+', '-']
+        assert local_offset[0] in ["+", "-"]
 
     def test_timezone_function_caching(self):
         """Test that timezone functions are properly cached."""

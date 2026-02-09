@@ -80,11 +80,11 @@ def patch_logger_kwargs_with_safe_timezone(kwargs):
     """Patch logger kwargs to use safe timezone if UTC is specified but not available."""
     from zoneinfo import ZoneInfo
 
-    if kwargs.get('timezone') == 'UTC':
+    if kwargs.get("timezone") == "UTC":
         try:
             ZoneInfo("UTC")  # Test if UTC timezone data is available
         except KeyError:
-            kwargs['timezone'] = 'localtime'  # Fall back to localtime if UTC data is missing
+            kwargs["timezone"] = "localtime"  # Fall back to localtime if UTC data is missing
     return kwargs
 
 
@@ -333,7 +333,7 @@ def create_windows_safe_temp_file(suffix="", prefix="tmp", dir=None, text=False)
     fd, filepath = tempfile.mkstemp(suffix=suffix, prefix=prefix, dir=dir, text=text)
 
     # Convert file descriptor to file handle
-    mode = 'w' if text else 'wb'
+    mode = "w" if text else "wb"
     file_handle = os.fdopen(fd, mode)
 
     return file_handle, filepath
@@ -385,7 +385,7 @@ class TestLogUtils:
 
         try:
             os.makedirs(directory, mode=0, exist_ok=True)  # No permissions at all
-            assert os.path.exists(directory) == True
+            assert os.path.exists(directory)
             with pytest.raises(PermissionError) as exec_info:
                 log_utils.check_directory_permissions(directory)
             assert type(exec_info.value) is PermissionError
@@ -419,7 +419,7 @@ class TestLogUtils:
     def test_remove_old_logs(self):
         directory = os.path.join(tempfile.gettempdir(), "test_remove_logs")
         os.makedirs(directory, mode=0o755, exist_ok=True)
-        assert os.path.exists(directory) == True
+        assert os.path.exists(directory)
 
         # Create a file and manually set its modification time to be old
         with tempfile.NamedTemporaryFile(dir=directory, suffix=".gz", delete=False) as tmpfile:
@@ -428,9 +428,9 @@ class TestLogUtils:
             os.utime(file_path, (old_time, old_time))
 
         log_utils.remove_old_logs(directory, 1)  # Remove files older than 1 day
-        assert os.path.isfile(file_path) == False
+        assert not os.path.isfile(file_path)
         log_utils.delete_file(directory)
-        assert os.path.exists(directory) == False
+        assert not os.path.exists(directory)
 
     def test_delete_file(self):
         """Test delete_file with standard Unix/Linux file handling."""
@@ -438,9 +438,9 @@ class TestLogUtils:
             file_path = tmp_file.name
             tmp_file.write("test content")
 
-        assert os.path.isfile(file_path) == True
+        assert os.path.isfile(file_path)
         log_utils.delete_file(file_path)
-        assert os.path.isfile(file_path) == False
+        assert not os.path.isfile(file_path)
 
     def test_is_older_than_x_days(self):
         """Test is_older_than_x_days with standard Unix/Linux file handling."""
@@ -449,18 +449,18 @@ class TestLogUtils:
             tmp_file.write("test content")
 
         try:
-            assert os.path.isfile(file_path) == True
+            assert os.path.isfile(file_path)
 
             # When days=1, it compares against 1 day ago, so newly created file should NOT be older
             result = log_utils.is_older_than_x_days(file_path, 1)
-            assert result == False
+            assert not result
 
             # When days=5, it compares against 5 days ago, so newly created file should NOT be older
             result = log_utils.is_older_than_x_days(file_path, 5)
-            assert result == False
+            assert not result
 
             log_utils.delete_file(file_path)
-            assert os.path.isfile(file_path) == False
+            assert not os.path.isfile(file_path)
         finally:
             # Ensure cleanup if the test fails
             if os.path.exists(file_path):
@@ -550,12 +550,12 @@ class TestLogUtils:
         import re
 
         # The % characters need to be literal in the regex
-        offset_pattern = r'\[%\(asctime\)s\.%\(msecs\)03d([+-]\d{4})\]'
+        offset_pattern = r"\[%\(asctime\)s\.%\(msecs\)03d([+-]\d{4})\]"
         match = re.search(offset_pattern, result)
         assert match is not None, f"No timezone offset found in format: {result}"
         # The offset could be +1000 (if timezone is available) or system localtime fallback
         offset = match.group(1)
-        assert re.match(r'[+-]\d{4}', offset), f"Invalid timezone offset format: {offset}"
+        assert re.match(r"[+-]\d{4}", offset), f"Invalid timezone offset format: {offset}"
 
     def test_gzip_file_with_sufix(self):
         """Test gzip_file_with_sufix with standard Unix/Linux file handling."""
@@ -564,7 +564,7 @@ class TestLogUtils:
             tmp_file.write("test content for gzip")
 
         try:
-            assert os.path.isfile(file_path) == True
+            assert os.path.isfile(file_path)
             sufix = "test1"
             result = log_utils.gzip_file_with_sufix(file_path, sufix)
             file_path_no_suffix = file_path.split(".")[0]
@@ -573,7 +573,7 @@ class TestLogUtils:
             # Clean up the gzipped file
             if os.path.exists(result):
                 os.unlink(result)
-            assert os.path.isfile(result) == False
+            assert not os.path.isfile(result)
 
         finally:
             # Ensure cleanup of the original file if it still exists
@@ -747,7 +747,7 @@ class TestLogUtils:
 
             time.sleep(0.001)  # 1ms delay to handle Windows timing precision
             result = log_utils.is_older_than_x_days(tmp_file.name, 0)
-            assert result == True  # Should use current time as cutoff
+            assert result  # Should use current time as cutoff
 
             # Test with non-existent file
             with pytest.raises(FileNotFoundError):
@@ -893,7 +893,7 @@ class TestLogUtils:
                 return original_path_glob(self, pattern)
 
             try:
-                with unittest.mock.patch.object(Path, 'glob', mock_glob):
+                with unittest.mock.patch.object(Path, "glob", mock_glob):
                     stderr_capture = io.StringIO()
                     with contextlib.redirect_stderr(stderr_capture):
                         log_utils.remove_old_logs(test_dir, 1)
@@ -920,7 +920,7 @@ class TestLogUtils:
 
             # delete_file should handle symlinks
             result = log_utils.delete_file(link_file)
-            assert result == True
+            assert result
             assert not os.path.exists(link_file)
 
     @pytest.mark.skipif(sys.platform == "win32", reason="Unix/Linux/macOS-specific chmod test")
@@ -1199,7 +1199,7 @@ class TestLogUtils:
 
         finally:
             # Cleanup using context managers
-            for temp_dir, temp_dir_context in temp_dirs:
+            for _temp_dir, temp_dir_context in temp_dirs:
                 temp_dir_context.__exit__(None, None, None)
             log_utils._max_cached_directories = original_max
 
@@ -1250,7 +1250,7 @@ class TestLogUtils:
                 offset = log_utils.get_timezone_offset(tz)
                 assert isinstance(offset, str)
                 assert len(offset) == 5  # Format: +/-HHMM
-                assert offset[0] in ['+', '-']
+                assert offset[0] in ["+", "-"]
 
                 if expected_offset:
                     assert offset == expected_offset
@@ -1356,7 +1356,7 @@ class TestLogUtils:
 
                 # delete_file should handle this special file
                 result = log_utils.delete_file(fifo_path)
-                assert result == True
+                assert result
                 assert not os.path.exists(fifo_path)
             except OSError:
                 # FIFO creation might not be supported on all systems
@@ -1443,7 +1443,7 @@ class TestLogUtils:
         # Should fall back to localtime (lines 216-219)
         assert isinstance(result, str)
         assert len(result) == 5  # Format: +/-HHMM
-        assert result[0] in ['+', '-']
+        assert result[0] in ["+", "-"]
 
     def test_gzip_file_source_deletion_error_coverage(self):
         """Test gzip_file_with_sufix when source file deletion fails."""
@@ -1467,7 +1467,7 @@ class TestLogUtils:
             try:
                 stderr_capture = io.StringIO()
                 with contextlib.redirect_stderr(stderr_capture):
-                    with unittest.mock.patch.object(Path, 'unlink', mock_unlink):
+                    with unittest.mock.patch.object(Path, "unlink", mock_unlink):
                         with pytest.raises(OSError):
                             log_utils.gzip_file_with_sufix(test_file, "test")
 
@@ -1494,7 +1494,7 @@ class TestLogUtils:
             return ZoneInfo(key)
 
         try:
-            with unittest.mock.patch('pythonLogs.core.log_utils.ZoneInfo', side_effect=mock_zoneinfo):
+            with unittest.mock.patch("pythonLogs.core.log_utils.ZoneInfo", side_effect=mock_zoneinfo):
                 result = log_utils.get_timezone_function("UTC")
 
                 # Should fall back to localtime (lines 273-275)
@@ -1519,7 +1519,7 @@ class TestLogUtils:
             return ZoneInfo(key)
 
         try:
-            with unittest.mock.patch('pythonLogs.core.log_utils.ZoneInfo', side_effect=mock_zoneinfo):
+            with unittest.mock.patch("pythonLogs.core.log_utils.ZoneInfo", side_effect=mock_zoneinfo):
                 result = log_utils.get_timezone_function("Custom/Timezone")
 
                 # Should fall back to localtime (lines 283-285)
@@ -1544,7 +1544,7 @@ class TestLogUtils:
                 raise OSError("Mock OSError during gzip compression")
 
             try:
-                with unittest.mock.patch('gzip.open', side_effect=mock_gzip_open):
+                with unittest.mock.patch("gzip.open", side_effect=mock_gzip_open):
                     stderr_capture = io.StringIO()
                     with contextlib.redirect_stderr(stderr_capture):
                         with pytest.raises(OSError) as exc_info:
@@ -1577,10 +1577,10 @@ class TestLogUtils:
 
             def mock_copyfileobj(*args, **kwargs):
                 # Raise IOError to trigger lines 265-267
-                raise IOError("Mock IOError during file copy")
+                raise OSError("Mock IOError during file copy")
 
             try:
-                with unittest.mock.patch('shutil.copyfileobj', side_effect=mock_copyfileobj):
+                with unittest.mock.patch("shutil.copyfileobj", side_effect=mock_copyfileobj):
                     stderr_capture = io.StringIO()
                     with contextlib.redirect_stderr(stderr_capture):
                         with pytest.raises(IOError) as exc_info:

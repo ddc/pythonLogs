@@ -49,7 +49,7 @@ class TestLogUtilsWindows:
 
             # Test with a path that contains invalid characters (Windows-specific)
             try:
-                invalid_chars_path = os.path.join(temp_dir, "invalid<>:|*?\"path")
+                invalid_chars_path = os.path.join(temp_dir, 'invalid<>:|*?"path')
                 # This might raise different exceptions on different Windows versions
                 with pytest.raises((OSError, ValueError)) as exec_info:
                     log_utils.check_directory_permissions(invalid_chars_path)
@@ -92,9 +92,9 @@ class TestLogUtilsWindows:
             file_handle.write("test content")
             file_handle.close()
 
-            assert os.path.isfile(file_path) == True
+            assert os.path.isfile(file_path)
             log_utils.delete_file(file_path)
-            assert os.path.isfile(file_path) == False
+            assert not os.path.isfile(file_path)
         finally:
             # Ensure cleanup if the test fails
             if os.path.exists(file_path):
@@ -113,18 +113,18 @@ class TestLogUtilsWindows:
             file_handle.write("test content")
             file_handle.close()
 
-            assert os.path.isfile(file_path) == True
+            assert os.path.isfile(file_path)
 
             # When days=1, it compares against 1 day ago, so newly created file should NOT be older
             result = log_utils.is_older_than_x_days(file_path, 1)
-            assert result == False
+            assert not result
 
             # When days=5, it compares against 5 days ago, so newly created file should NOT be older
             result = log_utils.is_older_than_x_days(file_path, 5)
-            assert result == False
+            assert not result
 
             log_utils.delete_file(file_path)
-            assert os.path.isfile(file_path) == False
+            assert not os.path.isfile(file_path)
         finally:
             # Ensure cleanup if the test fails
             if os.path.exists(file_path):
@@ -141,7 +141,7 @@ class TestLogUtilsWindows:
             file_handle.write("test content for gzip")
             file_handle.close()
 
-            assert os.path.isfile(file_path) == True
+            assert os.path.isfile(file_path)
             sufix = "test1"
             result = log_utils.gzip_file_with_sufix(file_path, sufix)
             file_path_no_suffix = file_path.split(".")[0]
@@ -149,7 +149,7 @@ class TestLogUtilsWindows:
 
             # Clean up the gzipped file with Windows-safe deletion
             safe_close_and_delete_file(None, result)
-            assert os.path.isfile(result) == False
+            assert not os.path.isfile(result)
 
         finally:
             # Ensure cleanup of the original file if it still exists
@@ -170,7 +170,7 @@ class TestLogUtilsWindows:
             file_handle.close()
 
             # Mock time.sleep to verify retry mechanism
-            with patch('pythonLogs.core.log_utils.time.sleep') as mock_sleep:
+            with patch("pythonLogs.core.log_utils.time.sleep") as mock_sleep:
                 # Mock open to raise PermissionError on first call, succeed on second
                 call_count = 0
                 original_open = open
@@ -186,8 +186,8 @@ class TestLogUtilsWindows:
                         return real_open(*args, **kwargs)
 
                 # Always mock platform as win32 and open with retry behavior
-                with patch('pythonLogs.core.log_utils.sys.platform', 'win32'):
-                    with patch('pythonLogs.core.log_utils.open', side_effect=mock_open_side_effect):
+                with patch("pythonLogs.core.log_utils.sys.platform", "win32"):
+                    with patch("pythonLogs.core.log_utils.open", side_effect=mock_open_side_effect):
                         result = log_utils.gzip_file_with_sufix(file_path, "retry_test")
 
                         # Verify retry was attempted (sleep was called)
@@ -225,12 +225,12 @@ class TestLogUtilsWindows:
         import re
 
         # The % characters need to be literal in the regex
-        offset_pattern = r'\[%\(asctime\)s\.%\(msecs\)03d([+-]\d{4})\]'
+        offset_pattern = r"\[%\(asctime\)s\.%\(msecs\)03d([+-]\d{4})\]"
         match = re.search(offset_pattern, result)
         assert match is not None, f"No timezone offset found in format: {result}"
         # The offset could be the specific timezone or system localtime fallback
         offset = match.group(1)
-        assert re.match(r'[+-]\d{4}', offset), f"Invalid timezone offset format: {offset}"
+        assert re.match(r"[+-]\d{4}", offset), f"Invalid timezone offset format: {offset}"
 
     @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific tests")
     def test_windows_timezone_environment_fallback(self):
@@ -327,7 +327,7 @@ class TestLogUtilsWindows:
 
             # Should contain some form of timezone offset
             # Windows may fall back to local timezone if specific timezone unavailable
-            assert any(char in output for char in ['+', '-']) or 'Z' in output
+            assert any(char in output for char in ["+", "-"]) or "Z" in output
 
         finally:
             if original_tz is not None:
@@ -366,10 +366,10 @@ class TestLogUtilsWindows:
                     with lock:
                         results.append(
                             {
-                                'worker_id': worker_id,
-                                'file_path': file_path,
-                                'is_old': is_old,
-                                'gzip_result': gzip_result,
+                                "worker_id": worker_id,
+                                "file_path": file_path,
+                                "is_old": is_old,
+                                "gzip_result": gzip_result,
                             }
                         )
 
@@ -399,9 +399,9 @@ class TestLogUtilsWindows:
 
         # Verify all workers completed successfully
         for result in results:
-            assert result['is_old'] == False  # Files should NOT be considered "old" (created recently)
-            assert result['gzip_result'] is not None
-            assert f"worker_{result['worker_id']}" in result['gzip_result']
+            assert not result["is_old"]  # Files should NOT be considered "old" (created recently)
+            assert result["gzip_result"] is not None
+            assert f"worker_{result['worker_id']}" in result["gzip_result"]
 
     @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific tests")
     def test_gzip_file_windows_permission_error(self):
@@ -504,9 +504,9 @@ class TestLogUtilsWindows:
                     return original_open(*args, **kwargs)
 
             # Mock sys.platform to be Windows and time.sleep to verify retry
-            with unittest.mock.patch('pythonLogs.core.log_utils.sys.platform', 'win32'):
-                with unittest.mock.patch('pythonLogs.core.log_utils.time.sleep') as mock_sleep:
-                    with unittest.mock.patch('pythonLogs.core.log_utils.open', side_effect=mock_open_side_effect):
+            with unittest.mock.patch("pythonLogs.core.log_utils.sys.platform", "win32"):
+                with unittest.mock.patch("pythonLogs.core.log_utils.time.sleep") as mock_sleep:
+                    with unittest.mock.patch("pythonLogs.core.log_utils.open", side_effect=mock_open_side_effect):
                         result = log_utils.gzip_file_with_sufix(file_path, "comprehensive_retry")
 
                         # Verify retries were attempted (sleep should be called twice)
@@ -556,7 +556,7 @@ class TestLogUtilsWindows:
 
             assert os.path.isfile(file_path)
             result = log_utils.delete_file(file_path)
-            assert result == True
+            assert result
             assert not os.path.exists(file_path)
         finally:
             if os.path.exists(file_path):
@@ -597,7 +597,7 @@ class TestLogUtilsWindows:
                 for log_file in temp_files:
                     if os.path.exists(log_file):
                         result = safe_delete_file(log_file)
-                        assert result == True
+                        assert result
         finally:
             # Ensure cleanup
             cleanup_all_loggers()
@@ -630,7 +630,7 @@ class TestLogUtilsWindows:
 
                     # Windows-safe cleanup should handle this
                     result = safe_delete_directory(nested_dir)
-                    assert result == True or not os.path.exists(nested_dir)
+                    assert result or not os.path.exists(nested_dir)
         finally:
             # Final cleanup
             cleanup_all_loggers()

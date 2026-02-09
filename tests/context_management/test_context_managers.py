@@ -71,7 +71,7 @@ class TestContextManagers:
             assert logger.level == logging.DEBUG
 
             # Should have file handlers
-            file_handlers = [h for h in logger.handlers if hasattr(h, 'baseFilename')]
+            file_handlers = [h for h in logger.handlers if hasattr(h, "baseFilename")]
             assert len(file_handlers) > 0
 
             # Test logging
@@ -98,7 +98,7 @@ class TestContextManagers:
             assert logger.level == logging.WARNING
 
             # Should have file handlers
-            file_handlers = [h for h in logger.handlers if hasattr(h, 'baseFilename')]
+            file_handlers = [h for h in logger.handlers if hasattr(h, "baseFilename")]
             assert len(file_handlers) > 0
 
             # Test logging
@@ -134,7 +134,7 @@ class TestContextManagers:
 
         with logger_instance as logger:
             # Context manager should have called init()
-            assert hasattr(logger_instance, 'logger')
+            assert hasattr(logger_instance, "logger")
             assert logger_instance.logger is not None
             assert isinstance(logger, logging.Logger)
             logger.info("Test message")
@@ -148,7 +148,7 @@ class TestContextManagers:
 
         # Call init() manually first
         manual_logger = logger_instance.init()
-        assert hasattr(logger_instance, 'logger')
+        assert hasattr(logger_instance, "logger")
 
         with logger_instance as context_logger:
             # Should return the same logger
@@ -167,7 +167,7 @@ class TestContextManagers:
             name=logger_name, directory=self.temp_dir, filenames=multiple_files, maxmbytes=1
         ) as logger:
             # Should have multiple file handlers
-            file_handlers = [h for h in logger.handlers if hasattr(h, 'baseFilename')]
+            file_handlers = [h for h in logger.handlers if hasattr(h, "baseFilename")]
             assert len(file_handlers) == len(multiple_files)
 
             logger.info("Test message to multiple files")
@@ -188,7 +188,7 @@ class TestContextManagers:
         ) as logger:
             # Should have both file and stream handlers
             stream_handlers = [h for h in logger.handlers if isinstance(h, logging.StreamHandler)]
-            file_handlers = [h for h in logger.handlers if hasattr(h, 'baseFilename')]
+            file_handlers = [h for h in logger.handlers if hasattr(h, "baseFilename")]
 
             assert len(stream_handlers) > 0
             assert len(file_handlers) > 0
