@@ -53,9 +53,9 @@ dependencies = [
 dev = [
     "psutil>=7.2.2",
     "pytest-cov>=7.0.0",
-    "black>=26.1.0",
-    "poethepoet>=0.40.0",
+    "poethepoet>=0.41.0",
     "ruff>=0.15.0",
+    "black>=26.1.0",
 ]
 
 [tool.poe.tasks]
