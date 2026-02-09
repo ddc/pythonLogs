@@ -20,7 +20,7 @@ urls.Homepage = "https://pypi.org/project/pythonLogs"
 license = {text = "MIT"}
 readme = "README.md"
 authors = [
-    {name = "Daniel Costa", email = "danieldcsta@gmail.com"},
+    {name = "Daniel Costa", email = "ddcsoftwares@proton.me"},
 ]
 maintainers = [
     {name = "Daniel Costa"},
