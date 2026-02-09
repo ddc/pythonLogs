@@ -16,7 +16,7 @@ __all__ = (
 
 __title__ = "pythonLogs"
 __author__ = "Daniel Costa"
-__email__ = "danieldcsta@gmail.com"
+__email__ = "ddcsoftwares@proton.me"
 __license__ = "MIT"
 __copyright__ = "Copyright 2024-present DDC Softwares"
 __version__ = version(__title__)
