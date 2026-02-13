@@ -40,7 +40,7 @@
 - [Environment Variables](#env-variables-optional)
   - [Settings Cache Management](#settings-cache-management)
 - [Flexible Configuration Options](#flexible-configuration-options)
-- [Development](#development)
+- [Development and Testing](#development-and-testing)
   - [Create DEV Environment and Running Tests](#create-dev-environment-and-running-tests)
   - [Update DEV Environment Packages](#update-dev-environment-packages)
   - [Building Wheel](#building-wheel)
@@ -349,7 +349,7 @@ RotateWhen.MONDAY     # "W0"
 
 
 
-# Development
+# Development and Testing
 
 Must have [UV](https://uv.run/docs/getting-started/installation) installed.
 
