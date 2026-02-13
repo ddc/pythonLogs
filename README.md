@@ -355,11 +355,9 @@ Must have [UV](https://uv.run/docs/getting-started/installation) installed.
 
 ## Create DEV Environment and Running Tests
 
-> **Note:** All poe tasks automatically run ruff linter along with Black formatting
-
 ```shell
 uv sync --all-extras --all-groups
-poe test
+poe tests
 ```
 
 
