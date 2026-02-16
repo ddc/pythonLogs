@@ -240,9 +240,9 @@ class TestThreadSafety:
         # Just verify it has at least some loggers and doesn't exceed the total
         registry = LoggerFactory.get_registered_loggers()
         assert len(registry) > 0, "Registry should have at least one logger"
-        assert len(registry) <= len(
-            logger_names
-        ), f"Registry has {len(registry)} loggers, expected at most {len(logger_names)}"
+        assert len(registry) <= len(logger_names), (
+            f"Registry has {len(registry)} loggers, expected at most {len(logger_names)}"
+        )
 
         # Verify that loggers in the registry are from our expected set
         for logger_name in registry.keys():
@@ -375,9 +375,9 @@ class TestThreadSafety:
         """Helper to verify all thread results are successful."""
         for worker_id in range(num_threads):
             assert worker_id in thread_results
-            assert (
-                "error" not in thread_results[worker_id]
-            ), f"Thread {worker_id} failed: {thread_results[worker_id].get('error')}"
+            assert "error" not in thread_results[worker_id], (
+                f"Thread {worker_id} failed: {thread_results[worker_id].get('error')}"
+            )
             assert "messages" in thread_results[worker_id]
             assert len(thread_results[worker_id]["messages"]) == 10
 
