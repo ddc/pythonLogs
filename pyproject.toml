@@ -20,7 +20,7 @@ urls.Homepage = "https://pypi.org/project/pythonLogs"
 license = {text = "MIT"}
 readme = "README.md"
 authors = [
-    {name = "Daniel Costa", email = "ddcsoftwares@proton.me"},
+    {name = "Daniel Costa", email = "daniel@ddcsoftwares.com"},
 ]
 maintainers = [
     {name = "Daniel Costa"},
@@ -53,8 +53,8 @@ dependencies = [
 dev = [
     "psutil>=7.2.2",
     "pytest-cov>=7.0.0",
-    "poethepoet>=0.41.0",
-    "ruff>=0.15.1",
+    "poethepoet>=0.42.0",
+    "ruff>=0.15.2",
 ]
 
 [tool.poe.tasks]
