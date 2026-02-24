@@ -65,7 +65,7 @@ updatedev.sequence = ["linter", {shell = "uv lock --upgrade && uv sync --all-ext
 build.sequence = ["updatedev", "tests", {shell = "uv build --wheel"}]
 
 [tool.pytest.ini_options]
-addopts = "-v --cov --cov-report=term --cov-report=xml --junitxml=junit.xml"
+addopts = "-v --import-mode=importlib --cov --cov-report=term --cov-report=xml --junitxml=junit.xml"
 junit_family = "legacy"
 testpaths = ["tests"]
 markers = [
