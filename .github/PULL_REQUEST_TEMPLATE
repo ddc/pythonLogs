@@ -1,16 +1,29 @@
 ## Summary
+<!-- Brief description of what this PR does and why -->
 
-<!-- What is this pull request for? Does it fix any issues? -->
+## Changes Made
+<!-- List the key changes -->
+
+## Type of Change
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Breaking change (existing functionality affected)
+- [ ] Refactoring (no functional changes)
+- [ ] Documentation
+- [ ] CI/CD or build configuration
+- [ ] Dependencies update
+
+## Testing
+- [ ] Unit tests added/updated
+- [ ] Integration tests added/updated
+- [ ] All existing tests pass
+- [ ] Manual testing performed
 
 ## Checklist
-- [ ] If code changes were made, then they have been tested
-- [ ] I have updated the documentation to reflect any changes made
-- [ ] I have thought about how this code may affect other services
-- [ ] This PR fixes an issue
-- [ ] This PR is a breaking change (e.g. method, parameters, env variables)
-- [ ] This PR adds something new (e.g. method, parameters, env variables)
-- [ ] This PR change unit and integration tests
-- [ ] This PR is **NOT** a code change (e.g. documentation, packages)
+- [ ] Code follows the project's style and conventions
+- [ ] Documentation updated (if applicable)
+- [ ] No new warnings or linter errors introduced
+- [ ] I have considered how this change may affect other services
 
 ## Reviewer
-- [ ] I understand that approving this code, I am also responsible for it going into the codebase
+- [ ] I understand that by approving this PR, I share responsibility for these changes

@@ -13,14 +13,14 @@ packages = ["pythonLogs"]
 
 [project]
 name = "pythonLogs"
-version = "6.0.2"
+version = "6.0.3"
 description = "High-performance Python logging library with file rotation and optimized caching for better performance"
 urls.Repository = "https://github.com/ddc/pythonLogs"
 urls.Homepage = "https://pypi.org/project/pythonLogs"
 license = {text = "MIT"}
 readme = "README.md"
 authors = [
-    {name = "Daniel Costa", email = "ddcsoftwares@proton.me"},
+    {name = "Daniel Costa", email = "daniel@ddcsoftwares.com"},
 ]
 maintainers = [
     {name = "Daniel Costa"},
@@ -53,20 +53,19 @@ dependencies = [
 dev = [
     "psutil>=7.2.2",
     "pytest-cov>=7.0.0",
-    "poethepoet>=0.41.0",
-    "ruff>=0.15.0",
-    "black>=26.1.0",
+    "poethepoet>=0.42.0",
+    "ruff>=0.15.2",
 ]
 
 [tool.poe.tasks]
-linter.shell = "uv run ruff check --fix . && uv run black ."
-profile.sequence = ["linter", {shell = "uv run python -m cProfile -o cprofile_unit.prof -m pytest --no-cov"}]
-test.sequence = ["linter", {shell = "uv run pytest"}]
+linter.shell = "uv run ruff check --fix . && uv run ruff format ."
+profile = "uv run python -m cProfile -o cprofile_unit.prof -m pytest --no-cov"
+tests.sequence = ["linter", {shell = "uv run pytest"}]
 updatedev.sequence = ["linter", {shell = "uv lock --upgrade && uv sync --all-extras --group dev"}]
-build.sequence = ["updatedev", "test", {shell = "uv build --wheel"}]
+build.sequence = ["updatedev", "tests", {shell = "uv build --wheel"}]
 
 [tool.pytest.ini_options]
-addopts = "-v --cov --cov-report=term --cov-report=xml --junitxml=junit.xml"
+addopts = "-v --import-mode=importlib --cov --cov-report=term --cov-report=xml --junitxml=junit.xml"
 junit_family = "legacy"
 testpaths = ["tests"]
 markers = [
@@ -94,10 +93,6 @@ exclude_lines = [
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
 ]
-
-[tool.black]
-line-length = 120
-skip-string-normalization = true
 
 [tool.ruff]
 line-length = 120

@@ -8,14 +8,13 @@
     <a href="https://www.paypal.com/ncp/payment/6G9Z78QHUD4RJ"><img src="https://img.shields.io/badge/Donate-PayPal-brightgreen.svg?style=plastic" alt="Donate"/></a>
     <a href="https://github.com/sponsors/ddc"><img src="https://img.shields.io/static/v1?style=plastic&label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=ff69b4" alt="Sponsor"/></a>
     <br>
-    <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg?style=plastic" alt="Code style: black"/></a>
-    <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json?style=plastic" alt="uv"/></a>
-    <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json?style=plastic" alt="Ruff"/></a>
-    <br>
-    <a href="https://www.python.org/downloads"><img src="https://img.shields.io/pypi/pyversions/pythonLogs.svg?style=plastic&logo=python&cacheSeconds=3600" alt="Python"/></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=plastic" alt="License: MIT"/></a>
     <a href="https://pepy.tech/projects/pythonLogs"><img src="https://static.pepy.tech/badge/pythonLogs?style=plastic" alt="PyPI Downloads"/></a>
     <a href="https://pypi.python.org/pypi/pythonLogs"><img src="https://img.shields.io/pypi/v/pythonLogs.svg?style=plastic&logo=python&cacheSeconds=3600" alt="PyPi"/></a>
+    <br>
+    <a href="https://www.python.org/downloads"><img src="https://img.shields.io/pypi/pyversions/pythonLogs.svg?style=plastic&logo=python&cacheSeconds=3600" alt="Python"/></a>
+    <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json?style=plastic" alt="uv"/></a>
+    <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json?style=plastic" alt="Ruff"/></a>
     <br>
     <a href="https://github.com/ddc/pythonLogs/issues"><img src="https://img.shields.io/github/issues/ddc/pythonLogs?style=plastic" alt="issues"/></a>
     <a href="https://codecov.io/gh/ddc/pythonLogs"><img src="https://codecov.io/gh/ddc/pythonLogs/graph/badge.svg?token=XWB53034GI&style=plastic" alt="codecov"/></a>
@@ -40,7 +39,7 @@
 - [Environment Variables](#env-variables-optional)
   - [Settings Cache Management](#settings-cache-management)
 - [Flexible Configuration Options](#flexible-configuration-options)
-- [Development](#development)
+- [Development and Testing](#development-and-testing)
   - [Create DEV Environment and Running Tests](#create-dev-environment-and-running-tests)
   - [Update DEV Environment Packages](#update-dev-environment-packages)
   - [Building Wheel](#building-wheel)
@@ -349,17 +348,15 @@ RotateWhen.MONDAY     # "W0"
 
 
 
-# Development
+# Development and Testing
 
 Must have [UV](https://uv.run/docs/getting-started/installation) installed.
 
 ## Create DEV Environment and Running Tests
 
-> **Note:** All poe tasks automatically run ruff linter along with Black formatting
-
 ```shell
 uv sync --all-extras --all-groups
-poe test
+poe tests
 ```
 
 
