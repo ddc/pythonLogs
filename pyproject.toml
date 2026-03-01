@@ -13,7 +13,7 @@ packages = ["pythonLogs"]
 
 [project]
 name = "pythonLogs"
-version = "6.0.3"
+version = "6.0.4"
 description = "High-performance Python logging library with file rotation and optimized caching for better performance"
 urls.Repository = "https://github.com/ddc/pythonLogs"
 urls.Homepage = "https://pypi.org/project/pythonLogs"
@@ -53,8 +53,8 @@ dependencies = [
 dev = [
     "psutil>=7.2.2",
     "pytest-cov>=7.0.0",
-    "poethepoet>=0.42.0",
-    "ruff>=0.15.2",
+    "poethepoet>=0.42.1",
+    "ruff>=0.15.4",
 ]
 
 [tool.poe.tasks]

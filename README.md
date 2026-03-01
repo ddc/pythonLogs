@@ -5,22 +5,22 @@
 </h1>
 
 <p align="center">
-    <a href="https://www.paypal.com/ncp/payment/6G9Z78QHUD4RJ"><img src="https://img.shields.io/badge/Donate-PayPal-brightgreen.svg?style=plastic" alt="Donate"/></a>
+    <a href="https://www.paypal.com/ncp/payment/6G9Z78QHUD4RJ"><img src="https://img.shields.io/badge/Donate-PayPal-brightgreen.svg?style=plastic&logo=paypal&logoColor=3776AB" alt="Donate"/></a>
     <a href="https://github.com/sponsors/ddc"><img src="https://img.shields.io/static/v1?style=plastic&label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=ff69b4" alt="Sponsor"/></a>
     <br>
-    <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=plastic" alt="License: MIT"/></a>
-    <a href="https://pepy.tech/projects/pythonLogs"><img src="https://static.pepy.tech/badge/pythonLogs?style=plastic" alt="PyPI Downloads"/></a>
     <a href="https://pypi.python.org/pypi/pythonLogs"><img src="https://img.shields.io/pypi/v/pythonLogs.svg?style=plastic&logo=python&cacheSeconds=3600" alt="PyPi"/></a>
+    <a href="https://pepy.tech/projects/pythonLogs"><img src="https://img.shields.io/pepy/dt/pythonLogs?style=plastic&logo=pypi&logoColor=3776AB" alt="PyPI Downloads"/></a>
+    <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=plastic&logo=creativecommons&logoColor=white" alt="License: MIT"/></a>
     <br>
     <a href="https://www.python.org/downloads"><img src="https://img.shields.io/pypi/pyversions/pythonLogs.svg?style=plastic&logo=python&cacheSeconds=3600" alt="Python"/></a>
-    <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json?style=plastic" alt="uv"/></a>
-    <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json?style=plastic" alt="Ruff"/></a>
+    <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json&style=plastic" alt="uv"/></a>
+    <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=plastic" alt="Ruff"/></a>
     <br>
-    <a href="https://github.com/ddc/pythonLogs/issues"><img src="https://img.shields.io/github/issues/ddc/pythonLogs?style=plastic" alt="issues"/></a>
-    <a href="https://codecov.io/gh/ddc/pythonLogs"><img src="https://codecov.io/gh/ddc/pythonLogs/graph/badge.svg?token=XWB53034GI&style=plastic" alt="codecov"/></a>
-    <a href="https://sonarcloud.io/dashboard?id=ddc_pythonLogs"><img src="https://sonarcloud.io/api/project_badges/measure?project=ddc_pythonLogs&metric=alert_status&style=plastic" alt="Quality Gate Status"/></a>
-    <a href="https://github.com/ddc/pythonLogs/actions/workflows/workflow.yml"><img src="https://github.com/ddc/pythonLogs/actions/workflows/workflow.yml/badge.svg?style=plastic" alt="CI/CD Pipeline"/></a>
-    <a href="https://actions-badge.atrox.dev/ddc/pythonLogs/goto?ref=main"><img src="https://img.shields.io/endpoint.svg?url=https%3A//actions-badge.atrox.dev/ddc/pythonLogs/badge?ref=main&label=build&logo=none&style=plastic" alt="Build Status"/></a>
+    <a href="https://github.com/ddc/pythonLogs/issues"><img src="https://img.shields.io/github/issues/ddc/pythonLogs?style=plastic&logo=github&logoColor=white" alt="issues"/></a>
+    <a href="https://codecov.io/gh/ddc/pythonLogs"><img src="https://img.shields.io/codecov/c/github/ddc/pythonLogs?token=XWB53034GI&style=plastic&logo=codecov" alt="codecov"/></a>
+    <a href="https://sonarcloud.io/dashboard?id=ddc_pythonLogs"><img src="https://img.shields.io/sonar/quality_gate/ddc_pythonLogs?server=https%3A%2F%2Fsonarcloud.io&style=plastic&logo=sonarqubecloud&logoColor=white" alt="Quality Gate Status"/></a>
+    <a href="https://github.com/ddc/pythonLogs/actions/workflows/workflow.yml"><img src="https://img.shields.io/github/actions/workflow/status/ddc/pythonLogs/workflow.yml?style=plastic&logo=github&logoColor=white&label=CI%2FCD%20Pipeline" alt="CI/CD Pipeline"/></a>
+    <a href="https://actions-badge.atrox.dev/ddc/pythonLogs/goto?ref=main"><img src="https://img.shields.io/endpoint.svg?url=https%3A//actions-badge.atrox.dev/ddc/pythonLogs/badge?ref=main&label=build&logo=github&style=plastic" alt="Build Status"/></a>
 </p>
 
 <p align="center">High-performance Python logging library with file rotation and optimized caching for better performance</p>
