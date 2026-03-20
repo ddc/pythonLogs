@@ -52,12 +52,13 @@ def thread_safe(func: F) -> F:
         if lock is None:
             # Check if class has lock, if not create one
             if not hasattr(self.__class__, "_lock"):
-                self.__class__._lock = threading.RLock()
-            lock = self.__class__._lock
+                self.__class__._lock = threading.RLock()  # noqa: SLF001
+            lock = self.__class__._lock  # noqa: SLF001
 
         with lock:
             return func(self, *args, **kwargs)
 
+    wrapper.thread_safe_wrapped = True
     return wrapper
 
 
@@ -83,7 +84,7 @@ def _ensure_class_has_lock(cls: type) -> None:
 def _should_wrap_method(cls: type, method_name: str, original_method: Any) -> bool:
     """Check if a method should be wrapped with thread safety."""
     return (
-        hasattr(cls, method_name) and callable(original_method) and not hasattr(original_method, "_thread_safe_wrapped")
+        hasattr(cls, method_name) and callable(original_method) and not hasattr(original_method, "thread_safe_wrapped")
     )
 
 
@@ -105,7 +106,6 @@ def auto_thread_safe(thread_safe_methods: list = None):
             original_method = getattr(cls, method_name, None)
             if _should_wrap_method(cls, method_name, original_method):
                 wrapped_method = thread_safe(original_method)
-                wrapped_method._thread_safe_wrapped = True
                 setattr(cls, method_name, wrapped_method)
 
         return cls
@@ -131,9 +131,8 @@ class AutoThreadSafe:
         for attr_name in dir(cls):
             if not attr_name.startswith("_"):
                 attr = getattr(cls, attr_name)
-                if callable(attr) and not hasattr(attr, "_thread_safe_wrapped"):
+                if callable(attr) and not hasattr(attr, "thread_safe_wrapped"):
                     wrapped_attr = thread_safe(attr)
-                    wrapped_attr._thread_safe_wrapped = True
                     setattr(cls, attr_name, wrapped_attr)
 
 

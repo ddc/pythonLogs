@@ -3,7 +3,7 @@
 import pytest
 import threading
 import time
-from pythonLogs.core.thread_safety import (
+from pythonlogs.core.thread_safety import (
     AutoThreadSafe,
     ThreadSafeContext,
     ThreadSafeMeta,
@@ -113,9 +113,9 @@ class TestAutoThreadSafeDecorator:
         obj = TestClass()
 
         # Check that the specified method is wrapped
-        assert hasattr(obj.increment, "_thread_safe_wrapped")
+        assert hasattr(obj.increment, "thread_safe_wrapped")
         # Check that non-specified method is not wrapped
-        assert not hasattr(obj.unsafe_increment, "_thread_safe_wrapped")
+        assert not hasattr(obj.unsafe_increment, "thread_safe_wrapped")
 
         # Test thread safety of wrapped method
         threads = []
@@ -152,10 +152,10 @@ class TestAutoThreadSafeDecorator:
         obj = TestClass()
 
         # Public methods should be wrapped
-        assert hasattr(obj.increment, "_thread_safe_wrapped")
-        assert hasattr(obj.decrement, "_thread_safe_wrapped")
+        assert hasattr(obj.increment, "thread_safe_wrapped")
+        assert hasattr(obj.decrement, "thread_safe_wrapped")
         # Private method should not be wrapped
-        assert not hasattr(obj._private_method, "_thread_safe_wrapped")
+        assert not hasattr(obj._private_method, "thread_safe_wrapped")
 
     def test_auto_thread_safe_no_double_wrapping(self):
         """Test that methods are not wrapped multiple times."""
@@ -246,7 +246,7 @@ class TestAutoThreadSafeBaseClass:
         # Should have instance lock
         assert hasattr(obj, "_lock")
         # Public method should be wrapped
-        assert hasattr(obj.increment, "_thread_safe_wrapped")
+        assert hasattr(obj.increment, "thread_safe_wrapped")
 
         # Test thread safety
         threads = []
@@ -282,8 +282,8 @@ class TestAutoThreadSafeBaseClass:
         obj = DerivedClass()
 
         # Both base and derived methods should be thread-safe
-        assert hasattr(obj.base_method, "_thread_safe_wrapped")
-        assert hasattr(obj.derived_method, "_thread_safe_wrapped")
+        assert hasattr(obj.base_method, "thread_safe_wrapped")
+        assert hasattr(obj.derived_method, "thread_safe_wrapped")
 
 
 class TestSynchronizedMethodDecorator:
@@ -378,7 +378,7 @@ class TestEdgeCases:
         obj = TestClass()
 
         # Regular method should be wrapped
-        assert hasattr(obj.regular_method, "_thread_safe_wrapped")
+        assert hasattr(obj.regular_method, "thread_safe_wrapped")
         # Static method should not be affected
         assert TestClass.static_method() == "static"
 
@@ -399,7 +399,7 @@ class TestEdgeCases:
         obj = TestClass()
 
         # Regular method should be wrapped
-        assert hasattr(obj.regular_method, "_thread_safe_wrapped")
+        assert hasattr(obj.regular_method, "thread_safe_wrapped")
         # Class method should work normally
         assert TestClass.class_method() == "class"
 

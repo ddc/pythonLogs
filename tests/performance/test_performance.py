@@ -9,15 +9,15 @@ import time
 
 # Add parent directory to path for imports
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, project_root)  # For pythonLogs
+sys.path.insert(0, project_root)  # For pythonlogs
 
 # Import test utilities
-from pythonLogs import (
+from pythonlogs import (
     BasicLog,
     LogLevel,
     SizeRotatingLog,
 )
-from pythonLogs.core.factory import (
+from pythonlogs.core.factory import (
     LoggerFactory,
     LoggerType,
     clear_logger_registry,

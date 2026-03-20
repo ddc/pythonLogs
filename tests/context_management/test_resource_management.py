@@ -11,11 +11,11 @@ import weakref
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
-from pythonLogs import (
+from pythonlogs import (
     LogLevel,
 )
-from pythonLogs.basic_log import BasicLog as BasicLogImpl
-from pythonLogs.core.factory import (
+from pythonlogs.basic_log import BasicLog as BasicLogImpl
+from pythonlogs.core.factory import (
     LoggerFactory,
     LoggerType,
     clear_logger_registry,

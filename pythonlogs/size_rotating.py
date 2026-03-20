@@ -2,8 +2,8 @@ import logging.handlers
 import os
 import re
 from pathlib import Path
-from pythonLogs.core.constants import MB_TO_BYTES
-from pythonLogs.core.log_utils import (
+from pythonlogs.core.constants import MB_TO_BYTES
+from pythonlogs.core.log_utils import (
     RotatingLogMixin,
     check_directory_permissions,
     check_filename_instance,
@@ -15,9 +15,9 @@ from pythonLogs.core.log_utils import (
     remove_old_logs,
     write_stderr,
 )
-from pythonLogs.core.memory_utils import register_logger_weakref
-from pythonLogs.core.settings import get_log_settings
-from pythonLogs.core.thread_safety import auto_thread_safe
+from pythonlogs.core.memory_utils import register_logger_weakref
+from pythonlogs.core.settings import get_log_settings
+from pythonlogs.core.thread_safety import auto_thread_safe
 
 
 @auto_thread_safe(["init"])

@@ -15,7 +15,7 @@ from contextlib import contextmanager
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from pythonLogs.core import log_utils
+from pythonlogs.core import log_utils
 
 # ============================================================================
 # UTILITY FUNCTIONS
@@ -1494,7 +1494,7 @@ class TestLogUtils:
             return ZoneInfo(key)
 
         try:
-            with unittest.mock.patch("pythonLogs.core.log_utils.ZoneInfo", side_effect=mock_zoneinfo):
+            with unittest.mock.patch("pythonlogs.core.log_utils.ZoneInfo", side_effect=mock_zoneinfo):
                 result = log_utils.get_timezone_function("UTC")
 
                 # Should fall back to localtime (lines 273-275)
@@ -1519,7 +1519,7 @@ class TestLogUtils:
             return ZoneInfo(key)
 
         try:
-            with unittest.mock.patch("pythonLogs.core.log_utils.ZoneInfo", side_effect=mock_zoneinfo):
+            with unittest.mock.patch("pythonlogs.core.log_utils.ZoneInfo", side_effect=mock_zoneinfo):
                 result = log_utils.get_timezone_function("Custom/Timezone")
 
                 # Should fall back to localtime (lines 283-285)

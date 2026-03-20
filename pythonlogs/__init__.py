@@ -1,8 +1,8 @@
 import logging
 from importlib.metadata import version
-from pythonLogs.core.constants import LogLevel, RotateWhen
-from pythonLogs.core.factory import BasicLog, SizeRotatingLog, TimedRotatingLog
-from pythonLogs.core.settings import clear_settings_cache, get_log_settings
+from pythonlogs.core.constants import LogLevel, RotateWhen
+from pythonlogs.core.factory import BasicLog, SizeRotatingLog, TimedRotatingLog
+from pythonlogs.core.settings import clear_settings_cache, get_log_settings
 
 __all__ = (
     "BasicLog",
@@ -14,7 +14,7 @@ __all__ = (
     "get_log_settings",
 )
 
-__title__ = "pythonLogs"
+__title__ = "pythonlogs"
 __author__ = "Daniel Costa"
 __email__ = "daniel@ddcsoftwares.com"
 __license__ = "MIT"

@@ -6,11 +6,11 @@ import sys
 import tempfile
 import threading
 import time
-from pythonLogs.basic_log import BasicLog
-from pythonLogs.core.constants import RotateWhen
-from pythonLogs.core.memory_utils import get_active_logger_count
-from pythonLogs.size_rotating import SizeRotatingLog
-from pythonLogs.timed_rotating import TimedRotatingLog
+from pythonlogs.basic_log import BasicLog
+from pythonlogs.core.constants import RotateWhen
+from pythonlogs.core.memory_utils import get_active_logger_count
+from pythonlogs.size_rotating import SizeRotatingLog
+from pythonlogs.timed_rotating import TimedRotatingLog
 
 
 class TestAutomaticFeatures:
@@ -144,7 +144,7 @@ class TestAutomaticFeatures:
 
         # 3. Automatic Thread Safety: Decorator applied
         assert hasattr(basic_log.__class__, "_lock")
-        assert hasattr(basic_log.init, "_thread_safe_wrapped")
+        assert hasattr(basic_log.init, "thread_safe_wrapped")
         # cleanup_logger is a static method, so it's not wrapped
 
         BasicLog.cleanup_logger(logger)

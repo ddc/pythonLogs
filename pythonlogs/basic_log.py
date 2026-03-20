@@ -1,8 +1,8 @@
 import logging
-from pythonLogs.core.log_utils import cleanup_logger_handlers, get_format, get_level, get_timezone_function
-from pythonLogs.core.memory_utils import register_logger_weakref
-from pythonLogs.core.settings import get_log_settings
-from pythonLogs.core.thread_safety import auto_thread_safe
+from pythonlogs.core.log_utils import cleanup_logger_handlers, get_format, get_level, get_timezone_function
+from pythonlogs.core.memory_utils import register_logger_weakref
+from pythonlogs.core.settings import get_log_settings
+from pythonlogs.core.thread_safety import auto_thread_safe
 
 
 @auto_thread_safe(["init"])

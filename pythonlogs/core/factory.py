@@ -4,12 +4,12 @@ import threading
 import time
 from dataclasses import dataclass
 from enum import StrEnum
-from pythonLogs.basic_log import BasicLog as _BasicLogImpl
-from pythonLogs.core.constants import LogLevel, RotateWhen
-from pythonLogs.core.log_utils import cleanup_logger_handlers
-from pythonLogs.core.settings import get_log_settings
-from pythonLogs.size_rotating import SizeRotatingLog as _SizeRotatingLogImpl
-from pythonLogs.timed_rotating import TimedRotatingLog as _TimedRotatingLogImpl
+from pythonlogs.basic_log import BasicLog as _BasicLogImpl
+from pythonlogs.core.constants import LogLevel, RotateWhen
+from pythonlogs.core.log_utils import cleanup_logger_handlers
+from pythonlogs.core.settings import get_log_settings
+from pythonlogs.size_rotating import SizeRotatingLog as _SizeRotatingLogImpl
+from pythonlogs.timed_rotating import TimedRotatingLog as _TimedRotatingLogImpl
 from typing import assert_never
 
 

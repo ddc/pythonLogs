@@ -8,18 +8,18 @@ import tempfile
 
 # Add parent directory to path for imports
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, project_root)  # For pythonLogs
+sys.path.insert(0, project_root)  # For pythonlogs
 
 # Import test utilities
-from pythonLogs import (
+from pythonlogs import (
     BasicLog,
     LogLevel,
     RotateWhen,
     SizeRotatingLog,
     TimedRotatingLog,
 )
-from pythonLogs.core.factory import LoggerFactory, LoggerType, clear_logger_registry
-from pythonLogs.core.log_utils import (
+from pythonlogs.core.factory import LoggerFactory, LoggerType, clear_logger_registry
+from pythonlogs.core.log_utils import (
     get_stderr_timezone,
     get_timezone_function,
     get_timezone_offset,
@@ -38,7 +38,7 @@ class TestTimezoneZoneinfo:
     @requires_zoneinfo_utc
     def test_zoneinfo_import_success(self):
         """Test that ZoneInfo is properly imported."""
-        from pythonLogs.core.log_utils import ZoneInfo
+        from pythonlogs.core.log_utils import ZoneInfo
 
         # Should be able to create timezone objects
         utc_tz = ZoneInfo("UTC")
