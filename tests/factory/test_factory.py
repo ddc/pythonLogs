@@ -164,8 +164,12 @@ class TestLoggerFactory:
     def test_factory_create_size_rotating_logger(self):
         """Test factory create_size_rotating_logger method."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            logger = LoggerFactory.create_size_rotating_logger(
-                name="size_factory_test", directory=temp_dir, maxmbytes=10, level=LogLevel.INFO
+            logger = LoggerFactory.create_logger(
+                LoggerType.SIZE_ROTATING,
+                name="size_factory_test",
+                directory=temp_dir,
+                maxmbytes=10,
+                level=LogLevel.INFO,
             )
             assert logger.name == "size_factory_test"
 
@@ -176,14 +180,18 @@ class TestLoggerFactory:
     def test_factory_create_timed_rotating_logger(self):
         """Test factory create_timed_rotating_logger method."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            logger = LoggerFactory.create_timed_rotating_logger(
-                name="timed_factory_test", directory=temp_dir, when=RotateWhen.DAILY, level="ERROR"
+            logger = LoggerFactory.create_logger(
+                LoggerType.TIMED_ROTATING,
+                name="timed_factory_test",
+                directory=temp_dir,
+                when=RotateWhen.DAILY,
+                level="ERROR",
             )
             assert logger.name == "timed_factory_test"
 
     def test_factory_create_basic_logger(self):
         """Test factory create_basic_logger method."""
-        logger = LoggerFactory.create_basic_logger(name="basic_factory_test", level=LogLevel.CRITICAL)
+        logger = LoggerFactory.create_logger(LoggerType.BASIC, name="basic_factory_test", level=LogLevel.CRITICAL)
         assert logger.name == "basic_factory_test"
         assert logger.level == 50  # CRITICAL level
 
