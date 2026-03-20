@@ -69,7 +69,8 @@ class TestLoggerFactoryWindows:
     def test_factory_create_size_rotating_logger_windows(self):
         """Test factory create_size_rotating_logger method on Windows."""
         with windows_safe_temp_directory() as temp_dir:
-            logger = LoggerFactory.create_size_rotating_logger(
+            logger = LoggerFactory.create_logger(
+                LoggerType.SIZE_ROTATING,
                 name="size_factory_test_win",
                 directory=temp_dir,
                 maxmbytes=10,
@@ -81,7 +82,8 @@ class TestLoggerFactoryWindows:
     def test_factory_create_timed_rotating_logger_windows(self):
         """Test factory create_timed_rotating_logger method on Windows."""
         with windows_safe_temp_directory() as temp_dir:
-            logger = LoggerFactory.create_timed_rotating_logger(
+            logger = LoggerFactory.create_logger(
+                LoggerType.TIMED_ROTATING,
                 name="timed_factory_test_win",
                 directory=temp_dir,
                 when=RotateWhen.DAILY,
@@ -379,7 +381,8 @@ class TestLoggerFactoryWindows:
         """Test that Windows file locking resilience works with factory-created loggers."""
         with windows_safe_temp_directory() as temp_dir:
             # Create multiple loggers that write to the same directory
-            logger1 = LoggerFactory.create_size_rotating_logger(
+            logger1 = LoggerFactory.create_logger(
+                LoggerType.SIZE_ROTATING,
                 name="resilience_test1_win",
                 directory=temp_dir,
                 filenames=["resilience1.log"],
@@ -387,7 +390,8 @@ class TestLoggerFactoryWindows:
                 level=LogLevel.INFO,
             )
 
-            logger2 = LoggerFactory.create_timed_rotating_logger(
+            logger2 = LoggerFactory.create_logger(
+                LoggerType.TIMED_ROTATING,
                 name="resilience_test2_win",
                 directory=temp_dir,
                 filenames=["resilience2.log"],

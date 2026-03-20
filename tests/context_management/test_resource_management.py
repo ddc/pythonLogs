@@ -51,7 +51,8 @@ class TestResourceManagement:
         logger_name = "test_registry_cleanup"
 
         # Create logger through factory (returns logging.Logger)
-        logger = LoggerFactory.create_size_rotating_logger(
+        logger = LoggerFactory.create_logger(
+            LoggerType.SIZE_ROTATING,
             name=logger_name,
             directory=self.temp_dir,
             filenames=[self.log_file],
@@ -150,7 +151,8 @@ class TestResourceManagement:
         logger_name = "test_file_handlers"
 
         # Create logger with file handlers (returns logging.Logger)
-        logger = LoggerFactory.create_size_rotating_logger(
+        logger = LoggerFactory.create_logger(
+            LoggerType.SIZE_ROTATING,
             name=logger_name,
             directory=self.temp_dir,
             filenames=[self.log_file, "second.log"],
@@ -186,7 +188,8 @@ class TestResourceManagement:
         # Create multiple loggers using factory
         start_time = time.time()
         for name in logger_names:
-            logger = LoggerFactory.create_size_rotating_logger(
+            logger = LoggerFactory.create_logger(
+                LoggerType.SIZE_ROTATING,
                 name=name,
                 directory=self.temp_dir,
                 filenames=[f"{name}.log"],
@@ -218,7 +221,8 @@ class TestResourceManagement:
         logger_name = "memory_test_logger"
 
         # Create logger using factory (returns logging.Logger)
-        logger = LoggerFactory.create_size_rotating_logger(
+        logger = LoggerFactory.create_logger(
+            LoggerType.SIZE_ROTATING,
             name=logger_name,
             directory=self.temp_dir,
             filenames=[self.log_file],
@@ -258,7 +262,7 @@ class TestResourceManagement:
             """Create a logger and immediately clean it up."""
             logger_name = f"concurrent_test_{index}"
             # Use factory to create logger (returns logging.Logger)
-            logger = LoggerFactory.create_basic_logger(name=logger_name, level=LogLevel.INFO.value)
+            logger = LoggerFactory.create_logger(LoggerType.BASIC, name=logger_name, level=LogLevel.INFO.value)
 
             # Add to registry
             LoggerFactory._logger_registry[logger_name] = (logger, time.time())

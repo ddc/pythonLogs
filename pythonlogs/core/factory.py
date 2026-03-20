@@ -1,4 +1,5 @@
 import atexit
+import dataclasses
 import logging
 import threading
 import time
@@ -10,7 +11,6 @@ from pythonlogs.core.log_utils import cleanup_logger_handlers
 from pythonlogs.core.settings import get_log_settings
 from pythonlogs.size_rotating import SizeRotatingLog as _SizeRotatingLogImpl
 from pythonlogs.timed_rotating import TimedRotatingLog as _TimedRotatingLogImpl
-from typing import assert_never
 
 
 @dataclass
@@ -217,6 +217,48 @@ class LoggerFactory:
         with cls._registry_lock:
             return {"max_loggers": cls._max_loggers, "ttl_seconds": cls._logger_ttl}
 
+    # Mapping of logger types to their implementation classes and accepted fields
+    _LOGGER_IMPL = {
+        LoggerType.BASIC: (
+            _BasicLogImpl,
+            {"level", "name", "encoding", "datefmt", "timezone", "showlocation"},
+        ),
+        LoggerType.SIZE_ROTATING: (
+            _SizeRotatingLogImpl,
+            {
+                "level",
+                "name",
+                "directory",
+                "filenames",
+                "maxmbytes",
+                "daystokeep",
+                "encoding",
+                "datefmt",
+                "timezone",
+                "streamhandler",
+                "showlocation",
+            },
+        ),
+        LoggerType.TIMED_ROTATING: (
+            _TimedRotatingLogImpl,
+            {
+                "level",
+                "name",
+                "directory",
+                "filenames",
+                "when",
+                "sufix",
+                "daystokeep",
+                "encoding",
+                "datefmt",
+                "timezone",
+                "streamhandler",
+                "showlocation",
+                "rotateatutc",
+            },
+        ),
+    }
+
     @staticmethod
     def create_logger(logger_type: LoggerType | str, config: LoggerConfig | None = None, **kwargs) -> logging.Logger:
         """
@@ -225,7 +267,7 @@ class LoggerFactory:
         Args:
             logger_type: Type of logger to create (LoggerType enum or string)
             config: LoggerConfig object with logger parameters
-            **kwargs: Individual logger parameters (for backward compatibility)
+            **kwargs: Individual logger parameters (kwargs take precedence over config)
 
         Returns:
             Configured logger instance
@@ -242,159 +284,21 @@ class LoggerFactory:
                     f"Invalid logger type: {logger_type}. Valid types: {[t.value for t in LoggerType]}"
                 ) from err
 
-        # Merge config and kwargs (kwargs take precedence for backward compatibility)
+        # Merge config and kwargs (kwargs take precedence)
         if config is None:
             config = LoggerConfig()
-
-        # Create a new config with kwargs overriding config values
-        final_config = LoggerConfig(
-            level=kwargs.get("level", config.level),
-            name=kwargs.get("name", config.name),
-            directory=kwargs.get("directory", config.directory),
-            filenames=kwargs.get("filenames", config.filenames),
-            encoding=kwargs.get("encoding", config.encoding),
-            datefmt=kwargs.get("datefmt", config.datefmt),
-            timezone=kwargs.get("timezone", config.timezone),
-            streamhandler=kwargs.get("streamhandler", config.streamhandler),
-            showlocation=kwargs.get("showlocation", config.showlocation),
-            maxmbytes=kwargs.get("maxmbytes", config.maxmbytes),
-            when=kwargs.get("when", config.when),
-            sufix=kwargs.get("sufix", config.sufix),
-            rotateatutc=kwargs.get("rotateatutc", config.rotateatutc),
-            daystokeep=kwargs.get("daystokeep", config.daystokeep),
-        )
+        merged = {f.name: kwargs.get(f.name, getattr(config, f.name)) for f in dataclasses.fields(LoggerConfig)}
 
         # Convert enum values to strings for logger classes
-        level_str = final_config.level.value if isinstance(final_config.level, LogLevel) else final_config.level
-        when_str = final_config.when.value if isinstance(final_config.when, RotateWhen) else final_config.when
+        if isinstance(merged.get("level"), LogLevel):
+            merged["level"] = merged["level"].value
+        if isinstance(merged.get("when"), RotateWhen):
+            merged["when"] = merged["when"].value
 
-        # Create logger based on type
-        match logger_type:
-            case LoggerType.BASIC:
-                return _BasicLogImpl(
-                    level=level_str,
-                    name=final_config.name,
-                    encoding=final_config.encoding,
-                    datefmt=final_config.datefmt,
-                    timezone=final_config.timezone,
-                    showlocation=final_config.showlocation,
-                ).init()
-            case LoggerType.SIZE_ROTATING:
-                return _SizeRotatingLogImpl(
-                    level=level_str,
-                    name=final_config.name,
-                    directory=final_config.directory,
-                    filenames=final_config.filenames,
-                    maxmbytes=final_config.maxmbytes,
-                    daystokeep=final_config.daystokeep,
-                    encoding=final_config.encoding,
-                    datefmt=final_config.datefmt,
-                    timezone=final_config.timezone,
-                    streamhandler=final_config.streamhandler,
-                    showlocation=final_config.showlocation,
-                ).init()
-            case LoggerType.TIMED_ROTATING:
-                return _TimedRotatingLogImpl(
-                    level=level_str,
-                    name=final_config.name,
-                    directory=final_config.directory,
-                    filenames=final_config.filenames,
-                    when=when_str,
-                    sufix=final_config.sufix,
-                    daystokeep=final_config.daystokeep,
-                    encoding=final_config.encoding,
-                    datefmt=final_config.datefmt,
-                    timezone=final_config.timezone,
-                    streamhandler=final_config.streamhandler,
-                    showlocation=final_config.showlocation,
-                    rotateatutc=final_config.rotateatutc,
-                ).init()
-            case _ as unreachable:  # pragma: no cover
-                assert_never(unreachable)
-
-    @staticmethod
-    def create_basic_logger(
-        level: LogLevel | str | None = None,
-        name: str | None = None,
-        encoding: str | None = None,
-        datefmt: str | None = None,
-        timezone: str | None = None,
-        showlocation: bool | None = None,
-    ) -> logging.Logger:
-        """Convenience method for creating a basic logger"""
-        return LoggerFactory.create_logger(
-            LoggerType.BASIC,
-            level=level,
-            name=name,
-            encoding=encoding,
-            datefmt=datefmt,
-            timezone=timezone,
-            showlocation=showlocation,
-        )
-
-    @staticmethod
-    def create_size_rotating_logger(
-        level: LogLevel | str | None = None,
-        name: str | None = None,
-        directory: str | None = None,
-        filenames: list | tuple | None = None,
-        maxmbytes: int | None = None,
-        daystokeep: int | None = None,
-        encoding: str | None = None,
-        datefmt: str | None = None,
-        timezone: str | None = None,
-        streamhandler: bool | None = None,
-        showlocation: bool | None = None,
-    ) -> logging.Logger:
-        """Convenience method for creating a size rotating logger"""
-        return LoggerFactory.create_logger(
-            LoggerType.SIZE_ROTATING,
-            level=level,
-            name=name,
-            directory=directory,
-            filenames=filenames,
-            maxmbytes=maxmbytes,
-            daystokeep=daystokeep,
-            encoding=encoding,
-            datefmt=datefmt,
-            timezone=timezone,
-            streamhandler=streamhandler,
-            showlocation=showlocation,
-        )
-
-    @staticmethod
-    def create_timed_rotating_logger(
-        level: LogLevel | str | None = None,
-        name: str | None = None,
-        directory: str | None = None,
-        filenames: list | tuple | None = None,
-        when: RotateWhen | str | None = None,
-        sufix: str | None = None,
-        daystokeep: int | None = None,
-        encoding: str | None = None,
-        datefmt: str | None = None,
-        timezone: str | None = None,
-        streamhandler: bool | None = None,
-        showlocation: bool | None = None,
-        rotateatutc: bool | None = None,
-    ) -> logging.Logger:
-        """Convenience method for creating a timed rotating logger"""
-        return LoggerFactory.create_logger(
-            LoggerType.TIMED_ROTATING,
-            level=level,
-            name=name,
-            directory=directory,
-            filenames=filenames,
-            when=when,
-            sufix=sufix,
-            daystokeep=daystokeep,
-            encoding=encoding,
-            datefmt=datefmt,
-            timezone=timezone,
-            streamhandler=streamhandler,
-            showlocation=showlocation,
-            rotateatutc=rotateatutc,
-        )
+        # Create logger using table-driven dispatch
+        impl_class, valid_fields = LoggerFactory._LOGGER_IMPL[logger_type]
+        logger_kwargs = {k: v for k, v in merged.items() if k in valid_fields}
+        return impl_class(**logger_kwargs).init()
 
 
 # Public API wrapper classes - act like logging.Logger with context manager support
@@ -439,7 +343,8 @@ class BasicLog(_LoggerMixin):
         timezone: str | None = None,
         showlocation: bool | None = None,
     ):
-        self._logger = LoggerFactory.create_basic_logger(
+        self._logger = LoggerFactory.create_logger(
+            LoggerType.BASIC,
             level=level,
             name=name,
             encoding=encoding,
@@ -477,7 +382,8 @@ class SizeRotatingLog(_LoggerMixin):
         streamhandler: bool | None = None,
         showlocation: bool | None = None,
     ):
-        self._logger = LoggerFactory.create_size_rotating_logger(
+        self._logger = LoggerFactory.create_logger(
+            LoggerType.SIZE_ROTATING,
             level=level,
             name=name,
             directory=directory,
@@ -522,7 +428,8 @@ class TimedRotatingLog(_LoggerMixin):
         showlocation: bool | None = None,
         rotateatutc: bool | None = None,
     ):
-        self._logger = LoggerFactory.create_timed_rotating_logger(
+        self._logger = LoggerFactory.create_logger(
+            LoggerType.TIMED_ROTATING,
             level=level,
             name=name,
             directory=directory,
