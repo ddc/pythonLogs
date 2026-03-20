@@ -1,0 +1,6 @@
+# Snyk policy file
+# https://docs.snyk.io/scan-using-snyk/snyk-code/configure-snyk-code#excluding-directories-and-files-from-the-snyk-code-test
+version: v1.25.0
+exclude:
+  global:
+    - tests/**
