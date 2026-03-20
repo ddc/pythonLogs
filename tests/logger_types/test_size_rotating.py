@@ -12,7 +12,7 @@ from unittest.mock import Mock, patch
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from pythonLogs.size_rotating import GZipRotatorSize, SizeRotatingLog
+from pythonlogs.size_rotating import GZipRotatorSize, SizeRotatingLog
 
 
 class TestSizeRotatingLog:
@@ -322,7 +322,7 @@ class TestGZipRotatorSize:
             gz_files = list(Path(temp_dir).glob("*.gz"))
             assert len(gz_files) == 0
 
-    @patch("pythonLogs.size_rotating.remove_old_logs")
+    @patch("pythonlogs.size_rotating.remove_old_logs")
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason="Windows file locking issues with TemporaryDirectory - see equivalent Windows-specific test file",

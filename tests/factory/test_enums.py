@@ -9,13 +9,13 @@ import tempfile
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from pythonLogs import (
+from pythonlogs import (
     BasicLog,
     LogLevel,
     RotateWhen,
     TimedRotatingLog,
 )
-from pythonLogs.core.factory import LoggerFactory, LoggerType, clear_logger_registry
+from pythonlogs.core.factory import LoggerFactory, LoggerType, clear_logger_registry
 
 
 class TestEnumUsage:

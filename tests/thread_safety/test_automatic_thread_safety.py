@@ -3,10 +3,10 @@
 import pytest
 import sys
 import threading
-from pythonLogs.basic_log import BasicLog
-from pythonLogs.core.constants import RotateWhen
-from pythonLogs.size_rotating import SizeRotatingLog
-from pythonLogs.timed_rotating import TimedRotatingLog
+from pythonlogs.basic_log import BasicLog
+from pythonlogs.core.constants import RotateWhen
+from pythonlogs.size_rotating import SizeRotatingLog
+from pythonlogs.timed_rotating import TimedRotatingLog
 
 
 class TestAutomaticThreadSafety:
@@ -125,7 +125,7 @@ class TestAutomaticThreadSafety:
 
         # Verify the class has the automatic thread safety decorator applied
         assert hasattr(basic_log.__class__, "_lock"), "Class should have automatic lock"
-        assert hasattr(basic_log.init, "_thread_safe_wrapped"), "Method should be wrapped for thread safety"
+        assert hasattr(basic_log.init, "thread_safe_wrapped"), "Method should be wrapped for thread safety"
         # cleanup_logger is a static method, so it's not wrapped with thread safety
 
         # Test that methods can still be called normally

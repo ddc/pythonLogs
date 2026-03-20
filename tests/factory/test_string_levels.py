@@ -7,14 +7,14 @@ import tempfile
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
-from pythonLogs import (
+from pythonlogs import (
     BasicLog,
     LogLevel,
     RotateWhen,
     SizeRotatingLog,
     TimedRotatingLog,
 )
-from pythonLogs.core.factory import LoggerFactory, clear_logger_registry
+from pythonlogs.core.factory import LoggerFactory, clear_logger_registry
 from tests.core.test_log_utils import cleanup_all_loggers, safe_delete_directory
 
 

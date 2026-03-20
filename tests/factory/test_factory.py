@@ -11,14 +11,14 @@ from unittest.mock import Mock, patch
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from pythonLogs import (
+from pythonlogs import (
     BasicLog,
     LogLevel,
     RotateWhen,
     SizeRotatingLog,
     TimedRotatingLog,
 )
-from pythonLogs.core.factory import (
+from pythonlogs.core.factory import (
     LoggerFactory,
     LoggerType,
     clear_logger_registry,
@@ -382,7 +382,7 @@ class TestLoggerFactory:
         mock_settings.logger_ttl_seconds = 1800
 
         # Patch the import inside the function
-        with patch("pythonLogs.core.factory.get_log_settings", return_value=mock_settings):
+        with patch("pythonlogs.core.factory.get_log_settings", return_value=mock_settings):
             # Reset initialization flag
             LoggerFactory._initialized = False
 
@@ -478,7 +478,7 @@ class TestLoggerFactory:
 
     def test_shutdown_logger_convenience_function(self):
         """Test shutdown_logger convenience function."""
-        from pythonLogs.core.factory import shutdown_logger
+        from pythonlogs.core.factory import shutdown_logger
 
         # Create and register a logger
         LoggerFactory.get_or_create_logger(LoggerType.BASIC, name="shutdown_conv_test")

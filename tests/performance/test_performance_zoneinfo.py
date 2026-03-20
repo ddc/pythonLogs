@@ -10,12 +10,12 @@ import time
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from pythonLogs import (
+from pythonlogs import (
     BasicLog,
     LogLevel,
     SizeRotatingLog,
 )
-from pythonLogs.core.factory import clear_logger_registry
+from pythonlogs.core.factory import clear_logger_registry
 
 
 @pytest.mark.skipif(os.getenv("CI") == "true", reason="Performance tests unstable in CI")
@@ -27,7 +27,7 @@ class TestZoneinfoPerformance:
         clear_logger_registry()
 
         # Clear timezone caches
-        from pythonLogs.core.log_utils import get_stderr_timezone, get_timezone_function, get_timezone_offset
+        from pythonlogs.core.log_utils import get_stderr_timezone, get_timezone_function, get_timezone_offset
 
         get_timezone_function.cache_clear()
         get_timezone_offset.cache_clear()
@@ -35,7 +35,7 @@ class TestZoneinfoPerformance:
 
     def test_timezone_function_caching_performance(self):
         """Test that timezone function caching improves performance."""
-        from pythonLogs.core.log_utils import get_timezone_function
+        from pythonlogs.core.log_utils import get_timezone_function
 
         # First call (not cached) - single call to prime the cache
         start_time = time.time()
@@ -55,7 +55,7 @@ class TestZoneinfoPerformance:
 
     def test_timezone_offset_caching_performance(self):
         """Test timezone offset calculation caching performance."""
-        from pythonLogs.core.log_utils import get_timezone_offset
+        from pythonlogs.core.log_utils import get_timezone_offset
 
         # Test with multiple calls to the same timezone
         start_time = time.time()
@@ -161,7 +161,7 @@ class TestZoneinfoPerformance:
 
     def test_timezone_function_performance_comparison(self):
         """Compare performance of different timezone function types."""
-        from pythonLogs.core.log_utils import get_timezone_function
+        from pythonlogs.core.log_utils import get_timezone_function
 
         # Test UTC (should return time.gmtime - fastest)
         start_time = time.time()

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test thread safety of the pythonLogs library."""
+"""Test thread safety of the pythonlogs library."""
 
 import concurrent.futures
 import os
@@ -12,13 +12,13 @@ import time
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from pythonLogs import (
+from pythonlogs import (
     LogLevel,
 )
-from pythonLogs.basic_log import BasicLog
-from pythonLogs.core.factory import LoggerFactory, LoggerType, clear_logger_registry
-from pythonLogs.size_rotating import SizeRotatingLog
-from pythonLogs.timed_rotating import TimedRotatingLog
+from pythonlogs.basic_log import BasicLog
+from pythonlogs.core.factory import LoggerFactory, LoggerType, clear_logger_registry
+from pythonlogs.size_rotating import SizeRotatingLog
+from pythonlogs.timed_rotating import TimedRotatingLog
 
 
 class TestThreadSafety:
@@ -107,7 +107,7 @@ class TestThreadSafety:
     )
     def test_concurrent_directory_cache_access(self):
         """Test concurrent access to directory permission cache."""
-        import pythonLogs.core.log_utils as log_utils
+        import pythonlogs.core.log_utils as log_utils
 
         num_threads = 15
         temp_dirs = []

@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 from functools import lru_cache
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pythonLogs.core.constants import (
+from pythonlogs.core.constants import (
     DEFAULT_BACKUP_COUNT,
     DEFAULT_DATE_FORMAT,
     DEFAULT_ENCODING,

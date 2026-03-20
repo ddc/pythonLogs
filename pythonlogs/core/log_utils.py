@@ -11,7 +11,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
-from pythonLogs.core.constants import DEFAULT_FILE_MODE, LEVEL_MAP
+from pythonlogs.core.constants import DEFAULT_FILE_MODE, LEVEL_MAP
 from zoneinfo import ZoneInfo
 
 

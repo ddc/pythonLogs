@@ -6,17 +6,17 @@ build-backend = "hatchling.build"
 allow-direct-references = true
 
 [tool.hatch.build]
-include = ["pythonLogs/**/*"]
+include = ["pythonlogs/**/*"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["pythonLogs"]
+packages = ["pythonlogs"]
 
 [project]
-name = "pythonLogs"
-version = "6.0.4"
+name = "pythonlogs"
+version = "7.0.0"
 description = "High-performance Python logging library with file rotation and optimized caching for better performance"
-urls.Repository = "https://github.com/ddc/pythonLogs"
-urls.Homepage = "https://pypi.org/project/pythonLogs"
+urls.Repository = "https://github.com/ddc/pythonlogs"
+urls.Homepage = "https://pypi.org/project/pythonlogs"
 license = {text = "MIT"}
 readme = "README.md"
 authors = [
@@ -28,7 +28,7 @@ maintainers = [
 keywords = [
     "python", "python3", "python-3",
     "log", "logging", "logger",
-    "logutils", "log-utils", "pythonLogs"
+    "logutils", "log-utils", "pythonlogs"
 ]
 classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
@@ -54,7 +54,7 @@ dev = [
     "psutil>=7.2.2",
     "pytest-cov>=7.0.0",
     "poethepoet>=0.42.1",
-    "ruff>=0.15.4",
+    "ruff>=0.15.7",
 ]
 
 [tool.poe.tasks]
@@ -99,15 +99,15 @@ line-length = 120
 target-version = "py311"
 
 [tool.ruff.lint]
-select = ["E", "W", "F", "I", "B", "C4", "UP"]
+select = ["E", "W", "F", "I", "B", "C4", "UP", "S", "SLF"]
 ignore = ["E501", "E402", "UP046", "UP047"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-"tests/**/*.py" = ["S101", "S105", "S106", "S311", "SLF001", "F841"]
+"tests/**/*.py" = ["S101", "S103", "S105", "S106", "S110", "S311", "S603", "S607", "SLF001", "F841"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["pythonLogs"]
+known-first-party = ["pythonlogs"]
 force-sort-within-sections = false
 from-first = false
 no-sections = true

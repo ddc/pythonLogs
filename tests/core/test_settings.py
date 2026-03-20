@@ -1,14 +1,14 @@
 """Tests for settings module."""
 
 import os
-from pythonLogs.core.constants import (
+from pythonlogs.core.constants import (
     DEFAULT_BACKUP_COUNT,
     DEFAULT_DATE_FORMAT,
     DEFAULT_ENCODING,
     DEFAULT_ROTATE_SUFFIX,
     DEFAULT_TIMEZONE,
 )
-from pythonLogs.core.settings import (
+from pythonlogs.core.settings import (
     LogSettings,
     clear_settings_cache,
     get_log_settings,
@@ -61,7 +61,7 @@ class TestLogSettings:
 
     def test_custom_values(self):
         """Test LogSettings with custom values."""
-        from pythonLogs.core.constants import LogLevel
+        from pythonlogs.core.constants import LogLevel
 
         settings = LogSettings(
             level=LogLevel.DEBUG,
@@ -156,7 +156,7 @@ class TestClearSettingsCache:
 
     def test_reloads_env_by_default(self):
         """Test that clear_settings_cache resets dotenv flag by default."""
-        import pythonLogs.core.settings as settings_module
+        import pythonlogs.core.settings as settings_module
 
         # Ensure dotenv is loaded
         get_log_settings()
@@ -168,7 +168,7 @@ class TestClearSettingsCache:
 
     def test_keeps_env_when_reload_false(self):
         """Test that clear_settings_cache keeps dotenv flag when reload_env=False."""
-        import pythonLogs.core.settings as settings_module
+        import pythonlogs.core.settings as settings_module
 
         # Ensure dotenv is loaded
         get_log_settings()
@@ -200,27 +200,27 @@ class TestPublicExports:
     """Test that clear_settings_cache and get_log_settings are exported from main module."""
 
     def test_clear_settings_cache_import_from_main_module(self):
-        """Test that clear_settings_cache can be imported from pythonLogs."""
-        from pythonLogs import clear_settings_cache as exported_func
-        from pythonLogs.core.settings import clear_settings_cache as original_func
+        """Test that clear_settings_cache can be imported from pythonlogs."""
+        from pythonlogs import clear_settings_cache as exported_func
+        from pythonlogs.core.settings import clear_settings_cache as original_func
 
         assert exported_func is original_func
 
     def test_clear_settings_cache_in_all(self):
         """Test that clear_settings_cache is in __all__."""
-        import pythonLogs
+        import pythonlogs
 
-        assert "clear_settings_cache" in pythonLogs.__all__
+        assert "clear_settings_cache" in pythonlogs.__all__
 
     def test_get_log_settings_import_from_main_module(self):
-        """Test that get_log_settings can be imported from pythonLogs."""
-        from pythonLogs import get_log_settings as exported_func
-        from pythonLogs.core.settings import get_log_settings as original_func
+        """Test that get_log_settings can be imported from pythonlogs."""
+        from pythonlogs import get_log_settings as exported_func
+        from pythonlogs.core.settings import get_log_settings as original_func
 
         assert exported_func is original_func
 
     def test_get_log_settings_in_all(self):
         """Test that get_log_settings is in __all__."""
-        import pythonLogs
+        import pythonlogs
 
-        assert "get_log_settings" in pythonLogs.__all__
+        assert "get_log_settings" in pythonlogs.__all__

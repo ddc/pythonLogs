@@ -1,28 +1,28 @@
 <h1 align="center">
-  <img src="https://raw.githubusercontent.com/ddc/pythonLogs/main/assets/pythonLogs-icon.svg" alt="pythonLogs" width="150">
+  <img src="https://raw.githubusercontent.com/ddc/pythonlogs/main/assets/pythonlogs-icon.svg" alt="pythonlogs" width="150">
   <br>
-  pythonLogs
+  pythonlogs
 </h1>
 
 <p align="center">
     <a href="https://github.com/sponsors/ddc"><img src="https://img.shields.io/static/v1?style=plastic&label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=ff69b4" alt="Sponsor"/></a>
     <br>
-    <a href="https://ko-fi.com/ddcsta"><img src="https://img.shields.io/badge/Ko--fi-ddcsta-FF5E5B?style=plastic&logo=kofi&logoColor=white&color=brightgreen" alt="Ko-fi"/></a>
+    <a href="https://ko-fi.com/ddc"><img src="https://img.shields.io/badge/Ko--fi-ddc-FF5E5B?style=plastic&logo=kofi&logoColor=white&color=brightgreen" alt="Ko-fi"/></a>
     <a href="https://www.paypal.com/ncp/payment/6G9Z78QHUD4RJ"><img src="https://img.shields.io/badge/Donate-PayPal-brightgreen.svg?style=plastic&logo=paypal&logoColor=white" alt="Donate"/></a>
     <br>
-    <a href="https://pypi.python.org/pypi/pythonLogs"><img src="https://img.shields.io/pypi/v/pythonLogs.svg?style=plastic&logo=python&cacheSeconds=3600" alt="PyPi"/></a>
-    <a href="https://pepy.tech/projects/pythonLogs"><img src="https://img.shields.io/pepy/dt/pythonLogs?style=plastic&logo=pypi&logoColor=3776AB" alt="PyPI Downloads"/></a>
+    <a href="https://pypi.python.org/pypi/pythonlogs"><img src="https://img.shields.io/pypi/v/pythonlogs.svg?style=plastic&logo=python&cacheSeconds=3600" alt="PyPi"/></a>
+    <a href="https://pepy.tech/projects/pythonlogs"><img src="https://img.shields.io/pepy/dt/pythonlogs?style=plastic&logo=pypi&logoColor=3776AB" alt="PyPI Downloads"/></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=plastic&logo=creativecommons&logoColor=white" alt="License: MIT"/></a>
     <br>
-    <a href="https://www.python.org/downloads"><img src="https://img.shields.io/pypi/pyversions/pythonLogs.svg?style=plastic&logo=python&cacheSeconds=3600" alt="Python"/></a>
+    <a href="https://www.python.org/downloads"><img src="https://img.shields.io/pypi/pyversions/pythonlogs.svg?style=plastic&logo=python&cacheSeconds=3600" alt="Python"/></a>
     <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json&style=plastic" alt="uv"/></a>
     <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=plastic" alt="Ruff"/></a>
     <br>
-    <a href="https://github.com/ddc/pythonLogs/issues"><img src="https://img.shields.io/github/issues/ddc/pythonLogs?style=plastic&logo=github&logoColor=white" alt="issues"/></a>
-    <a href="https://codecov.io/gh/ddc/pythonLogs"><img src="https://img.shields.io/codecov/c/github/ddc/pythonLogs?token=XWB53034GI&style=plastic&logo=codecov" alt="codecov"/></a>
-    <a href="https://sonarcloud.io/dashboard?id=ddc_pythonLogs"><img src="https://img.shields.io/sonar/quality_gate/ddc_pythonLogs?server=https%3A%2F%2Fsonarcloud.io&style=plastic&logo=sonarqubecloud&logoColor=white" alt="Quality Gate Status"/></a>
-    <a href="https://github.com/ddc/pythonLogs/actions/workflows/workflow.yml"><img src="https://img.shields.io/github/actions/workflow/status/ddc/pythonLogs/workflow.yml?style=plastic&logo=github&logoColor=white&label=CI%2FCD%20Pipeline" alt="CI/CD Pipeline"/></a>
-    <a href="https://actions-badge.atrox.dev/ddc/pythonLogs/goto?ref=main"><img src="https://img.shields.io/endpoint.svg?url=https%3A//actions-badge.atrox.dev/ddc/pythonLogs/badge?ref=main&label=build&logo=github&style=plastic" alt="Build Status"/></a>
+    <a href="https://github.com/ddc/pythonlogs/issues"><img src="https://img.shields.io/github/issues/ddc/pythonlogs?style=plastic&logo=github&logoColor=white" alt="issues"/></a>
+    <a href="https://codecov.io/gh/ddc/pythonlogs"><img src="https://img.shields.io/codecov/c/github/ddc/pythonlogs?token=XWB53034GI&style=plastic&logo=codecov" alt="codecov"/></a>
+    <a href="https://sonarcloud.io/dashboard?id=ddc_pythonlogs"><img src="https://img.shields.io/sonar/quality_gate/ddc_pythonlogs?server=https%3A%2F%2Fsonarcloud.io&style=plastic&logo=sonarqubecloud&logoColor=white" alt="Quality Gate Status"/></a>
+    <a href="https://github.com/ddc/pythonlogs/actions/workflows/workflow.yml"><img src="https://img.shields.io/github/actions/workflow/status/ddc/pythonlogs/workflow.yml?style=plastic&logo=github&logoColor=white&label=CI%2FCD%20Pipeline" alt="CI/CD Pipeline"/></a>
+    <a href="https://actions-badge.atrox.dev/ddc/pythonlogs/goto?ref=main"><img src="https://img.shields.io/endpoint.svg?url=https%3A//actions-badge.atrox.dev/ddc/pythonlogs/badge?ref=main&label=build&logo=github&style=plastic" alt="Build Status"/></a>
 </p>
 
 <p align="center">High-performance Python logging library with file rotation and optimized caching for better performance</p>
@@ -69,7 +69,7 @@
 # Installation
 
 ```shell
-pip install pythonLogs
+pip install pythonlogs
 ```
 
 
@@ -85,7 +85,7 @@ Console-only logging without file output. Perfect for development and simple app
 ### Usage
 
 ```python
-from pythonLogs import BasicLog
+from pythonlogs import BasicLog
 
 logger = BasicLog(
     name="my_app",
@@ -115,7 +115,7 @@ File-based logging with automatic rotation when files reach a specified size. Ro
 ### Usage
 
 ```python
-from pythonLogs import SizeRotatingLog
+from pythonlogs import SizeRotatingLog
 
 logger = SizeRotatingLog(
     name="my_app",
@@ -151,7 +151,7 @@ File-based logging with automatic rotation based on time intervals. Rotated file
 ### Usage
 
 ```python
-from pythonLogs import TimedRotatingLog
+from pythonlogs import TimedRotatingLog
 
 logger = TimedRotatingLog(
     name="my_app",
@@ -182,10 +182,10 @@ All logger types support context managers for automatic resource cleanup and exc
 ## Usage Examples
 
 ```python
-from pythonLogs import LogLevel
-from pythonLogs.basic_log import BasicLog
-from pythonLogs.size_rotating import SizeRotatingLog
-from pythonLogs.timed_rotating import TimedRotatingLog
+from pythonlogs import LogLevel
+from pythonlogs.basic_log import BasicLog
+from pythonlogs.size_rotating import SizeRotatingLog
+from pythonlogs.timed_rotating import TimedRotatingLog
 
 # Automatic cleanup with context managers
 with BasicLog(name="app", level=LogLevel.INFO) as logger:
@@ -212,7 +212,7 @@ except ValueError:
 # Using With Multiple Log Levels and Files
 
 ```python
-from pythonLogs import SizeRotatingLog, TimedRotatingLog, LogLevel, RotateWhen
+from pythonlogs import SizeRotatingLog, TimedRotatingLog, LogLevel, RotateWhen
 
 # Application logger
 app_logger = SizeRotatingLog(
@@ -262,7 +262,7 @@ The .env variables file can be used by leaving all options blank when calling th
 If not specified inside the .env file, it will use the default value.\
 This is a good approach for production environments, since options can be changed easily.
 ```python
-from pythonLogs import TimedRotatingLog
+from pythonlogs import TimedRotatingLog
 log = TimedRotatingLog()
 ```
 
@@ -294,7 +294,7 @@ LOG_ROTATE_FILE_SUFIX="%Y%m%d"
 Use `get_log_settings()` to inspect current configuration and `clear_settings_cache()` to reload configuration from environment variables:
 
 ```python
-from pythonLogs import get_log_settings, clear_settings_cache
+from pythonlogs import get_log_settings, clear_settings_cache
 
 # Inspect current settings
 settings = get_log_settings()
@@ -318,7 +318,7 @@ clear_settings_cache(reload_env=False)
 You can use either enums (for type safety) or strings (for simplicity):
 
 ```python
-from pythonLogs import LogLevel, RotateWhen
+from pythonlogs import LogLevel, RotateWhen
 
 # Option 1: Type-safe enums (recommended)
 LogLevel.DEBUG     # "DEBUG"
@@ -399,8 +399,8 @@ Released under the [MIT License](LICENSE)
 
 # Support
 
-If you find this project helpful, consider supporting development:
+If you find this project helpful, consider supporting development.
 
-- [GitHub Sponsor](https://github.com/sponsors/ddc)
-- [ko-fi](https://ko-fi.com/ddcsta)
-- [PayPal](https://www.paypal.com/ncp/payment/6G9Z78QHUD4RJ)
+<a href='https://github.com/sponsors/ddc' target='_blank'><img height='24' style='border:0px;height:24px;' src='https://img.shields.io/badge/Sponsor-❤-ea4aaa?style=plastic&logo=github&logoColor=white' border='0' alt='Sponsor on GitHub' /></a>
+<a href='https://ko-fi.com/ddc' target='_blank'><img height='30' style='border:0px;height:30px;' src='https://storage.ko-fi.com/cdn/kofi2.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+<a href='https://www.paypal.com/ncp/payment/6G9Z78QHUD4RJ' target='_blank'><img height='30' style='border:0px;height:30px;' src='https://www.paypalobjects.com/digitalassets/c/website/marketing/apac/C2/logos-buttons/optimize/44_Yellow_PayPal_Pill_Button.png' border='0' alt='Donate via PayPal' /></a>

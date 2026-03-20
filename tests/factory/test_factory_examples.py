@@ -10,14 +10,14 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from pythonLogs import (
+from pythonlogs import (
     BasicLog,
     LogLevel,
     RotateWhen,
     SizeRotatingLog,
     TimedRotatingLog,
 )
-from pythonLogs.core.factory import LoggerFactory, LoggerType, clear_logger_registry
+from pythonlogs.core.factory import LoggerFactory, LoggerType, clear_logger_registry
 
 
 class TestFactoryExamples:

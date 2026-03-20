@@ -6,9 +6,9 @@ import sys
 # Add the parent directory to sys.path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from pythonLogs import LogLevel
-from pythonLogs.basic_log import BasicLog
-from pythonLogs.core.factory import clear_logger_registry
+from pythonlogs import LogLevel
+from pythonlogs.basic_log import BasicLog
+from pythonlogs.core.factory import clear_logger_registry
 
 
 class TestBasicLog:
