@@ -10,13 +10,13 @@
     <a href="https://ko-fi.com/ddc"><img src="https://img.shields.io/badge/Ko--fi-ddc-FF5E5B?style=plastic&logo=kofi&logoColor=white&color=brightgreen" alt="Ko-fi"/></a>
     <a href="https://www.paypal.com/ncp/payment/6G9Z78QHUD4RJ"><img src="https://img.shields.io/badge/Donate-PayPal-brightgreen.svg?style=plastic&logo=paypal&logoColor=white" alt="Donate"/></a>
     <br>
-    <a href="https://pypi.python.org/pypi/pythonlogs"><img src="https://img.shields.io/pypi/v/pythonlogs.svg?style=plastic&logo=python&cacheSeconds=3600" alt="PyPi"/></a>
-    <a href="https://pepy.tech/projects/pythonlogs"><img src="https://img.shields.io/pepy/dt/pythonlogs?style=plastic&logo=pypi&logoColor=3776AB" alt="PyPI Downloads"/></a>
-    <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=plastic&logo=creativecommons&logoColor=white" alt="License: MIT"/></a>
-    <br>
     <a href="https://www.python.org/downloads"><img src="https://img.shields.io/pypi/pyversions/pythonlogs.svg?style=plastic&logo=python&cacheSeconds=3600" alt="Python"/></a>
     <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json&style=plastic" alt="uv"/></a>
     <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=plastic" alt="Ruff"/></a>
+    <br>
+    <a href="https://pypi.python.org/pypi/pythonlogs"><img src="https://img.shields.io/pypi/v/pythonlogs.svg?style=plastic&logo=python&cacheSeconds=3600" alt="PyPi"/></a>
+    <a href="https://pepy.tech/projects/pythonlogs"><img src="https://img.shields.io/pepy/dt/pythonlogs?style=plastic&logo=pypi&logoColor=3776AB" alt="PyPI Downloads"/></a>
+    <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=plastic&logo=creativecommons&logoColor=white" alt="License: MIT"/></a>
     <br>
     <a href="https://github.com/ddc/pythonlogs/issues"><img src="https://img.shields.io/github/issues/ddc/pythonlogs?style=plastic&logo=github&logoColor=white" alt="issues"/></a>
     <a href="https://codecov.io/gh/ddc/pythonlogs"><img src="https://img.shields.io/codecov/c/github/ddc/pythonlogs?token=XWB53034GI&style=plastic&logo=codecov" alt="codecov"/></a>
@@ -285,7 +285,6 @@ LOG_MAX_FILE_SIZE_MB=10
 
 # TimedRotatingLog
 LOG_ROTATE_WHEN=midnight
-LOG_ROTATE_AT_UTC=True
 LOG_ROTATE_FILE_SUFIX="%Y%m%d"
 ```
 

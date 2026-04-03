@@ -1,20 +1,21 @@
 import logging
 from enum import StrEnum
+from typing import Final
 
 # File and Directory Constants
-MB_TO_BYTES = 1024 * 1024
-DEFAULT_FILE_MODE = 0o755
-DEFAULT_BACKUP_COUNT = 30
+MB_TO_BYTES: Final = 1024 * 1024
+DEFAULT_FILE_MODE: Final = 0o755
+DEFAULT_BACKUP_COUNT: Final = 30
 
 # Date Format Constants
-DEFAULT_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"
-DEFAULT_ROTATE_SUFFIX = "%Y%m%d"
+DEFAULT_DATE_FORMAT: Final = "%Y-%m-%dT%H:%M:%S"
+DEFAULT_ROTATE_SUFFIX: Final = "%Y%m%d"
 
 # Encoding Constants
-DEFAULT_ENCODING = "UTF-8"
+DEFAULT_ENCODING: Final = "UTF-8"
 
 # Timezone Constants
-DEFAULT_TIMEZONE = "UTC"
+DEFAULT_TIMEZONE: Final = "UTC"
 
 
 class LogLevel(StrEnum):
@@ -45,7 +46,7 @@ class RotateWhen(StrEnum):
 
 
 # Level mapping for performance optimization
-LEVEL_MAP = {
+LEVEL_MAP: Final = {
     LogLevel.DEBUG.value.lower(): logging.DEBUG,
     LogLevel.WARNING.value.lower(): logging.WARNING,
     LogLevel.WARN.value.lower(): logging.WARNING,

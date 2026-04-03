@@ -51,7 +51,6 @@ class TestTimedRotatingLog:
                 timezone="UTC",
                 streamhandler=True,
                 showlocation=True,
-                rotateatutc=True,
             )
             assert timed_log.appname == "test_comprehensive"
             assert timed_log.filenames == ["test1.log", "test2.log"]
@@ -250,7 +249,7 @@ class TestTimedRotatingLog:
     def test_timed_rotating_log_utc_rotation(self):
         """Test TimedRotatingLog with UTC rotation."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            timed_log = TimedRotatingLog(name="test_utc", directory=temp_dir, rotateatutc=True)
+            timed_log = TimedRotatingLog(name="test_utc", directory=temp_dir, timezone="UTC")
             logger = timed_log.init()
 
             # Check that handler is configured for UTC
@@ -466,7 +465,6 @@ class TestGZipRotatorTimed:
                 encoding="utf-8",
                 when="H",
                 daystokeep=10,
-                # Note: rotateatutc defaults to True from settings
             )
             logger = timed_log.init()
 

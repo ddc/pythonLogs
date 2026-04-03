@@ -43,7 +43,6 @@ class TimedRotatingLog(RotatingLogMixin):
         timezone: str | None = None,
         streamhandler: bool | None = None,
         showlocation: bool | None = None,
-        rotateatutc: bool | None = None,
     ):
         _settings = get_log_settings()
         self.level = get_level(level or _settings.level)
@@ -58,7 +57,7 @@ class TimedRotatingLog(RotatingLogMixin):
         self.timezone = timezone or _settings.timezone
         self.streamhandler = streamhandler or _settings.stream_handler
         self.showlocation = showlocation or _settings.show_location
-        self.rotateatutc = rotateatutc or _settings.rotate_at_utc
+        self.rotateatutc = self.timezone.upper() == "UTC"
         self.logger = None
 
     def init(self):

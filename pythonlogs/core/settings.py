@@ -95,10 +95,6 @@ class LogSettings(BaseSettings):
         default=RotateWhen.MIDNIGHT,
         description="When to rotate log files (midnight, hourly, daily, weekly)",
     )
-    rotate_at_utc: bool = Field(
-        default=True,
-        description="Use UTC time for rotation timing",
-    )
     rotate_file_sufix: str = Field(
         default=DEFAULT_ROTATE_SUFFIX,
         description="Date suffix format for rotated log files",
