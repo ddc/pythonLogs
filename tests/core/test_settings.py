@@ -41,7 +41,6 @@ class TestLogSettings:
             assert settings.logger_ttl_seconds == 3600
             assert settings.max_file_size_mb == 10
             assert settings.rotate_when.value == "midnight"
-            assert settings.rotate_at_utc is True
             assert settings.rotate_file_sufix == DEFAULT_ROTATE_SUFFIX
         finally:
             # Restore environment variables

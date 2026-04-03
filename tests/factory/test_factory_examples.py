@@ -239,7 +239,6 @@ class TestFactoryExamples:
                 timezone="UTC",
                 streamhandler=True,
                 showlocation=True,
-                rotateatutc=True,
             )
 
             # Test all log levels

@@ -29,7 +29,6 @@ class LoggerConfig:
     maxmbytes: int | None = None
     when: RotateWhen | str | None = None
     sufix: str | None = None
-    rotateatutc: bool | None = None
     daystokeep: int | None = None
 
 
@@ -254,7 +253,6 @@ class LoggerFactory:
                 "timezone",
                 "streamhandler",
                 "showlocation",
-                "rotateatutc",
             },
         ),
     }
@@ -426,7 +424,6 @@ class TimedRotatingLog(_LoggerMixin):
         timezone: str | None = None,
         streamhandler: bool | None = None,
         showlocation: bool | None = None,
-        rotateatutc: bool | None = None,
     ):
         self._logger = LoggerFactory.create_logger(
             LoggerType.TIMED_ROTATING,
@@ -442,7 +439,6 @@ class TimedRotatingLog(_LoggerMixin):
             timezone=timezone,
             streamhandler=streamhandler,
             showlocation=showlocation,
-            rotateatutc=rotateatutc,
         )
         self._name = name or get_log_settings().appname
 
