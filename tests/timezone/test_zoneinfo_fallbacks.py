@@ -130,10 +130,11 @@ class TestZoneinfoFallbacks:
                         streamhandler=False,
                     )
                     logger.info(f"Complex timezone test: {tz}")
-                    assert logger.name == f"complex_tz_test_{i}"
                 except Exception as e:
                     # Some timezones might not be available on all systems
                     pytest.skip(f"Timezone {tz} not available: {e}")
+
+                assert logger.name == f"complex_tz_test_{i}"
 
     def test_zoneinfo_caching_behavior(self):
         """Test that zoneinfo objects are properly cached."""
