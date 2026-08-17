@@ -19,7 +19,7 @@
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=plastic&logo=creativecommons&logoColor=white" alt="License: MIT"/></a>
     <br>
     <a href="https://github.com/ddc/pythonlogs/issues"><img src="https://img.shields.io/github/issues/ddc/pythonlogs?style=plastic&logo=github&logoColor=white" alt="issues"/></a>
-    <a href="https://codecov.io/gh/ddc/pythonlogs"><img src="https://img.shields.io/codecov/c/github/ddc/pythonlogs?token=XWB53034GI&style=plastic&logo=codecov" alt="codecov"/></a>
+    <a href="https://sonarcloud.io/component_measures?id=ddc_pythonlogs&metric=coverage"><img src="https://img.shields.io/sonar/coverage/ddc_pythonlogs?server=https%3A%2F%2Fsonarcloud.io&style=plastic&logo=sonarqubecloud&logoColor=white" alt="SonarCloud Coverage"/></a>
     <a href="https://sonarcloud.io/dashboard?id=ddc_pythonlogs"><img src="https://img.shields.io/sonar/quality_gate/ddc_pythonlogs?server=https%3A%2F%2Fsonarcloud.io&style=plastic&logo=sonarqubecloud&logoColor=white" alt="Quality Gate Status"/></a>
     <a href="https://github.com/ddc/pythonlogs/actions/workflows/workflow.yml"><img src="https://img.shields.io/github/actions/workflow/status/ddc/pythonlogs/workflow.yml?style=plastic&logo=github&logoColor=white&label=CI%2FCD%20Pipeline" alt="CI/CD Pipeline"/></a>
     <a href="https://actions-badge.atrox.dev/ddc/pythonlogs/goto?ref=main"><img src="https://img.shields.io/endpoint.svg?url=https%3A//actions-badge.atrox.dev/ddc/pythonlogs/badge?ref=main&label=build&logo=github&style=plastic" alt="Build Status"/></a>
@@ -91,7 +91,7 @@ logger = BasicLog(
     name="my_app",
     level="debug",  # "debug", "info", "warning", "error", "critical"
     timezone="America/Sao_Paulo",
-    showlocation=False
+    showlocation=False,
 )
 logger.warning("This is a warning example")
 ```
@@ -126,7 +126,7 @@ logger = SizeRotatingLog(
     daystokeep=7,
     timezone="America/Chicago",
     streamhandler=True,
-    showlocation=False
+    showlocation=False,
 )
 logger.warning("This is a warning example")
 ```
@@ -162,7 +162,7 @@ logger = TimedRotatingLog(
     daystokeep=7,
     timezone="UTC",
     streamhandler=True,
-    showlocation=False
+    showlocation=False,
 )
 logger.warning("This is a warning example")
 ```
@@ -223,8 +223,8 @@ app_logger = SizeRotatingLog(
     daystokeep=30,  # Keep 30 days
     level=LogLevel.INFO,
     streamhandler=True,  # Also log to console
-    showlocation=True,   # Show file:function:line
-    timezone="UTC"
+    showlocation=True,  # Show file:function:line
+    timezone="UTC",
 )
 
 # Error logger with longer retention
@@ -235,16 +235,12 @@ error_logger = SizeRotatingLog(
     maxmbytes=10,
     daystokeep=90,  # Keep errors longer
     level=LogLevel.ERROR,
-    streamhandler=False
+    streamhandler=False,
 )
 
 # Audit logger with daily rotation
 audit_logger = TimedRotatingLog(
-    name="audit_log",
-    directory="/var/log/myapp",
-    filenames=["audit.log"],
-    when=RotateWhen.MIDNIGHT,
-    level=LogLevel.INFO
+    name="audit_log", directory="/var/log/myapp", filenames=["audit.log"], when=RotateWhen.MIDNIGHT, level=LogLevel.INFO
 )
 
 # Use the loggers
@@ -263,6 +259,7 @@ If not specified inside the .env file, it will use the default value.\
 This is a good approach for production environments, since options can be changed easily.
 ```python
 from pythonlogs import TimedRotatingLog
+
 log = TimedRotatingLog()
 ```
 
@@ -297,8 +294,8 @@ from pythonlogs import get_log_settings, clear_settings_cache
 
 # Inspect current settings
 settings = get_log_settings()
-print(settings.level)      # Current log level
-print(settings.timezone)   # Current timezone
+print(settings.level)  # Current log level
+print(settings.timezone)  # Current timezone
 
 # Clear cache and reload .env on next access (default)
 clear_settings_cache()
@@ -320,27 +317,27 @@ You can use either enums (for type safety) or strings (for simplicity):
 from pythonlogs import LogLevel, RotateWhen
 
 # Option 1: Type-safe enums (recommended)
-LogLevel.DEBUG     # "DEBUG"
-LogLevel.INFO      # "INFO"
-LogLevel.WARNING   # "WARNING"
-LogLevel.ERROR     # "ERROR"
+LogLevel.DEBUG  # "DEBUG"
+LogLevel.INFO  # "INFO"
+LogLevel.WARNING  # "WARNING"
+LogLevel.ERROR  # "ERROR"
 LogLevel.CRITICAL  # "CRITICAL"
 
 # Option 2: String values (case-insensitive)
-"debug"       # Same as LogLevel.DEBUG
-"info"        # Same as LogLevel.INFO
-"warning"     # Same as LogLevel.WARNING
-"warn"        # Same as LogLevel.WARN (alias)
-"error"       # Same as LogLevel.ERROR
-"critical"    # Same as LogLevel.CRITICAL
-"crit"        # Same as LogLevel.CRIT (alias)
+"debug"  # Same as LogLevel.DEBUG
+"info"  # Same as LogLevel.INFO
+"warning"  # Same as LogLevel.WARNING
+"warn"  # Same as LogLevel.WARN (alias)
+"error"  # Same as LogLevel.ERROR
+"critical"  # Same as LogLevel.CRITICAL
+"crit"  # Same as LogLevel.CRIT (alias)
 # Also supports: "DEBUG", "Info", "Warning", etc.
 
 # RotateWhen values
-RotateWhen.MIDNIGHT   # "midnight"
-RotateWhen.HOURLY     # "H"
-RotateWhen.DAILY      # "D"
-RotateWhen.MONDAY     # "W0"
+RotateWhen.MIDNIGHT  # "midnight"
+RotateWhen.HOURLY  # "H"
+RotateWhen.DAILY  # "D"
+RotateWhen.MONDAY  # "W0"
 # ... through SUNDAY  # "W6"
 # String equivalents: "midnight", "H", "D", "W0"-"W6"
 ```
