@@ -51,7 +51,7 @@ jobs:
         with:
           timeout_minutes: 2
           max_attempts: 3
-          command: uv run --no-sync pytest
+          command: uv run --no-sync poe test-unit
           shell: bash
 
       - name: SonarQube Scan
