@@ -1248,16 +1248,16 @@ class TestLogUtils:
         for tz, expected_offset in timezones:
             try:
                 offset = log_utils.get_timezone_offset(tz)
-                assert isinstance(offset, str)
-                assert len(offset) == 5  # Format: +/-HHMM
-                assert offset[0] in ["+", "-"]
-
-                if expected_offset:
-                    assert offset == expected_offset
-
             except Exception as e:
                 # Some timezones might not be available on all systems
                 pytest.skip(f"Timezone {tz} not available: {e}")
+
+            assert isinstance(offset, str)
+            assert len(offset) == 5  # Format: +/-HHMM
+            assert offset[0] in ["+", "-"]
+
+            if expected_offset:
+                assert offset == expected_offset
 
     def test_formatter_and_logger_integration(self):
         """Test integration between get_logger_and_formatter and other utilities."""
@@ -1270,23 +1270,22 @@ class TestLogUtils:
         for timezone in timezones:
             try:
                 logger, formatter = log_utils.get_logger_and_formatter(name, datefmt, True, timezone)
-
-                # Verify logger properties
-                assert logger.name == name
-                assert isinstance(formatter, logging.Formatter)
-                assert formatter.datefmt == datefmt
-
-                # Test format string generation
                 format_str = log_utils.get_format(True, name, timezone)
-                assert f"[{name}]:" in format_str
-                assert "[%(filename)s:%(funcName)s:%(lineno)d]:" in format_str
-
-                # Test timezone function integration
                 tz_func = log_utils.get_timezone_function(timezone)
-                assert callable(tz_func)
-
             except Exception as e:
                 pytest.skip(f"Timezone {timezone} not available: {e}")
+
+            # Verify logger properties
+            assert logger.name == name
+            assert isinstance(formatter, logging.Formatter)
+            assert formatter.datefmt == datefmt
+
+            # Test format string generation
+            assert f"[{name}]:" in format_str
+            assert "[%(filename)s:%(funcName)s:%(lineno)d]:" in format_str
+
+            # Test timezone function integration
+            assert callable(tz_func)
 
     def test_memory_efficiency_verification(self):
         """Test memory efficiency of caching mechanisms."""
